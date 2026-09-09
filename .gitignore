@@ -1,0 +1,78 @@
+# =========================
+# Laravel Backend
+# =========================
+
+backend/vendor/
+backend/node_modules/
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+backend/storage/*.key
+backend/storage/app/public/*
+!backend/storage/app/public/.gitignore
+
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+
+backend/bootstrap/cache/*
+
+# Laravel logs
+backend/storage/logs/*.log
+
+
+# =========================
+# React Frontend
+# =========================
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+
+*.swp
+*.swo
+
+
+# =========================
+# OS
+# =========================
+
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Environment / Secrets
+# =========================
+
+*.pem
+*.key
+
+# Gemini / API keys
+.env
+.env.local
+.env.production
+.env.development
+
+
+# =========================
+# Misc
+# =========================
+
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
