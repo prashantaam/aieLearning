@@ -55,19 +55,22 @@ class Flashcard extends Model
 
     public function toResponseArray(?Chapter $chapter = null): array
     {
-        $chapter ??= $this->relationLoaded('chapter') ? $this->chapter : null;
+        $chapter ??= $this->relationLoaded('chapter')
+            ? $this->chapter
+            : null;
 
-        $data = [
+        return [
             'id' => $this->id,
             'userId' => $this->user_id,
             'chapterId' => $chapter
-                ? ['id' => $chapter->id, 'title' => $chapter->title]
+                ? [
+                    'id' => $chapter->id,
+                    'title' => $chapter->title,
+                ]
                 : $this->chapter_id,
             'cards' => $this->cards ?? [],
             'createdAt' => $this->created_at?->toIso8601String(),
             'updatedAt' => $this->updated_at?->toIso8601String(),
         ];
-
-        return $data;
     }
 }

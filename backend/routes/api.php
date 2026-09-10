@@ -68,6 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
     '/ai/generate-learning-content',
     [AiController::class, 'generateLearningContent']
     );
+
+    Route::post(
+    '/ai/generate-course-chapters',
+    [AiController::class, 'generateCourseChapters']
+);
     /*
     |--------------------------------------------------------------------------
     | Subjects

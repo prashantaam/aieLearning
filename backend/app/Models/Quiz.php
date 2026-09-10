@@ -86,8 +86,5 @@ class Quiz extends Model
         ];
     }
 
-    public function chapter()
-    {
-        return $this->belongsTo(Chapter::class);
-    }
+    
 }

@@ -51,6 +51,18 @@ const SubjectDetailPage = () => {
     status: "draft",
   });
 
+  /*
+   * AI chapter generation
+   */
+  const [generatingChapters, setGeneratingChapters] =
+    useState(false);
+
+  const [savingGeneratedChapters, setSavingGeneratedChapters] =
+    useState(false);
+
+  const [generatedChapters, setGeneratedChapters] =
+    useState([]);
+
   useEffect(() => {
     fetchSubject();
   }, [subjectId]);
@@ -164,6 +176,153 @@ const SubjectDetailPage = () => {
       }
     } finally {
       setCreatingChapter(false);
+    }
+  };
+
+  /*
+   * Generate chapter suggestions with AI
+   */
+  const handleGenerateChapters = async () => {
+    try {
+      setGeneratingChapters(true);
+      setError("");
+      setSuccess("");
+      setShowChapterForm(false);
+
+      const response = await axiosInstance.post(
+        "/api/ai/generate-course-chapters",
+        {
+          title: subject.title,
+          description: subject.description || "",
+        }
+      );
+
+      const chapters =
+        response.data?.data?.chapters || [];
+
+      if (!Array.isArray(chapters) || chapters.length === 0) {
+        throw new Error(
+          "AI did not return any chapter suggestions."
+        );
+      }
+
+      setGeneratedChapters(
+        chapters.map((chapter, index) => ({
+          id: `generated-${Date.now()}-${index}`,
+          title: chapter.title || "",
+          description: chapter.description || "",
+          status: "draft",
+        }))
+      );
+
+      setSuccess(
+        "AI chapter suggestions generated. Review them before saving."
+      );
+    } catch (err) {
+      console.error(
+        "Failed to generate chapters:",
+        err
+      );
+
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to generate chapters."
+      );
+    } finally {
+      setGeneratingChapters(false);
+    }
+  };
+
+  /*
+   * Edit one generated chapter before saving
+   */
+  const handleGeneratedChapterChange = (
+    id,
+    field,
+    value
+  ) => {
+    setGeneratedChapters((current) =>
+      current.map((chapter) =>
+        chapter.id === id
+          ? { ...chapter, [field]: value }
+          : chapter
+      )
+    );
+  };
+
+  /*
+   * Remove one generated chapter suggestion
+   */
+  const handleRemoveGeneratedChapter = (id) => {
+    setGeneratedChapters((current) =>
+      current.filter((chapter) => chapter.id !== id)
+    );
+  };
+
+  /*
+   * Save all reviewed AI-generated chapters
+   */
+  const handleSaveGeneratedChapters = async () => {
+    const validChapters = generatedChapters.filter(
+      (chapter) => chapter.title.trim()
+    );
+
+    if (validChapters.length === 0) {
+      setError(
+        "Please keep at least one chapter with a title before saving."
+      );
+      return;
+    }
+
+    try {
+      setSavingGeneratedChapters(true);
+      setError("");
+      setSuccess("");
+
+      for (const chapter of validChapters) {
+        await axiosInstance.post(
+          `/api/subjects/${subjectId}/chapters`,
+          {
+            title: chapter.title.trim(),
+            description: chapter.description.trim(),
+            status: chapter.status || "draft",
+          }
+        );
+      }
+
+      setGeneratedChapters([]);
+      setSuccess(
+        `${validChapters.length} AI-generated chapter${
+          validChapters.length === 1 ? "" : "s"
+        } saved successfully.`
+      );
+
+      await fetchSubject();
+    } catch (err) {
+      console.error(
+        "Failed to save generated chapters:",
+        err
+      );
+
+      if (err.response?.data?.errors) {
+        const validationErrors = Object.values(
+          err.response.data.errors
+        )
+          .flat()
+          .join(" ");
+
+        setError(validationErrors);
+      } else {
+        setError(
+          err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Failed to save generated chapters."
+        );
+      }
+    } finally {
+      setSavingGeneratedChapters(false);
     }
   };
 
@@ -384,17 +543,34 @@ const SubjectDetailPage = () => {
               </p>
             </div>
 
-            {/* CREATE CHAPTER BUTTON */}
+            {/* Teacher Chapter Actions */}
             {isTeacherMode && (
-              <button
-                type="button"
-                onClick={toggleChapterForm}
-                className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-              >
-                {showChapterForm
-                  ? "Cancel"
-                  : "+ Create Chapter"}
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={toggleChapterForm}
+                  disabled={generatingChapters}
+                  className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {showChapterForm
+                    ? "Cancel"
+                    : "+ Create Chapter"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleGenerateChapters}
+                  disabled={
+                    generatingChapters ||
+                    savingGeneratedChapters
+                  }
+                  className="rounded-lg bg-purple-600 px-5 py-3 font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {generatingChapters
+                    ? "Generating..."
+                    : "✨ Generate Chapters with AI"}
+                </button>
+              </div>
             )}
 
           </div>
@@ -542,6 +718,177 @@ const SubjectDetailPage = () => {
 
                 </form>
 
+              </div>
+            )}
+
+          {/* AI Generated Chapter Suggestions */}
+          {isTeacherMode &&
+            generatedChapters.length > 0 && (
+              <div className="mb-6 rounded-xl border border-purple-200 bg-purple-50/40 p-6">
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      AI Suggested Chapters
+                    </h3>
+
+                    <p className="mt-1 text-sm text-gray-600">
+                      Review, edit or remove chapters before saving them to the course.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGeneratedChapters([])
+                    }
+                    disabled={savingGeneratedChapters}
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Clear suggestions
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {generatedChapters.map(
+                    (chapter, index) => (
+                      <div
+                        key={chapter.id}
+                        className="rounded-xl border border-gray-200 bg-white p-5"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-700">
+                            {index + 1}
+                          </div>
+
+                          <div className="min-w-0 flex-1 space-y-4">
+                            <div>
+                              <label
+                                htmlFor={`generated-title-${chapter.id}`}
+                                className="mb-2 block text-sm font-medium text-gray-700"
+                              >
+                                Chapter Title
+                              </label>
+
+                              <input
+                                id={`generated-title-${chapter.id}`}
+                                type="text"
+                                value={chapter.title}
+                                onChange={(event) =>
+                                  handleGeneratedChapterChange(
+                                    chapter.id,
+                                    "title",
+                                    event.target.value
+                                  )
+                                }
+                                disabled={savingGeneratedChapters}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:bg-gray-50"
+                              />
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor={`generated-description-${chapter.id}`}
+                                className="mb-2 block text-sm font-medium text-gray-700"
+                              >
+                                Description
+                              </label>
+
+                              <textarea
+                                id={`generated-description-${chapter.id}`}
+                                rows="3"
+                                value={chapter.description}
+                                onChange={(event) =>
+                                  handleGeneratedChapterChange(
+                                    chapter.id,
+                                    "description",
+                                    event.target.value
+                                  )
+                                }
+                                disabled={savingGeneratedChapters}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:bg-gray-50"
+                              />
+                            </div>
+
+                            <div className="flex flex-wrap items-end justify-between gap-3">
+                              <div>
+                                <label
+                                  htmlFor={`generated-status-${chapter.id}`}
+                                  className="mb-2 block text-sm font-medium text-gray-700"
+                                >
+                                  Status
+                                </label>
+
+                                <select
+                                  id={`generated-status-${chapter.id}`}
+                                  value={chapter.status}
+                                  onChange={(event) =>
+                                    handleGeneratedChapterChange(
+                                      chapter.id,
+                                      "status",
+                                      event.target.value
+                                    )
+                                  }
+                                  disabled={savingGeneratedChapters}
+                                  className="rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:bg-gray-50"
+                                >
+                                  <option value="draft">
+                                    Draft
+                                  </option>
+                                  <option value="published">
+                                    Published
+                                  </option>
+                                </select>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleRemoveGeneratedChapter(
+                                    chapter.id
+                                  )
+                                }
+                                disabled={savingGeneratedChapters}
+                                className="rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveGeneratedChapters}
+                    disabled={
+                      savingGeneratedChapters ||
+                      generatedChapters.length === 0
+                    }
+                    className="rounded-lg bg-purple-600 px-5 py-3 font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingGeneratedChapters
+                      ? "Saving Chapters..."
+                      : `Save All ${generatedChapters.length} Chapters`}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateChapters}
+                    disabled={
+                      generatingChapters ||
+                      savingGeneratedChapters
+                    }
+                    className="rounded-lg border border-purple-300 bg-white px-5 py-3 font-medium text-purple-700 transition hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {generatingChapters
+                      ? "Generating..."
+                      : "Regenerate"}
+                  </button>
+                </div>
               </div>
             )}
 

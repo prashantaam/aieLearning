@@ -49,12 +49,7 @@ class ContentController extends Controller
          * Validate form data.
          */
         $validated = $request->validate([
-            'title' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-
+          
             'content' => [
                 'required',
                 'string',
@@ -72,8 +67,6 @@ class ContentController extends Controller
         $content = Content::create([
             'chapter_id' => $chapter->id,
             'created_by' => $user->id,
-
-            'title' => $validated['title'],
 
             'content' => $validated['content'],
 

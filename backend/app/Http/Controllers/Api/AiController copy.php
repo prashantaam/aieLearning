@@ -34,6 +34,9 @@ class AiController extends Controller
             'contents',
         ])->findOrFail($validated['chapterId']);
 
+        /*
+        * Check teacher owns the subject.
+        */
         if ($chapter->subject->teacher_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
@@ -41,6 +44,9 @@ class AiController extends Controller
             ], 403);
         }
 
+        /*
+        * Combine all chapter learning content.
+        */
         $learningMaterial = $chapter->contents
             ->pluck('content')
             ->filter()
@@ -57,7 +63,7 @@ class AiController extends Controller
             $count = $validated['count'] ?? 10;
 
             /*
-            * Step 1: Generate flashcards using Gemini.
+            * Step 1: Generate flashcards with Gemini.
             */
             $cards = $this->gemini->generateFlashcards(
                 $learningMaterial,
@@ -72,12 +78,12 @@ class AiController extends Controller
             }
 
             /*
-            * Step 2: Add UUID and revision fields.
+            * Step 2: Build cards for database storage.
             */
             $builtCards = Flashcard::buildCards($cards);
 
             /*
-            * Step 3: Save flashcard set to MySQL.
+            * Step 3: Save flashcard set in MySQL.
             */
             $flashcardSet = Flashcard::create([
                 'user_id' => $request->user()->id,

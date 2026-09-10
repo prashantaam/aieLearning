@@ -109,7 +109,11 @@ class ChapterController extends Controller
             }
         }
 
-        $chapter->load('contents');
+        $chapter->load([
+            'contents',
+            'quizzes',
+            'flashcards',
+        ]);
 
         return response()->json([
             'success' => true,

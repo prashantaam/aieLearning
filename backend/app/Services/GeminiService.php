@@ -194,43 +194,53 @@ class GeminiService
     public function generateLearningContent(string $title): string
     {
         $prompt = <<<PROMPT
-    You are an expert programming instructor creating educational content
-    for an online learning platform.
+        You are an expert educator and instructional content creator for an online learning platform.
 
-    Create a clear, practical and well-structured lesson about the following topic:
+        Create a clear, accurate, engaging, and well-structured lesson about the following topic:
 
-    Topic: "{$title}"
+        Topic: "{$title}"
 
-    Target audience:
-    Beginner to intermediate students.
+        Target audience:
+        Beginner to intermediate learners.
 
-    Requirements:
-    - Explain the topic clearly and accurately.
-    - Start with a short introduction.
-    - Organise the lesson using meaningful headings and subheadings.
-    - Explain important concepts step by step.
-    - Include practical examples.
-    - Include code examples when appropriate.
-    - Explain the code examples clearly.
-    - Include important rules, key points or best practices where relevant.
-    - Finish with a short summary.
-    - Avoid unnecessary conversational text.
+        Adapt the lesson to the subject automatically. The topic may come from areas such as programming, mathematics, statistics, finance, science, business, languages, technology, or other academic and professional subjects.
 
-    Formatting requirements:
-    - Return the entire response in Markdown.
-    - Use # for the main heading.
-    - Use ## for major sections.
-    - Use ### for subsections when needed.
-    - Use bullet lists or numbered lists where appropriate.
-    - Use **bold text** for important terms.
-    - Use inline code for variables, functions, commands and keywords.
-    - Use fenced code blocks with the appropriate programming language.
-    - Do not wrap the entire response inside one code block.
-    - Do not include text such as "Here is your lesson".
-    - Return only the educational lesson content.
+        Requirements:
+        - Explain the topic clearly and accurately.
+        - Start with a short introduction explaining what the topic is and why it is important.
+        - Organise the lesson using meaningful headings and subheadings.
+        - Introduce foundational concepts before more advanced concepts.
+        - Explain important concepts step by step.
+        - Define important terminology when it first appears.
+        - Include practical examples where appropriate.
+        - Include worked examples for mathematics, statistics, finance, or other calculation-based topics.
+        - Show formulas and explain each variable or component when relevant.
+        - Show calculations step by step when solving numerical problems.
+        - Include code examples only when relevant to the topic.
+        - Explain code examples clearly when code is included.
+        - Include real-world examples or applications when appropriate.
+        - Include important rules, principles, assumptions, key points, or best practices where relevant.
+        - Highlight common mistakes or misunderstandings when useful.
+        - Do not force programming examples into non-programming subjects.
+        - Do not force formulas or calculations into topics where they are not relevant.
+        - Finish with a concise summary of the key learning points.
+        - Avoid unnecessary conversational text.
 
-    Topic: "{$title}"
-    PROMPT;
+        Formatting requirements:
+        - Return the entire response in Markdown.
+        - Use # for the main lesson heading.
+        - Use ## for major sections.
+        - Use ### for subsections when needed.
+        - Use bullet lists or numbered lists where appropriate.
+        - Use **bold text** for important terms and concepts.
+        - Use inline code only for programming-related terms, commands, variables, functions, or syntax.
+        - Use fenced code blocks with the appropriate programming language only when code examples are relevant.
+        - Write mathematical and statistical formulas clearly using standard mathematical notation.
+        - Keep worked calculations easy to follow.
+        - Do not wrap the entire response inside one code block.
+        - Do not include introductory phrases such as "Here is your lesson".
+        - Return only the educational lesson content.
+        PROMPT;
 
         return $this->generateContent(
             $prompt,
@@ -272,5 +282,72 @@ class GeminiService
             logger()->error('Gemini API error', ['message' => $e->getMessage()]);
             throw new RuntimeException($errorMessage);
         }
+    }
+
+    public function generateCourseChapters(string $subjectTitle, ?string $subjectDescription = null): array 
+    {
+            $description = $subjectDescription ?: 'No additional description provided.';
+
+            $prompt = <<<PROMPT
+        You are an expert course designer for an online learning platform.
+
+        Create a well-structured course curriculum for the following subject.
+
+        Subject:
+        {$subjectTitle}
+
+        Course description:
+        {$description}
+
+        Target audience:
+        Beginner to intermediate learners.
+
+        Requirements:
+        - Create between 8 and 12 chapters.
+        - Arrange chapters in a logical learning order.
+        - Start with foundational concepts.
+        - Gradually move toward more practical and advanced topics.
+        - Each chapter should have a clear title.
+        - Each chapter should include a short description.
+        - Do not include quizzes, flashcards or exercises as separate chapters.
+        - Avoid duplicate or overly similar chapters.
+
+        Return each chapter exactly in this format:
+
+        TITLE: Chapter title
+        DESCRIPTION: Short chapter description
+
+        Separate each chapter using:
+
+        ---
+
+        Return only the chapter list.
+
+        PROMPT;
+
+            $response = $this->generateContent(
+                $prompt,
+                'Failed to generate course chapters'
+            );
+
+            $chapters = [];
+
+            $blocks = preg_split('/\s*---\s*/', trim($response));
+
+            foreach ($blocks as $block) {
+                preg_match('/TITLE:\s*(.+)/i', $block, $titleMatch);
+                preg_match('/DESCRIPTION:\s*(.+)/is', $block, $descriptionMatch);
+
+                if (!empty($titleMatch[1])) {
+                    $chapters[] = [
+                        'title' => trim($titleMatch[1]),
+                        'description' => isset($descriptionMatch[1])
+                            ? trim($descriptionMatch[1])
+                            : null,
+                    ];
+                }
+            }
+
+            return $chapters;
     }
 }

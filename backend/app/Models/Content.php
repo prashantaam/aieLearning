@@ -12,7 +12,6 @@ class Content extends Model
     protected $fillable = [
         'chapter_id',
         'created_by',
-        'title',
         'content',
         'source_type',
         'original_file_name',

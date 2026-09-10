@@ -40,8 +40,19 @@ const ChapterDetailPage = () => {
 
   const [success, setSuccess] = useState("");
 
+  /*
+   * AI quiz generation
+   */
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [numQuizQuestions, setNumQuizQuestions] = useState(5);
+
+  /*
+   * AI flashcard generation
+   */
+  const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
+  const [numFlashcards, setNumFlashcards] = useState(10);
+
   const [contentForm, setContentForm] = useState({
-    title: "",
     content: "",
     status: "draft",
   });
@@ -96,9 +107,9 @@ const ChapterDetailPage = () => {
    * Generate learning content with AI
    */
   const handleGenerateContent = async () => {
-    if (!contentForm.title.trim()) {
+    if (!chapter?.title?.trim()) {
       setError(
-        "Please enter a Content Title before generating content."
+        "Chapter title is required before generating content."
       );
       return;
     }
@@ -111,7 +122,7 @@ const ChapterDetailPage = () => {
       const response = await axiosInstance.post(
         "/api/ai/generate-learning-content",
         {
-          title: contentForm.title.trim(),
+          title: chapter.title.trim(),
         }
       );
 
@@ -149,6 +160,76 @@ const ChapterDetailPage = () => {
   };
 
   /*
+   * Generate and save chapter quiz with AI
+   */
+  const handleGenerateQuiz = async () => {
+    try {
+      setGeneratingQuiz(true);
+      setError("");
+      setSuccess("");
+
+      await axiosInstance.post("/api/ai/generate-quiz", {
+        chapterId: Number(chapterId),
+        numQuestions: Number(numQuizQuestions),
+      });
+
+      setSuccess("Quiz generated and saved successfully.");
+      await fetchChapter();
+    } catch (err) {
+      console.error("Failed to generate quiz:", err);
+
+      if (err.response?.data?.errors) {
+        const messages = Object.values(err.response.data.errors)
+          .flat()
+          .join(" ");
+        setError(messages);
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Failed to generate quiz."
+        );
+      }
+    } finally {
+      setGeneratingQuiz(false);
+    }
+  };
+
+  /*
+   * Generate and save chapter flashcards with AI
+   */
+  const handleGenerateFlashcards = async () => {
+    try {
+      setGeneratingFlashcards(true);
+      setError("");
+      setSuccess("");
+
+      await axiosInstance.post("/api/ai/generate-flashcards", {
+        chapterId: Number(chapterId),
+        count: Number(numFlashcards),
+      });
+
+      setSuccess("Flashcards generated and saved successfully.");
+      await fetchChapter();
+    } catch (err) {
+      console.error("Failed to generate flashcards:", err);
+
+      if (err.response?.data?.errors) {
+        const messages = Object.values(err.response.data.errors)
+          .flat()
+          .join(" " );
+        setError(messages);
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Failed to generate flashcards."
+        );
+      }
+    } finally {
+      setGeneratingFlashcards(false);
+    }
+  };
+
+  /*
    * Create text content
    *
    * This endpoint will be added in our
@@ -168,14 +249,12 @@ const ChapterDetailPage = () => {
       await axiosInstance.post(
         `/api/chapters/${chapterId}/contents`,
         {
-          title: contentForm.title,
           content: contentForm.content,
           status: contentForm.status,
         }
       );
 
       setContentForm({
-        title: "",
         content: "",
         status: "draft",
       });
@@ -265,6 +344,19 @@ const ChapterDetailPage = () => {
     ? chapter.flashcards
     : [];
 
+  /*
+   * Each database row is a flashcard set and contains
+   * its generated cards inside the `cards` JSON array.
+   */
+  const allFlashcards = flashcards.flatMap((flashcardSet) =>
+    Array.isArray(flashcardSet.cards)
+      ? flashcardSet.cards.map((card) => ({
+          ...card,
+          flashcardSetId: flashcardSet.id,
+        }))
+      : []
+  );
+
   const tabs = [
     {
       id: "content",
@@ -279,7 +371,7 @@ const ChapterDetailPage = () => {
     {
       id: "flashcards",
       label: "Flashcards",
-      count: flashcards.length,
+      count: allFlashcards.length,
     },
   ];
 
@@ -458,31 +550,16 @@ const ChapterDetailPage = () => {
                   >
 
                     <div>
-
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Content Title
-                      </label>
+                   
 
                       <div className="flex flex-col gap-3 sm:flex-row">
-                        <input
-                          name="title"
-                          value={
-                            contentForm.title
-                          }
-                          onChange={
-                            handleContentChange
-                          }
-                          required
-                          placeholder="e.g. PHP Variables"
-                          className="w-full flex-1 rounded-lg border border-gray-300 px-4 py-3"
-                        />
-
+                        
                         <button
                           type="button"
                           onClick={handleGenerateContent}
                           disabled={
                             generatingContent ||
-                            !contentForm.title.trim()
+                            !chapter?.title?.trim()
                           }
                           className="shrink-0 rounded-lg bg-purple-600 px-5 py-3 font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -493,7 +570,7 @@ const ChapterDetailPage = () => {
                       </div>
 
                       <p className="mt-2 text-sm text-gray-500">
-                        Enter a topic such as "PHP Variables", then generate a Markdown lesson with AI.
+                        Generate a Markdown lesson using the chapter title: "{chapter.title}".
                       </p>
 
                     </div>
@@ -624,10 +701,6 @@ const ChapterDetailPage = () => {
                             Content{" "}
                             {index + 1}
                           </p>
-
-                          <h3 className="mt-1 text-lg font-semibold text-gray-900">
-                            {item.title}
-                          </h3>
 
                           <div className="mt-5 max-w-none text-gray-700">
                             <ReactMarkdown
@@ -768,12 +841,37 @@ const ChapterDetailPage = () => {
               </div>
 
               {isTeacherMode && (
-                <button
-                  type="button"
-                  className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700"
-                >
-                  + Create Quiz
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Questions
+                  </label>
+
+                  <select
+                    value={numQuizQuestions}
+                    onChange={(event) =>
+                      setNumQuizQuestions(Number(event.target.value))
+                    }
+                    disabled={generatingQuiz}
+                    className="rounded-lg border border-gray-300 px-3 py-3 text-sm disabled:bg-gray-100"
+                  >
+                    {[5, 10, 15, 20].map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateQuiz}
+                    disabled={generatingQuiz || contents.length === 0}
+                    className="rounded-lg bg-purple-600 px-5 py-3 font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {generatingQuiz
+                      ? "Generating Quiz..."
+                      : "✨ Generate Quiz with AI"}
+                  </button>
+                </div>
               )}
 
             </div>
@@ -787,8 +885,8 @@ const ChapterDetailPage = () => {
                 </h3>
 
                 <p className="mt-2 text-sm text-gray-500">
-                  Chapter-level quiz generation
-                  will appear here.
+                  Generate a quiz from this chapter's
+                  learning content using AI.
                 </p>
 
               </div>
@@ -801,9 +899,25 @@ const ChapterDetailPage = () => {
 
                   <div
                     key={quiz.id}
-                    className="rounded-xl border bg-white p-5"
+                    className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
                   >
-                    {quiz.title}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {quiz.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          {quiz.total_questions ??
+                            quiz.totalQuestions ??
+                            quiz.questions?.length ??
+                            0}{" "}
+                          questions
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700">
+                        AI Quiz
+                      </span>
+                    </div>
                   </div>
 
                 ))}
@@ -824,7 +938,7 @@ const ChapterDetailPage = () => {
 
           <div className="mt-6">
 
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
@@ -832,23 +946,47 @@ const ChapterDetailPage = () => {
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Create revision flashcards
-                  from this chapter.
+                  Generate revision flashcards from this chapter's learning content.
                 </p>
               </div>
 
               {isTeacherMode && (
-                <button
-                  type="button"
-                  className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white hover:bg-blue-700"
-                >
-                  + Generate Flashcards
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Cards
+                  </label>
+
+                  <select
+                    value={numFlashcards}
+                    onChange={(event) =>
+                      setNumFlashcards(Number(event.target.value))
+                    }
+                    disabled={generatingFlashcards}
+                    className="rounded-lg border border-gray-300 px-3 py-3 text-sm disabled:bg-gray-100"
+                  >
+                    {[5, 10, 15, 20].map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateFlashcards}
+                    disabled={generatingFlashcards || contents.length === 0}
+                    className="rounded-lg bg-purple-600 px-5 py-3 font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {generatingFlashcards
+                      ? "Generating Flashcards..."
+                      : "✨ Generate Flashcards with AI"}
+                  </button>
+                </div>
               )}
 
             </div>
 
-            {flashcards.length === 0 ? (
+            {allFlashcards.length === 0 ? (
 
               <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
 
@@ -857,8 +995,7 @@ const ChapterDetailPage = () => {
                 </h3>
 
                 <p className="mt-2 text-sm text-gray-500">
-                  Chapter-level flashcards will
-                  appear here.
+                  Generate flashcards from this chapter's learning content using AI.
                 </p>
 
               </div>
@@ -867,18 +1004,40 @@ const ChapterDetailPage = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
 
-                {flashcards.map(
-                  (card) => (
+                {allFlashcards.map((card, index) => (
+                  <div
+                    key={`${card.flashcardSetId}-${card.id || index}`}
+                    className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-purple-600">
+                        Flashcard {index + 1}
+                      </span>
 
-                    <div
-                      key={card.id}
-                      className="rounded-xl border bg-white p-5"
-                    >
-                      {card.question}
+                      <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-medium capitalize text-purple-700">
+                        {card.difficulty || "medium"}
+                      </span>
                     </div>
 
-                  )
-                )}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Question
+                      </p>
+                      <p className="mt-2 font-semibold leading-6 text-gray-900">
+                        {card.question}
+                      </p>
+                    </div>
+
+                    <div className="mt-5 border-t border-gray-100 pt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        Answer
+                      </p>
+                      <p className="mt-2 leading-6 text-gray-700">
+                        {card.answer}
+                      </p>
+                    </div>
+                  </div>
+                ))}
 
               </div>
 
