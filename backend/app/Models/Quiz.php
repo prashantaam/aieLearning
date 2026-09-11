@@ -13,7 +13,7 @@ class Quiz extends Model
 
     protected $fillable = [
         'user_id',
-        'chapter_id',
+        'lesson_id',
         'title',
         'questions',
         'user_answers',
@@ -42,9 +42,9 @@ class Quiz extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function chapter()
+    public function lesson()
     {
-        return $this->belongsTo(Chapter::class);
+        return $this->belongsTo(Lesson::class);
     }
 
     /**
@@ -65,16 +65,16 @@ class Quiz extends Model
         }, $rawQuestions);
     }
 
-    public function toResponseArray(?Chapter $chapter = null): array
+    public function toResponseArray(?Lesson $lesson = null): array
     {
-        $chapter ??= $this->relationLoaded('chapter') ? $this->chapter : null;
+        $lesson ??= $this->relationLoaded('lesson') ? $this->lesson : null;
 
         return [
             'id' => $this->id,
             'userId' => $this->user_id,
-            'chapterId' => $chapter
-                ? ['id' => $chapter->id, 'title' => $chapter->title]
-                : $this->chapter_id,
+            'lessonId' => $lesson
+                ? ['id' => $lesson->id, 'title' => $lesson->title]
+                : $this->lesson_id,
             'title' => $this->title,
             'questions' => $this->questions ?? [],
             'userAnswers' => $this->user_answers ?? [],

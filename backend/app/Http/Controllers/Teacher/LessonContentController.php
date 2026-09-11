@@ -1,28 +1,28 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Chapter;
-use App\Models\Content;
+use App\Models\Lesson;
+use App\Models\LessonContent;
 use Illuminate\Http\Request;
 
-class ContentController extends Controller
+class LessonContentController extends Controller
 {
     /**
-     * Create text content for a chapter.
+     * Create text content for a lesson.
      *
-     * POST /api/chapters/{chapter}/contents
+     * POST /api/lessons/{lesson}/contents
      */
-    public function store(Request $request, Chapter $chapter)
+    public function store(Request $request, Lesson $lesson)
     {
         $user = $request->user();
 
         /*
-         * Load the subject so we can check
-         * whether this teacher owns the subject.
+         * Load the course so we can check
+         * whether this teacher owns the course.
          */
-        $chapter->load('subject');
+        $lesson->load('course');
 
         /*
          * Only teachers can create content.
@@ -35,13 +35,13 @@ class ContentController extends Controller
         }
 
         /*
-         * Teacher must own the Subject
-         * that this Chapter belongs to.
+         * Teacher must own the Course
+         * that this Lesson belongs to.
          */
-        if ($chapter->subject->teacher_id !== $user->id) {
+        if ($lesson->course->teacher_id !== $user->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to add content to this chapter.',
+                'message' => 'You are not authorized to add content to this lesson.',
             ], 403);
         }
 
@@ -62,22 +62,19 @@ class ContentController extends Controller
         ]);
 
         /*
-         * Save Content.
+         * Save LessonContent.
          */
-        $content = Content::create([
-            'chapter_id' => $chapter->id,
+        $content = LessonContent::create([
+            'lesson_id' => $lesson->id,
             'created_by' => $user->id,
-
             'content' => $validated['content'],
-
             'source_type' => 'text',
-
             'status' => $validated['status'] ?? 'draft',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Content created successfully.',
+            'message' => 'LessonContent created successfully.',
             'data' => $content,
         ], 201);
     }

@@ -6,26 +6,26 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Flashcard;
 
-class Chapter extends Model
+class Lesson extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'subject_id',
+        'course_id',
         'title',
         'description',
-        'chapter_order',
+        'lesson_order',
         'status',
     ];
 
-    public function subject()
+    public function course()
     {
-        return $this->belongsTo(Subject::class);
+        return $this->belongsTo(Course::class);
     }
 
-    public function contents()
+    public function lessonContents()
     {
-        return $this->hasMany(Content::class);
+        return $this->hasMany(LessonContent::class);
     }
 
     public function quizzes()

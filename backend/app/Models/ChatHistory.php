@@ -11,7 +11,7 @@ class ChatHistory extends Model
 
     protected $fillable = [
         'user_id',
-        'chapter_id',
+        'lesson_id',
         'messages',
     ];
 
@@ -27,8 +27,8 @@ class ChatHistory extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function chapter()
+    public function lesson()
     {
-        return $this->belongsTo(Chapter::class);
+        return $this->belongsTo(Lesson::class);
     }
 }

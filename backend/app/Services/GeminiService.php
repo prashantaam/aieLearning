@@ -284,17 +284,17 @@ class GeminiService
         }
     }
 
-    public function generateCourseChapters(string $subjectTitle, ?string $subjectDescription = null): array 
+    public function generateCourseLessons(string $courseTitle, ?string $courseDescription = null): array 
     {
-            $description = $subjectDescription ?: 'No additional description provided.';
+            $description = $courseDescription ?: 'No additional description provided.';
 
             $prompt = <<<PROMPT
         You are an expert course designer for an online learning platform.
 
         Create a well-structured course curriculum for the following subject.
 
-        Subject:
-        {$subjectTitle}
+        Course:
+        {$courseTitle}
 
         Course description:
         {$description}
@@ -303,34 +303,34 @@ class GeminiService
         Beginner to intermediate learners.
 
         Requirements:
-        - Create between 8 and 12 chapters.
-        - Arrange chapters in a logical learning order.
+        - Create between 8 and 12 lessons.
+        - Arrange lessons in a logical learning order.
         - Start with foundational concepts.
         - Gradually move toward more practical and advanced topics.
-        - Each chapter should have a clear title.
-        - Each chapter should include a short description.
-        - Do not include quizzes, flashcards or exercises as separate chapters.
-        - Avoid duplicate or overly similar chapters.
+        - Each lesson should have a clear title.
+        - Each lesson should include a short description.
+        - Do not include quizzes, flashcards or exercises as separate lessons.
+        - Avoid duplicate or overly similar lessons.
 
-        Return each chapter exactly in this format:
+        Return each lesson exactly in this format:
 
-        TITLE: Chapter title
-        DESCRIPTION: Short chapter description
+        TITLE: Lesson title
+        DESCRIPTION: Short lesson description
 
-        Separate each chapter using:
+        Separate each lesson using:
 
         ---
 
-        Return only the chapter list.
+        Return only the lesson list.
 
         PROMPT;
 
             $response = $this->generateContent(
                 $prompt,
-                'Failed to generate course chapters'
+                'Failed to generate course lessons'
             );
 
-            $chapters = [];
+            $lessons = [];
 
             $blocks = preg_split('/\s*---\s*/', trim($response));
 
@@ -339,7 +339,7 @@ class GeminiService
                 preg_match('/DESCRIPTION:\s*(.+)/is', $block, $descriptionMatch);
 
                 if (!empty($titleMatch[1])) {
-                    $chapters[] = [
+                    $lessons[] = [
                         'title' => trim($titleMatch[1]),
                         'description' => isset($descriptionMatch[1])
                             ? trim($descriptionMatch[1])
@@ -348,6 +348,6 @@ class GeminiService
                 }
             }
 
-            return $chapters;
+            return $lessons;
     }
 }

@@ -47,14 +47,14 @@ class User extends Authenticatable
         return $this->hasMany(Quiz::class);
     }
 
-    public function subjects()
+    public function courses()
     {
-        return $this->hasMany(Subject::class, 'teacher_id');
+        return $this->hasMany(Course::class, 'teacher_id');
     }
 
-    public function createdContents()
+    public function createdLessonContents()
     {
-        return $this->hasMany(Content::class, 'created_by');
+        return $this->hasMany(LessonContent::class, 'created_by');
     }
     /**
      * Shape used everywhere the React app expects a `user` object

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Subject extends Model
+class Course extends Model
 {
     use HasFactory;
 
@@ -22,9 +22,9 @@ class Subject extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function chapters()
+    public function lessons()
     {
-        return $this->hasMany(Chapter::class)
-            ->orderBy('chapter_order');
+        return $this->hasMany(Lesson::class)
+            ->orderBy('lesson_order');
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChatHistory;
@@ -25,29 +25,23 @@ class AiController extends Controller
     public function generateFlashcards(Request $request)
     {
         $validated = $request->validate([
-            'chapterId' => ['required', 'integer', 'exists:chapters,id'],
+            'lessonId' => ['required', 'integer', 'exists:lessons,id'],
             'count' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
-        $chapter = \App\Models\Chapter::with([
-            'subject',
-            'contents',
-        ])->findOrFail($validated['chapterId']);
+        $lesson = \App\Models\Lesson::with([
+            'course',
+            'lessonContents',
+        ])->findOrFail($validated['lessonId']);
 
-        /*
-        * Check teacher owns the subject.
-        */
-        if ($chapter->subject->teacher_id !== $request->user()->id) {
+        if ($lesson->course->teacher_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorised to generate flashcards for this chapter.',
+                'message' => 'You are not authorised to generate flashcards for this lesson.',
             ], 403);
         }
 
-        /*
-        * Combine all chapter learning content.
-        */
-        $learningMaterial = $chapter->contents
+        $learningMaterial = $lesson->lessonContents
             ->pluck('content')
             ->filter()
             ->implode("\n\n");
@@ -55,7 +49,7 @@ class AiController extends Controller
         if (trim($learningMaterial) === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'This chapter does not have any learning content.',
+                'message' => 'This lesson does not have any learning content.',
             ], 422);
         }
 
@@ -63,7 +57,7 @@ class AiController extends Controller
             $count = $validated['count'] ?? 10;
 
             /*
-            * Step 1: Generate flashcards with Gemini.
+            * Step 1: Generate flashcards using Gemini.
             */
             $cards = $this->gemini->generateFlashcards(
                 $learningMaterial,
@@ -78,16 +72,16 @@ class AiController extends Controller
             }
 
             /*
-            * Step 2: Build cards for database storage.
+            * Step 2: Add UUID and revision fields.
             */
             $builtCards = Flashcard::buildCards($cards);
 
             /*
-            * Step 3: Save flashcard set in MySQL.
+            * Step 3: Save flashcard set to MySQL.
             */
             $flashcardSet = Flashcard::create([
                 'user_id' => $request->user()->id,
-                'chapter_id' => $chapter->id,
+                'lesson_id' => $lesson->id,
                 'cards' => $builtCards,
             ]);
 
@@ -96,13 +90,13 @@ class AiController extends Controller
             */
             return response()->json([
                 'success' => true,
-                'data' => $flashcardSet->toResponseArray($chapter),
+                'data' => $flashcardSet->toResponseArray($lesson),
                 'message' => 'Flashcards generated and saved successfully.',
             ], 201);
 
         } catch (\Throwable $e) {
-            logger()->error('Chapter flashcard generation failed', [
-                'chapter_id' => $chapter->id,
+            logger()->error('Lesson flashcard generation failed', [
+                'lesson_id' => $lesson->id,
                 'message' => $e->getMessage(),
             ]);
 
@@ -118,29 +112,29 @@ class AiController extends Controller
     public function generateQuiz(Request $request)
     {
         $validated = $request->validate([
-            'chapterId' => ['required', 'integer', 'exists:chapters,id'],
+            'lessonId' => ['required', 'integer', 'exists:lessons,id'],
             'numQuestions' => ['nullable', 'integer', 'min:1', 'max:20'],
         ]);
 
-        $chapter = \App\Models\Chapter::with([
-            'subject',
-            'contents',
-        ])->findOrFail($validated['chapterId']);
+        $lesson = \App\Models\Lesson::with([
+            'course',
+            'lessonContents',
+        ])->findOrFail($validated['lessonId']);
 
         /*
-        * Make sure the teacher owns this subject.
+        * Make sure the teacher owns this course.
         */
-        if ($chapter->subject->teacher_id !== $request->user()->id) {
+        if ($lesson->course->teacher_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorised to generate a quiz for this chapter.',
+                'message' => 'You are not authorised to generate a quiz for this lesson.',
             ], 403);
         }
 
         /*
-        * Combine all learning content belonging to the chapter.
+        * Combine all learning content belonging to the lesson.
         */
-        $learningMaterial = $chapter->contents
+        $learningMaterial = $lesson->lessonContents
             ->pluck('content')
             ->filter()
             ->implode("\n\n");
@@ -148,7 +142,7 @@ class AiController extends Controller
         if (trim($learningMaterial) === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'This chapter does not have any learning content.',
+                'message' => 'This lesson does not have any learning content.',
             ], 422);
         }
 
@@ -179,12 +173,12 @@ class AiController extends Controller
             $builtQuestions = Quiz::buildQuestions($questions);
 
             /*
-            * Save quiz against the chapter.
+            * Save quiz against the lesson.
             */
             $quiz = Quiz::create([
                 'user_id' => $request->user()->id,
-                'chapter_id' => $chapter->id,
-                'title' => $chapter->title . ' - Quiz',
+                'lesson_id' => $lesson->id,
+                'title' => $lesson->title . ' - Quiz',
                 'questions' => $builtQuestions,
                 'user_answers' => [],
                 'score' => 0,
@@ -196,13 +190,13 @@ class AiController extends Controller
             */
             return response()->json([
                 'success' => true,
-                'data' => $quiz->toResponseArray($chapter),
+                'data' => $quiz->toResponseArray($lesson),
                 'message' => 'Quiz generated and saved successfully.',
             ], 201);
 
         } catch (\Throwable $e) {
-            logger()->error('Chapter quiz generation failed', [
-                'chapter_id' => $chapter->id,
+            logger()->error('Lesson quiz generation failed', [
+                'lesson_id' => $lesson->id,
                 'message' => $e->getMessage(),
             ]);
 
@@ -423,7 +417,7 @@ class AiController extends Controller
         }
     }
 
-    public function generateCourseChapters(
+    public function generateCourseLessons(
         Request $request,
         GeminiService $geminiService
         ) 
@@ -434,7 +428,7 @@ class AiController extends Controller
         ]);
 
         try {
-            $chapters = $geminiService->generateCourseChapters(
+            $lessons = $geminiService->generateCourseLessons(
                 $validated['title'],
                 $validated['description'] ?? null
             );
@@ -442,20 +436,24 @@ class AiController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'chapters' => $chapters,
+                    'lessons' => $lessons,
                 ],
             ]);
         } catch (\Throwable $e) {
             logger()->error(
-                'Course chapter generation failed',
+                'Course lesson generation failed',
                 [
                     'message' => $e->getMessage(),
+                      'file' => $e->getFile(),
+            'line' => $e->getLine(),
                 ]
             );
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to generate course chapters.',
+                'message' => 'Failed to generate course lessons.',
+                  'file' => $e->getFile(),
+            'line' => $e->getLine(),
             ], 500);
         }
     }

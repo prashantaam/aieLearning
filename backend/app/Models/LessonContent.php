@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Content extends Model
+class LessonContent extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'chapter_id',
+        'lesson_id',
         'created_by',
         'content',
         'source_type',
@@ -19,9 +19,9 @@ class Content extends Model
         'status',
     ];
 
-    public function chapter()
+    public function lesson()
     {
-        return $this->belongsTo(Chapter::class);
+        return $this->belongsTo(Lesson::class);
     }
 
     public function creator()
