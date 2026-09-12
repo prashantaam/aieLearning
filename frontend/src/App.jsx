@@ -3,233 +3,326 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 
-import LoginPage from "./pages/Auth/LoginPage";
-import RegisterPage from "./pages/Auth/RegisterPage";
+/*
+|--------------------------------------------------------------------------
+| Public Pages
+|--------------------------------------------------------------------------
+*/
+
+import LandingPage from "./pages/public/LandingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+/*
+|--------------------------------------------------------------------------
+| Student Authentication
+|--------------------------------------------------------------------------
+*/
 
-import DashboardPage from "./pages/Dashboard/DashboardPage";
+import LoginPage from "./pages/Auth/Student/LoginPage";
+import RegisterPage from "./pages/Auth/Student/RegisterPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Authentication
+|--------------------------------------------------------------------------
+*/
+
+import TeacherLoginPage from "./pages/Auth/Teacher/LoginPage";
+import TeacherRegistrationPage from "./pages/Auth/Teacher/RegisterPage";
+
+/*
+|--------------------------------------------------------------------------
+| Authentication / Route Protection
+|--------------------------------------------------------------------------
+*/
+
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { useAuth } from "./context/AuthContext";
+
+/*
+|--------------------------------------------------------------------------
+| Student Pages
+|--------------------------------------------------------------------------
+*/
+
+import DashboardPage from "./pages/Students/DashboardPage";
+import StudentFlashcardsPage from "./pages/Students/StudentFlashcardsPage";
+import StudentQuizPage from "./pages/Students/StudentQuizPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Pages - Dashboard
+|--------------------------------------------------------------------------
+*/
+
+import TeacherDashboardPage from "./pages/Teachers/DashboardPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Pages - Courses
+|--------------------------------------------------------------------------
+*/
+
+import CoursesList from "./pages/Teachers/Courses/CourseList";
+import CreateCoursePage from "./pages/Teachers/Courses/CreateCoursePage";
+import CourseDetailPage from "./pages/Teachers/Courses/CourseDetailPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Pages - Lessons
+|--------------------------------------------------------------------------
+*/
+
+import LessonCreatePage from "./pages/Teachers/Lessons/LessonCreatePage";
+import LessonDetailPage from "./pages/Teachers/Lessons/LessonDetailPage";
+
+/*
+|--------------------------------------------------------------------------
+| Existing / Legacy Pages
+|--------------------------------------------------------------------------
+*/
 
 import DocumentListPage from "./pages/Documents/DocumentListPage";
 import DocumentDetailPage from "./pages/Documents/DocumentDetailPage";
 
-import FlashcardsListPage from "./pages/Flashcards/FlashcardsListPage";
-import FlashcardPage from "./pages/Flashcards/FlashcardPage";
+import FlashcardsListPage from "./pages/Teachers/Flashcards/FlashcardsListPage";
+import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
 
-import QuizTakePage from "./pages/Quizzes/QuizTakePage";
-import QuizResultPage from "./pages/Quizzes/QuizResultPage";
-import QuizAttemptResultPage from "./pages/Quizzes/QuizAttemptResultPage";
+import QuizTakePage from "./pages/Teachers/Quizzes/QuizTakePage";
+import QuizResultPage from "./pages/Teachers/Quizzes/QuizResultPage";
+import QuizAttemptResultPage from "./pages/Teachers/Quizzes/QuizAttemptResultPage";
 
 import ProfilePage from "./pages/Profile/ProfilePage";
-
-import { useAuth } from "./context/AuthContext";
-import SubjectsPage from "./pages/Subjects/SubjectsPage";
-import SubjectDetailPage from "./pages/Subjects/SubjectDetailPage";
-import ChapterDetailPage from "./pages/Chapters/ChapterDetailPage";
-import TeacherSubjectsPage from "./pages/Teacher/TeacherSubjectsPage";
-
+import LessonContentCreate from "./pages/Teachers/LessonContents/LessonContentCreate";
 
 const App = () => {
+  const { loading } = useAuth();
 
-  const {
-    isAuthenticated,
-    loading,
-  } = useAuth();
-
+  /*
+  |--------------------------------------------------------------------------
+  | Authentication Loading State
+  |--------------------------------------------------------------------------
+  */
 
   if (loading) {
-
     return (
-
-      <div className="flex items-center justify-center h-screen">
-
+      <div className="flex h-screen items-center justify-center">
         <p>Loading...</p>
-
       </div>
-
     );
-
   }
 
-
   return (
-
     <Router>
-
       <Routes>
 
-
-        {/* ========================= */}
-        {/* Public Routes */}
-        {/* ========================= */}
+        {/*
+        |--------------------------------------------------------------------------
+        | Public
+        |--------------------------------------------------------------------------
+        */}
 
         <Route
           path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate
-                to="/dashboard"
-                replace
-              />
-            ) : (
-              <Navigate
-                to="/login"
-                replace
-              />
-            )
-          }
+          element={<LandingPage />}
         />
 
+        {/*
+        |--------------------------------------------------------------------------
+        | Student Authentication
+        |--------------------------------------------------------------------------
+        */}
 
         <Route
-          path="/login"
+          path="/student/login"
           element={<LoginPage />}
         />
 
-
         <Route
-          path="/register"
+          path="/student/register"
           element={<RegisterPage />}
         />
 
+        {/*
+        |--------------------------------------------------------------------------
+        | Teacher Authentication
+        |--------------------------------------------------------------------------
+        */}
 
-        {/* ========================= */}
-        {/* Protected Routes */}
-        {/* ========================= */}
+        <Route
+          path="/teacher/login"
+          element={<TeacherLoginPage />}
+        />
+
+        <Route
+          path="/teacher/register"
+          element={<TeacherRegistrationPage />}
+        />
+
+        {/*
+        |--------------------------------------------------------------------------
+        | Protected Routes
+        |--------------------------------------------------------------------------
+        */}
 
         <Route element={<ProtectedRoute />}>
 
-
-          {/* Dashboard */}
+          {/*
+          |--------------------------------------------------------------------------
+          | Student
+          |--------------------------------------------------------------------------
+          */}
 
           <Route
             path="/dashboard"
             element={<DashboardPage />}
           />
 
+          <Route
+            path="/practice/flashcards"
+            element={<StudentFlashcardsPage />}
+          />
 
-          {/* Documents */}
+          <Route
+            path="/practice/quizzes"
+            element={<StudentQuizPage />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Dashboard
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/dashboard"
+            element={<TeacherDashboardPage />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Courses
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/courses"
+            element={<CoursesList />}
+          />
+
+          <Route
+            path="/teacher/courses/create"
+            element={<CreateCoursePage />}
+          />
+
+          <Route
+            path="/teacher/courses/:courseId"
+            element={<CourseDetailPage />}
+          />
+
+            
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Lessons
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/courses/:courseId/lessons/create"
+            element={<LessonCreatePage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId"
+            element={<LessonDetailPage />}
+          />
+
+            <Route
+              path="/teacher/lessons/:lessonId/contents/create"
+              element={<LessonContentCreate />}
+            />
+          {/*
+          |--------------------------------------------------------------------------
+          | Documents
+          |--------------------------------------------------------------------------
+          */}
 
           <Route
             path="/documents"
             element={<DocumentListPage />}
           />
 
-
           <Route
             path="/documents/:id"
             element={<DocumentDetailPage />}
           />
 
-
-          {/* Flashcards */}
+          {/*
+          |--------------------------------------------------------------------------
+          | Flashcards
+          |--------------------------------------------------------------------------
+          */}
 
           <Route
             path="/flashcards"
             element={<FlashcardsListPage />}
           />
 
-
           <Route
             path="/documents/:id/flashcards"
             element={<FlashcardPage />}
           />
 
-
-          {/* ========================= */}
-          {/* Quizzes */}
-          {/* ========================= */}
-
-          {/* Take Quiz */}
+          {/*
+          |--------------------------------------------------------------------------
+          | Quizzes
+          |--------------------------------------------------------------------------
+          */}
 
           <Route
             path="/quizzes/:quizId"
             element={<QuizTakePage />}
           />
 
-
-          {/* Latest Quiz Result */}
-
           <Route
             path="/quizzes/:quizId/results"
             element={<QuizResultPage />}
           />
-
-
-          {/* Historical Attempt Result */}
 
           <Route
             path="/quizzes/:quizId/attempts/:attemptId"
             element={<QuizAttemptResultPage />}
           />
 
-
-          {/* Profile */}
+          {/*
+          |--------------------------------------------------------------------------
+          | Profile
+          |--------------------------------------------------------------------------
+          */}
 
           <Route
             path="/profile"
             element={<ProfilePage />}
           />
 
-          {/* Subjects */}
-          <Route
-            path="/subjects"
-            element={<SubjectsPage />}
-          />
-          <Route
-            path="/subjects/:subjectId"
-            element={<SubjectDetailPage />}
-          />
-
-          {/* Chapters */}
-          <Route
-            path="/chapters/:chapterId"
-            element={<ChapterDetailPage />}
-          />
-
-          {/* teacher subjects */}
-          <Route
-            path="/teacher/subjects"
-            element={<TeacherSubjectsPage />}
-          />
-
-          <Route
-            path="/teacher/subjects/:subjectId"
-            element={<SubjectDetailPage />}
-          />
-
-          <Route
-            path="/subjects/:subjectId"
-            element={<SubjectDetailPage />}
-          />
         </Route>
 
-        <Route
-          path="/teacher/subjects/:subjectId/chapters/:chapterId"
-          element={<ChapterDetailPage />}
-        />
-
-        {/* ========================= */}
-        {/* 404 */}
-        {/* ========================= */}
+        {/*
+        |--------------------------------------------------------------------------
+        | 404
+        |--------------------------------------------------------------------------
+        */}
 
         <Route
           path="*"
           element={<NotFoundPage />}
         />
 
-
       </Routes>
-
     </Router>
-
   );
-
 };
-
 
 export default App;

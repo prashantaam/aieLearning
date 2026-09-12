@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 
-import quizService from '../../services/quizService';
-import PageHeader from '../../components/common/PageHeader';
-import Spinner from '../../components/common/Spinner';
+import quizService from '../../../services/quizService';
+import PageHeader from '../../../components/common/PageHeader';
+import Spinner from '../../../components/common/Spinner';
 
 import toast from 'react-hot-toast';
 
