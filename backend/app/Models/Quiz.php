@@ -4,87 +4,113 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Quiz extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'lesson_id',
         'title',
         'questions',
-        'user_answers',
-        'score',
         'total_questions',
-        'completed_at',
+        'source_type',
+        'status',
     ];
-
-    public function attempts(): HasMany
-    {
-        return $this->hasMany(QuizAttempt::class);
-    }
-
 
     protected function casts(): array
     {
         return [
             'questions' => 'array',
-            'user_answers' => 'array',
-            'completed_at' => 'datetime',
+            'total_questions' => 'integer',
         ];
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function lesson()
+    /**
+     * Quiz belongs to a lesson.
+     */
+    public function lesson(): BelongsTo
     {
         return $this->belongsTo(Lesson::class);
     }
 
     /**
-     * Normalise generated questions into the full shape, assigning
-     * each one a stable id (mirrors MongoDB subdocument `_id`s).
+     * Student attempts for this quiz.
+     */
+    public function attempts(): HasMany
+    {
+        return $this->hasMany(QuizAttempt::class);
+    }
+
+    /**
+     * Normalise AI-generated questions into
+     * the structure stored in the quizzes table.
      */
     public static function buildQuestions(array $rawQuestions): array
     {
         return array_map(function (array $q) {
             return [
                 'id' => (string) Str::uuid(),
-                'question' => $q['question'],
-                'options' => array_values($q['options']),
-                'correctAnswer' => $q['correctAnswer'],
-                'explanation' => $q['explanation'] ?? '',
-                'difficulty' => $q['difficulty'] ?? 'medium',
+
+                'question' => $q['question'] ?? '',
+
+                'options' => array_values(
+                    $q['options'] ?? []
+                ),
+
+                'correctAnswer' =>
+                    $q['correctAnswer'] ?? null,
+
+                'explanation' =>
+                    $q['explanation'] ?? '',
+
+                'difficulty' =>
+                    $q['difficulty'] ?? 'medium',
             ];
         }, $rawQuestions);
     }
 
+    /**
+     * API response structure for teacher/student UI.
+     */
     public function toResponseArray(?Lesson $lesson = null): array
     {
-        $lesson ??= $this->relationLoaded('lesson') ? $this->lesson : null;
+        $lesson ??= $this->relationLoaded('lesson')
+            ? $this->lesson
+            : null;
 
         return [
             'id' => $this->id,
-            'userId' => $this->user_id,
+
             'lessonId' => $lesson
-                ? ['id' => $lesson->id, 'title' => $lesson->title]
+                ? [
+                    'id' => $lesson->id,
+                    'title' => $lesson->title,
+                ]
                 : $this->lesson_id,
+
             'title' => $this->title,
-            'questions' => $this->questions ?? [],
-            'userAnswers' => $this->user_answers ?? [],
-            'score' => $this->score,
-            'totalQuestions' => $this->total_questions,
-            'completedAt' => $this->completed_at?->toIso8601String(),
-            'createdAt' => $this->created_at?->toIso8601String(),
-            'updatedAt' => $this->updated_at?->toIso8601String(),
+
+            'questions' =>
+                $this->questions ?? [],
+
+            'totalQuestions' =>
+                $this->total_questions,
+
+            'sourceType' =>
+                $this->source_type,
+
+            'status' =>
+                $this->status,
+
+            'createdAt' =>
+                $this->created_at?->toIso8601String(),
+
+            'updatedAt' =>
+                $this->updated_at?->toIso8601String(),
         ];
     }
-
-    
 }

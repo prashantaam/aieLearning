@@ -175,16 +175,19 @@ class AiController extends Controller
             /*
             * Save quiz against the lesson.
             */
-            $quiz = Quiz::create([
-                'user_id' => $request->user()->id,
-                'lesson_id' => $lesson->id,
-                'title' => $lesson->title . ' - Quiz',
-                'questions' => $builtQuestions,
-                'user_answers' => [],
-                'score' => 0,
-                'total_questions' => count($builtQuestions),
-            ]);
-
+         return response()->json([
+            'success' => true,
+            'message' => 'Quiz generated successfully. Review it before saving.',
+            'data' => [
+                'quiz' => [
+                    'title' => $lesson->title . ' - Quiz',
+                    'questions' => $questions,
+                    'totalQuestions' => count($questions),
+                    'sourceType' => 'ai',
+                    'status' => 'draft',
+                ],
+            ],
+        ]);
             /*
             * Return the saved quiz.
             */

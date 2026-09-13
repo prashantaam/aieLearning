@@ -134,6 +134,54 @@ Route::prefix('teacher')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
+        | Quiz Management
+        |--------------------------------------------------------------------------
+        */
+
+        // List quizzes for a lesson
+        Route::get(
+            '/lessons/{lesson}/quizzes',
+            [QuizController::class, 'index']
+        );
+
+        // Save/create a quiz for a lesson
+        Route::post(
+            '/lessons/{lesson}/quizzes',
+            [QuizController::class, 'store']
+        );
+
+        // View a single quiz
+        Route::get(
+            '/quizzes/{quiz}',
+            [QuizController::class, 'show']
+        );
+
+        // Update quiz title/questions
+        Route::put(
+            '/quizzes/{quiz}',
+            [QuizController::class, 'update']
+        );
+
+        // Delete entire quiz
+        Route::delete(
+            '/quizzes/{quiz}',
+            [QuizController::class, 'destroy']
+        );
+
+        // Publish quiz
+        Route::patch(
+            '/quizzes/{quiz}/publish',
+            [QuizController::class, 'publish']
+        );
+
+        // Unpublish quiz
+        Route::patch(
+            '/quizzes/{quiz}/unpublish',
+            [QuizController::class, 'unpublish']
+        );
+
+        /*
+        |--------------------------------------------------------------------------
         | AI Course Authoring
         |--------------------------------------------------------------------------
         */
