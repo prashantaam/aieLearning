@@ -93,11 +93,11 @@ const LessonDetailPage = () => {
     );
   };
 
-  const handleCreateQuiz = () => {
-    navigate(
-      `/teacher/lessons/${lessonId}/quizzes/create`
-    );
-  };
+  const handleQuizManagement = () => {
+  navigate(
+    `/teacher/lessons/${lessonId}/quizzes`
+  );
+};
 
   const handleCreateFlashcards = () => {
     navigate(
@@ -297,14 +297,14 @@ const LessonDetailPage = () => {
 
             <button
               type="button"
-              onClick={handleCreateQuiz}
+              onClick={handleQuizManagement}
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50"
             >
               <HelpCircle className="h-5 w-5 text-purple-600" />
 
               <div>
                 <p className="font-semibold text-gray-900">
-                  Create Quiz
+                  Manage Quiz
                 </p>
 
                 <p className="text-xs text-gray-500">

@@ -31,6 +31,7 @@ import RegisterPage from "./pages/Auth/Student/RegisterPage";
 
 import TeacherLoginPage from "./pages/Auth/Teacher/LoginPage";
 import TeacherRegistrationPage from "./pages/Auth/Teacher/RegisterPage";
+import QuizCreatePage from "./pages/Teachers/Quizzes/QuizCreatePage";
 
 /*
 |--------------------------------------------------------------------------
@@ -89,10 +90,11 @@ import DocumentDetailPage from "./pages/Documents/DocumentDetailPage";
 
 import FlashcardsListPage from "./pages/Teachers/Flashcards/FlashcardsListPage";
 import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
-
-import QuizTakePage from "./pages/Teachers/Quizzes/QuizTakePage";
-import QuizResultPage from "./pages/Teachers/Quizzes/QuizResultPage";
-import QuizAttemptResultPage from "./pages/Teachers/Quizzes/QuizAttemptResultPage";
+import QuizDetailPage from "./pages/Teachers/Quizzes/QuizDetailPage";
+import QuizListPage from "./pages/Teachers/Quizzes/QuizListPage";
+import QuizTakePage from "./pages/Students/Quizzes/QuizTakePage";
+import QuizResultPage from "./pages/Students/Quizzes/QuizResultPage";
+import QuizAttemptResultPage from "./pages/Students/Quizzes/QuizAttemptResultPage";
 
 import ProfilePage from "./pages/Profile/ProfilePage";
 import LessonContentCreate from "./pages/Teachers/LessonContents/LessonContentCreate";
@@ -242,6 +244,21 @@ const App = () => {
             <Route
               path="/teacher/lessons/:lessonId/contents/create"
               element={<LessonContentCreate />}
+            />
+
+            <Route
+              path="/teacher/lessons/:lessonId/quizzes/create"
+              element={<QuizCreatePage />}
+            />
+
+            <Route
+              path="/teacher/lessons/:lessonId/quizzes"
+              element={<QuizListPage />}
+            />
+
+            <Route
+              path="/teacher/quizzes/:quizId"
+              element={<QuizDetailPage />}
             />
           {/*
           |--------------------------------------------------------------------------
