@@ -99,11 +99,11 @@ const LessonDetailPage = () => {
   );
 };
 
-  const handleCreateFlashcards = () => {
-    navigate(
-      `/teacher/lessons/${lessonId}/flashcards/create`
-    );
-  };
+  const handleFlashcardManagement = () => {
+  navigate(
+    `/teacher/lessons/${lessonId}/flashcards`
+  );
+};
 
   const handleEdit = (content) => {
     setEditingId(content.id);
@@ -315,7 +315,7 @@ const LessonDetailPage = () => {
 
             <button
               type="button"
-              onClick={handleCreateFlashcards}
+              onClick={handleFlashcardManagement }
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-green-300 hover:bg-green-50"
             >
               <CreditCard className="h-5 w-5 text-green-600" />

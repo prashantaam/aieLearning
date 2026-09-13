@@ -32,7 +32,9 @@ import RegisterPage from "./pages/Auth/Student/RegisterPage";
 import TeacherLoginPage from "./pages/Auth/Teacher/LoginPage";
 import TeacherRegistrationPage from "./pages/Auth/Teacher/RegisterPage";
 import QuizCreatePage from "./pages/Teachers/Quizzes/QuizCreatePage";
-
+import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
+import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
+import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
 /*
 |--------------------------------------------------------------------------
 | Authentication / Route Protection
@@ -88,7 +90,7 @@ import LessonDetailPage from "./pages/Teachers/Lessons/LessonDetailPage";
 import DocumentListPage from "./pages/Documents/DocumentListPage";
 import DocumentDetailPage from "./pages/Documents/DocumentDetailPage";
 
-import FlashcardsListPage from "./pages/Teachers/Flashcards/FlashcardsListPage";
+import FlashcardsListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
 import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
 import QuizDetailPage from "./pages/Teachers/Quizzes/QuizDetailPage";
 import QuizListPage from "./pages/Teachers/Quizzes/QuizListPage";
@@ -260,6 +262,21 @@ const App = () => {
               path="/teacher/quizzes/:quizId"
               element={<QuizDetailPage />}
             />
+
+            <Route
+              path="/teacher/lessons/:lessonId/flashcards"
+              element={<FlashcardListPage />}
+            />
+
+            <Route
+            path="/teacher/lessons/:lessonId/flashcards/create"
+            element={<FlashcardCreatePage />}
+          />
+
+          <Route
+            path="/teacher/flashcards/:flashcardId"
+            element={<FlashcardDetailPage />}
+          />
           {/*
           |--------------------------------------------------------------------------
           | Documents

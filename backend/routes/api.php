@@ -42,6 +42,46 @@ Route::prefix('teacher')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
 
+                /*
+        |--------------------------------------------------------------------------
+        | Flashcard Management
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/lessons/{lesson}/flashcards',
+            [FlashcardController::class, 'index']
+        );
+
+        Route::post(
+            '/lessons/{lesson}/flashcards',
+            [FlashcardController::class, 'store']
+        );
+
+        Route::get(
+            '/flashcards/{flashcard}',
+            [FlashcardController::class, 'show']
+        );
+
+        Route::put(
+            '/flashcards/{flashcard}',
+            [FlashcardController::class, 'update']
+        );
+
+        Route::delete(
+            '/flashcards/{flashcard}',
+            [FlashcardController::class, 'destroy']
+        );
+
+        Route::patch(
+            '/flashcards/{flashcard}/publish',
+            [FlashcardController::class, 'publish']
+        );
+
+        Route::patch(
+            '/flashcards/{flashcard}/unpublish',
+            [FlashcardController::class, 'unpublish']
+        );
         /*
         |--------------------------------------------------------------------------
         | Teacher Authentication

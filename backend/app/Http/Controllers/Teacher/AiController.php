@@ -22,90 +22,195 @@ class AiController extends Controller
     /**
      * POST /api/ai/generate-flashcards
      */
-    public function generateFlashcards(Request $request)
-    {
-        $validated = $request->validate([
-            'lessonId' => ['required', 'integer', 'exists:lessons,id'],
-            'count' => ['nullable', 'integer', 'min:1', 'max:50'],
-        ]);
+  public function generateFlashcards(Request $request)
+{
+    $validated = $request->validate([
+        'lessonId' => [
+            'required',
+            'integer',
+            'exists:lessons,id',
+        ],
 
-        $lesson = \App\Models\Lesson::with([
-            'course',
-            'lessonContents',
-        ])->findOrFail($validated['lessonId']);
+        'numberOfCards' => [
+            'nullable',
+            'integer',
+            'min:1',
+            'max:50',
+        ],
+    ]);
 
-        if ($lesson->course->teacher_id !== $request->user()->id) {
+    $lesson = \App\Models\Lesson::with([
+        'course',
+        'lessonContents',
+    ])->findOrFail(
+        $validated['lessonId']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Make sure the authenticated teacher owns the course
+    |--------------------------------------------------------------------------
+    */
+
+    if (! $lesson->course) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Course not found for this lesson.',
+        ], 404);
+    }
+
+    if (
+        (int) $lesson->course->teacher_id !==
+        (int) $request->user()->id
+    ) {
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorised to generate flashcards for this lesson.',
+        ], 403);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Combine lesson learning content
+    |--------------------------------------------------------------------------
+    */
+
+    $learningMaterial = $lesson
+        ->lessonContents
+        ->pluck('content')
+        ->filter()
+        ->implode("\n\n");
+
+    if (trim($learningMaterial) === '') {
+        return response()->json([
+            'success' => false,
+            'message' => 'This lesson does not have any learning content.',
+        ], 422);
+    }
+
+    try {
+        $numberOfCards =
+            $validated['numberOfCards'] ?? 10;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Generate flashcards using Gemini
+        |--------------------------------------------------------------------------
+        */
+
+        $cards = $this->gemini
+            ->generateFlashcards(
+                $learningMaterial,
+                $numberOfCards
+            );
+
+        if (
+            ! is_array($cards) ||
+            count($cards) === 0
+        ) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorised to generate flashcards for this lesson.',
-            ], 403);
-        }
-
-        $learningMaterial = $lesson->lessonContents
-            ->pluck('content')
-            ->filter()
-            ->implode("\n\n");
-
-        if (trim($learningMaterial) === '') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This lesson does not have any learning content.',
+                'message' => 'AI did not generate any valid flashcards.',
             ], 422);
         }
 
-        try {
-            $count = $validated['count'] ?? 10;
+        /*
+        |--------------------------------------------------------------------------
+        | Normalise AI response
+        |--------------------------------------------------------------------------
+        |
+        | Gemini currently returns:
+        |
+        | question
+        | answer
+        | difficulty
+        |
+        | We return those values to React.
+        | Nothing is saved to MySQL here.
+        |
+        */
 
-            /*
-            * Step 1: Generate flashcards using Gemini.
-            */
-            $cards = $this->gemini->generateFlashcards(
-                $learningMaterial,
-                $count
-            );
+        $generatedCards = collect($cards)
+            ->map(function ($card) {
+                return [
+                    'question' =>
+                        trim(
+                            $card['question'] ?? ''
+                        ),
 
-            if (empty($cards)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'AI did not generate any valid flashcards.',
-                ], 422);
-            }
+                    'answer' =>
+                        trim(
+                            $card['answer'] ?? ''
+                        ),
 
-            /*
-            * Step 2: Add UUID and revision fields.
-            */
-            $builtCards = Flashcard::buildCards($cards);
+                    'difficulty' =>
+                        $card['difficulty'] ?? 'medium',
+                ];
+            })
+            ->filter(function ($card) {
+                return
+                    $card['question'] !== '' &&
+                    $card['answer'] !== '';
+            })
+            ->values()
+            ->all();
 
-            /*
-            * Step 3: Save flashcard set to MySQL.
-            */
-            $flashcardSet = Flashcard::create([
-                'user_id' => $request->user()->id,
-                'lesson_id' => $lesson->id,
-                'cards' => $builtCards,
-            ]);
-
-            /*
-            * Step 4: Return saved flashcard set.
-            */
-            return response()->json([
-                'success' => true,
-                'data' => $flashcardSet->toResponseArray($lesson),
-                'message' => 'Flashcards generated and saved successfully.',
-            ], 201);
-
-        } catch (\Throwable $e) {
-            logger()->error('Lesson flashcard generation failed', [
-                'lesson_id' => $lesson->id,
-                'message' => $e->getMessage(),
-            ]);
-
+        if (count($generatedCards) === 0) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+                'message' => 'AI did not generate any usable flashcards.',
+            ], 422);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return preview only
+        |--------------------------------------------------------------------------
+        |
+        | React will allow the teacher to edit these cards.
+        |
+        | The cards will only be stored when the teacher clicks:
+        |
+        | Save Flashcards
+        |
+        */
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Flashcards generated successfully. Review them before saving.',
+
+            'data' => [
+                'flashcards' => [
+                    'cards' => $generatedCards,
+
+                    'totalCards' =>
+                        count($generatedCards),
+
+                    'sourceType' => 'ai',
+
+                    'status' => 'draft',
+                ],
+            ],
+        ]);
+
+    } catch (\Throwable $e) {
+        logger()->error(
+            'Lesson flashcard generation failed',
+            [
+                'lesson_id' => $lesson->id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]
+        );
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to generate flashcards.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
     /**
      * POST /api/ai/generate-quiz
      */
