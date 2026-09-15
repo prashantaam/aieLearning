@@ -1,109 +1,179 @@
-import React from "react";
-
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import {
-  LayoutDashboard,
-  FileText,
-  User,
-  LogOut,
-  BrainCircuit,
   BookOpen,
+  ClipboardCheck,
+  GraduationCap,
+  LayoutDashboard,
+  Layers3,
   X,
 } from "lucide-react";
 
-const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
+import {
+  NavLink,
+} from "react-router-dom";
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
-  const navLinks = [
-    { to: '/dashboard', icon: LayoutDashboard, text: 'Dashboard' },
-    { to: '/documents', icon: FileText, text: 'Documents' },
-    { to: '/flashcards', icon: BookOpen, text: 'Flashcards' },
-    { to: '/profile', icon: User, text: 'Profile' },
+const Sidebar = ({
+  isOpen,
+  onClose,
+}) => {
+  const navigation = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Courses",
+      path: "/courses",
+      icon: BookOpen,
+    },
+    {
+      name: "Flashcards",
+      path: "/practice/flashcards",
+      icon: Layers3,
+    },
+    {
+      name: "Quizzes",
+      path: "/practice/quizzes",
+      icon: ClipboardCheck,
+    },
   ];
 
-  return <>
-  
-   <div
-        className={`fixed inset-0 bg-black/30 z-40 md:hidden transition-opacity duration-300 ${
-          isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={toggleSidebar}
-        aria-hidden="true"
-      ></div>
+  const getNavClass = ({
+    isActive,
+  }) => {
+    return [
+      "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition",
+      isActive
+        ? "bg-[#F4C95D] text-[#0B1F3A]"
+        : "text-slate-300 hover:bg-white/10 hover:text-white",
+    ].join(" ");
+  };
 
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+        />
+      )}
+
+      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-lg border-r border-slate-200/60 z-50 md:relative md:w-64 md:shrink-0 md:flex md:flex-col md:translate-x-0 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#0B1F3A] text-white shadow-xl transition-transform duration-300 lg:translate-x-0 ${
+          isOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
         }`}
       >
-        {/* Logo and Close button for mobile */}
-        <div className="flex items-center justify-between h-16 px-5 border-b border-slate-200/60">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 shadow-md shadow-emerald-500/20">
-              <BrainCircuit className="text-white" size={20} strokeWidth={2.5} />
+
+        {/* Logo */}
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
+
+          <NavLink
+            to="/dashboard"
+            onClick={onClose}
+            className="flex items-center gap-3"
+          >
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F4C95D] text-[#0B1F3A]">
+              <GraduationCap
+                size={23}
+                strokeWidth={2.3}
+              />
             </div>
-            <h1 className="text-sm md:text-base font-bold text-slate-900 tracking-tight">AI Learning Assistant</h1>
-          </div>
-          <button onClick={toggleSidebar} className="md:hidden text-slate-500 hover:text-slate-800">
-            <X size={24} />
+
+            <div>
+              <p className="font-bold tracking-tight text-white">
+                AI Learning
+              </p>
+
+              <p className="text-xs text-slate-400">
+                Student Portal
+              </p>
+            </div>
+
+          </NavLink>
+
+          {/* Mobile close */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Close menu"
+          >
+            <X size={20} />
           </button>
+
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-6 space-y-1.5">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={toggleSidebar} 
-              className={({ isActive }) =>
-                `group flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-linear-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25'
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                }`
+        <nav className="flex-1 overflow-y-auto px-3 py-6">
+
+          <p className="mb-3 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Learning
+          </p>
+
+          <div className="space-y-1">
+
+            {navigation.map(
+              (item) => {
+                const Icon =
+                  item.icon;
+
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    onClick={onClose}
+                    className={
+                      getNavClass
+                    }
+                  >
+                    <Icon
+                      size={19}
+                      strokeWidth={2}
+                    />
+
+                    <span>
+                      {item.name}
+                    </span>
+
+                  </NavLink>
+                );
               }
-            >
-              {({ isActive }) => (
-                <>
-                  <link.icon
-                    size={18}
-                    strokeWidth={2.5}
-                    className={`transition-transform duration-200 ${
-                      isActive ? '' : 'group-hover:scale-110'
-                    }`}
-                  />
-                  {link.text}
-                </>
-              )}
-            </NavLink>
-          ))}
+            )}
+
+          </div>
+
         </nav>
 
-        {/* Logout Section */}
-        <div className="px-3 py-4 border-t border-slate-200/60">
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-3 w-full px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200"
-          >
-            <LogOut
-              size={18}
-              strokeWidth={2.5}
-              className="transition-transform duration-200 group-hover:scale-110"
-            />
-            Logout
-          </button>
-        </div>
-      </aside>
+        {/* Bottom message */}
+        <div className="border-t border-white/10 p-4">
 
-  </>
+          <div className="rounded-lg bg-white/[0.06] p-4">
+
+            <div className="mb-3 h-1 w-10 rounded-full bg-[#F4C95D]" />
+
+            <p className="text-sm font-semibold text-white">
+              Keep learning
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              Continue your courses and
+              build your skills every day.
+            </p>
+
+          </div>
+
+        </div>
+
+      </aside>
+    </>
+  );
 };
 
 export default Sidebar;

@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import {
   ArrowLeft,
   Loader2,
@@ -13,15 +18,36 @@ import axiosInstance from "../../../utils/axiosInstance";
 import TeacherLayout from "../../../components/teachers/TeacherLayout";
 
 const FlashcardCreatePage = () => {
-  const { lessonId } = useParams();
+  const {
+    lessonId,
+    sublessonId,
+  } = useParams();
+
   const navigate = useNavigate();
 
-  const [lesson, setLesson] = useState(null);
+  /*
+  |--------------------------------------------------------------------------
+  | Frontend Route Helpers
+  |--------------------------------------------------------------------------
+  */
+
+  const flashcardListPath =
+    `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/flashcards`;
+
+  /*
+  |--------------------------------------------------------------------------
+  | State
+  |--------------------------------------------------------------------------
+  */
+
+  const [sublesson, setSublesson] =
+    useState(null);
 
   const [numberOfCards, setNumberOfCards] =
     useState(10);
 
-  const [cards, setCards] = useState([]);
+  const [cards, setCards] =
+    useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -32,32 +58,42 @@ const FlashcardCreatePage = () => {
   const [saving, setSaving] =
     useState(false);
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] =
+    useState("");
 
-  useEffect(() => {
-    fetchLesson();
-  }, [lessonId]);
+  const [success, setSuccess] =
+    useState("");
 
-  const fetchLesson = async () => {
+  /*
+  |--------------------------------------------------------------------------
+  | Load Sublesson
+  |--------------------------------------------------------------------------
+  */
+
+  const fetchSublesson = async () => {
     try {
       setLoading(true);
       setError("");
 
       const response =
         await axiosInstance.get(
-          `/api/teacher/lessons/${lessonId}`
+          `/api/teacher/sublessons/${sublessonId}`
         );
 
-      const lessonData =
-        response.data?.data?.lesson ||
+      console.log(
+        "Sublesson response:",
+        response.data
+      );
+
+      const sublessonData =
+        response.data?.data?.sublesson ||
         response.data?.data ||
         response.data;
 
-      setLesson(lessonData);
+      setSublesson(sublessonData);
     } catch (err) {
       console.error(
-        "Failed to load lesson:",
+        "Failed to load sublesson:",
         err
       );
 
@@ -68,12 +104,41 @@ const FlashcardCreatePage = () => {
 
       setError(
         err.response?.data?.message ||
-          "Failed to load lesson."
+          err.response?.data?.error ||
+          "Failed to load sublesson."
       );
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSublesson();
+  }, [sublessonId]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Normalise Cards
+  |--------------------------------------------------------------------------
+  |
+  | AI may return:
+  |
+  | {
+  |   front: "...",
+  |   back: "..."
+  | }
+  |
+  | OR:
+  |
+  | {
+  |   question: "...",
+  |   answer: "..."
+  | }
+  |
+  | Normalise everything to front/back because
+  | that is what our Flashcard editor/backend uses.
+  |
+  */
 
   const normaliseCards = (rawCards) => {
     if (!Array.isArray(rawCards)) {
@@ -95,6 +160,12 @@ const FlashcardCreatePage = () => {
     }));
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Generate Flashcards With AI
+  |--------------------------------------------------------------------------
+  */
+
   const handleGenerate = async () => {
     try {
       setGenerating(true);
@@ -105,7 +176,9 @@ const FlashcardCreatePage = () => {
         await axiosInstance.post(
           "/api/teacher/ai/generate-flashcards",
           {
-            lessonId: Number(lessonId),
+            sublessonId:
+              Number(sublessonId),
+
             numberOfCards:
               Number(numberOfCards),
           }
@@ -116,15 +189,22 @@ const FlashcardCreatePage = () => {
         response.data
       );
 
+      /*
+       * Support slightly different response
+       * structures while we stabilise the API.
+       */
       const generatedCards =
-        response.data?.data?.flashcards?.cards ||
+        response.data?.data?.flashcards
+          ?.cards ||
         response.data?.data?.cards ||
         response.data?.flashcards ||
         response.data?.cards ||
         [];
 
       const normalised =
-        normaliseCards(generatedCards);
+        normaliseCards(
+          generatedCards
+        );
 
       if (normalised.length === 0) {
         setError(
@@ -160,22 +240,35 @@ const FlashcardCreatePage = () => {
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Update Card
+  |--------------------------------------------------------------------------
+  */
+
   const updateCard = (
     index,
     field,
     value
   ) => {
     setCards((currentCards) =>
-      currentCards.map((card, cardIndex) =>
-        cardIndex === index
-          ? {
-              ...card,
-              [field]: value,
-            }
-          : card
+      currentCards.map(
+        (card, cardIndex) =>
+          cardIndex === index
+            ? {
+                ...card,
+                [field]: value,
+              }
+            : card
       )
     );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Add Card
+  |--------------------------------------------------------------------------
+  */
 
   const addCard = () => {
     setCards((currentCards) => [
@@ -185,7 +278,16 @@ const FlashcardCreatePage = () => {
         back: "",
       },
     ]);
+
+    setError("");
+    setSuccess("");
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Remove Card
+  |--------------------------------------------------------------------------
+  */
 
   const removeCard = (index) => {
     if (cards.length <= 1) {
@@ -202,7 +304,16 @@ const FlashcardCreatePage = () => {
           cardIndex !== index
       )
     );
+
+    setError("");
+    setSuccess("");
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validate Cards
+  |--------------------------------------------------------------------------
+  */
 
   const validateCards = () => {
     if (cards.length === 0) {
@@ -220,7 +331,7 @@ const FlashcardCreatePage = () => {
     ) {
       const card = cards[index];
 
-      if (!card.front.trim()) {
+      if (!card.front?.trim()) {
         setError(
           `Card ${index + 1} front is required.`
         );
@@ -228,7 +339,7 @@ const FlashcardCreatePage = () => {
         return false;
       }
 
-      if (!card.back.trim()) {
+      if (!card.back?.trim()) {
         setError(
           `Card ${index + 1} back is required.`
         );
@@ -239,6 +350,12 @@ const FlashcardCreatePage = () => {
 
     return true;
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Save Flashcards
+  |--------------------------------------------------------------------------
+  */
 
   const handleSave = async () => {
     setError("");
@@ -253,20 +370,39 @@ const FlashcardCreatePage = () => {
 
       const cleanedCards =
         cards.map((card) => ({
-          front: card.front.trim(),
-          back: card.back.trim(),
+          front:
+            card.front.trim(),
+
+          back:
+            card.back.trim(),
         }));
 
+      /*
+       * Save against Sublesson.
+       */
       await axiosInstance.post(
-        `/api/teacher/lessons/${lessonId}/flashcards`,
+        `/api/teacher/sublessons/${sublessonId}/flashcards`,
         {
+          title:
+            sublesson?.title
+              ? `${sublesson.title} - Flashcards`
+              : "Flashcards",
+
           cards: cleanedCards,
+
           source_type: "ai",
         }
       );
 
+      /*
+       * Return to this Sublesson's
+       * nested Flashcard list.
+       */
       navigate(
-        `/teacher/lessons/${lessonId}/flashcards`
+        flashcardListPath,
+        {
+          replace: true,
+        }
       );
     } catch (err) {
       console.error(
@@ -286,6 +422,7 @@ const FlashcardCreatePage = () => {
 
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to save flashcards."
       );
     } finally {
@@ -293,71 +430,105 @@ const FlashcardCreatePage = () => {
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Loading
+  |--------------------------------------------------------------------------
+  */
+
   if (loading) {
     return (
       <TeacherLayout>
+
         <div className="flex min-h-[400px] items-center justify-center">
+
           <Loader2
             size={32}
             className="animate-spin text-purple-600"
           />
+
         </div>
+
       </TeacherLayout>
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Page
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <TeacherLayout>
+
       <div className="mx-auto max-w-5xl px-4 py-8">
+
+        {/* Back */}
         <button
           type="button"
           onClick={() =>
             navigate(
-              `/teacher/lessons/${lessonId}/flashcards`
+              flashcardListPath
             )
           }
           className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-purple-700"
         >
           <ArrowLeft size={18} />
+
           Back to Flashcards
         </button>
 
+        {/* Header */}
         <div className="mb-8">
+
           <h1 className="text-3xl font-bold text-gray-900">
             Create Flashcards
           </h1>
 
-          {lesson && (
+          {sublesson && (
             <p className="mt-2 text-gray-600">
-              {lesson.title}
+              Create flashcards for{" "}
+
+              <span className="font-semibold text-gray-900">
+                {sublesson.title}
+              </span>
             </p>
           )}
+
         </div>
 
+        {/* Error */}
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
+        {/* Success */}
         {success && (
           <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
             {success}
           </div>
         )}
 
+        {/* AI Generator */}
         <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
           <h2 className="text-lg font-semibold text-gray-900">
             Generate with AI
           </h2>
 
           <p className="mt-1 text-sm text-gray-500">
-            Generate flashcards using the lesson content,
-            then review and edit them before saving.
+            Generate flashcards using this
+            sublesson's learning content, then
+            review and edit them before saving.
           </p>
 
           <div className="mt-5 flex flex-wrap items-end gap-4">
+
             <div>
+
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Number of cards
               </label>
@@ -371,6 +542,7 @@ const FlashcardCreatePage = () => {
                 }
                 className="rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
               >
+
                 <option value="5">
                   5
                 </option>
@@ -386,15 +558,20 @@ const FlashcardCreatePage = () => {
                 <option value="20">
                   20
                 </option>
+
               </select>
+
             </div>
 
             <button
               type="button"
-              onClick={handleGenerate}
+              onClick={
+                handleGenerate
+              }
               disabled={generating}
               className="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2.5 font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
+
               {generating ? (
                 <>
                   <Loader2
@@ -406,24 +583,36 @@ const FlashcardCreatePage = () => {
                 </>
               ) : (
                 <>
-                  <Sparkles size={18} />
+                  <Sparkles
+                    size={18}
+                  />
+
                   Generate Flashcards
                 </>
               )}
+
             </button>
+
           </div>
+
         </div>
 
+        {/* Flashcards */}
         {cards.length > 0 && (
           <>
+
             <div className="space-y-5">
+
               {cards.map(
                 (card, index) => (
+
                   <div
                     key={index}
                     className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
                   >
+
                     <div className="mb-5 flex items-center justify-between">
+
                       <h2 className="font-semibold text-gray-900">
                         Card {index + 1}
                       </h2>
@@ -435,20 +624,31 @@ const FlashcardCreatePage = () => {
                         }
                         className="flex items-center gap-1 text-sm font-medium text-red-600 transition hover:text-red-700"
                       >
-                        <Trash2 size={16} />
+                        <Trash2
+                          size={16}
+                        />
+
                         Remove
                       </button>
+
                     </div>
 
                     <div className="space-y-5">
+
+                      {/* Front */}
                       <div>
+
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           Front
                         </label>
 
                         <textarea
-                          value={card.front}
-                          onChange={(event) =>
+                          value={
+                            card.front
+                          }
+                          onChange={(
+                            event
+                          ) =>
                             updateCard(
                               index,
                               "front",
@@ -460,16 +660,23 @@ const FlashcardCreatePage = () => {
                           placeholder="Question or term"
                           className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                         />
+
                       </div>
 
+                      {/* Back */}
                       <div>
+
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           Back
                         </label>
 
                         <textarea
-                          value={card.back}
-                          onChange={(event) =>
+                          value={
+                            card.back
+                          }
+                          onChange={(
+                            event
+                          ) =>
                             updateCard(
                               index,
                               "back",
@@ -481,53 +688,74 @@ const FlashcardCreatePage = () => {
                           placeholder="Answer or explanation"
                           className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                         />
+
                       </div>
+
                     </div>
+
                   </div>
+
                 )
               )}
+
             </div>
 
+            {/* Bottom Actions */}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+
               <button
                 type="button"
                 onClick={addCard}
                 className="flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
               >
                 <Plus size={18} />
+
                 Add Card
               </button>
 
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={
+                  handleSave
+                }
                 disabled={saving}
                 className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
+
                 {saving ? (
                   <>
                     <Loader2
                       size={18}
                       className="animate-spin"
                     />
+
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Save size={18} />
+                    <Save
+                      size={18}
+                    />
+
                     Save Flashcards
                   </>
                 )}
+
               </button>
+
             </div>
+
           </>
         )}
 
+        {/* No Cards */}
         {cards.length === 0 && (
+
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+
             <p className="text-gray-500">
-              Generate flashcards with AI or add a
-              card manually.
+              Generate flashcards with AI
+              or add a card manually.
             </p>
 
             <button
@@ -536,11 +764,16 @@ const FlashcardCreatePage = () => {
               className="mt-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
             >
               <Plus size={18} />
+
               Add Card Manually
             </button>
+
           </div>
+
         )}
+
       </div>
+
     </TeacherLayout>
   );
 };

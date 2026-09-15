@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   useNavigate,
   useParams,
@@ -19,10 +20,30 @@ import axiosInstance from "../../../utils/axiosInstance";
 import TeacherLayout from "../../../components/teachers/TeacherLayout";
 
 const QuizCreatePage = () => {
-  const { lessonId } = useParams();
+  const {
+    lessonId,
+    sublessonId,
+  } = useParams();
+
   const navigate = useNavigate();
 
-  const [lesson, setLesson] = useState(null);
+  /*
+  |--------------------------------------------------------------------------
+  | Frontend Route Helpers
+  |--------------------------------------------------------------------------
+  */
+
+  const quizListPath =
+    `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/quizzes`;
+
+  /*
+  |--------------------------------------------------------------------------
+  | State
+  |--------------------------------------------------------------------------
+  */
+
+  const [sublesson, setSublesson] =
+    useState(null);
 
   const [numQuestions, setNumQuestions] =
     useState(5);
@@ -49,37 +70,40 @@ const QuizCreatePage = () => {
     useState([]);
 
   /*
-   * Load lesson
-   */
-  const fetchLesson = async () => {
+  |--------------------------------------------------------------------------
+  | Load Sublesson
+  |--------------------------------------------------------------------------
+  */
+
+  const fetchSublesson = async () => {
     try {
       setLoading(true);
       setError("");
 
       const response =
         await axiosInstance.get(
-          `/api/teacher/lessons/${lessonId}`
+          `/api/teacher/sublessons/${sublessonId}`
         );
 
-      const lessonData =
+      const sublessonData =
         response.data?.data || null;
 
-      setLesson(lessonData);
+      setSublesson(sublessonData);
 
-      if (lessonData) {
+      if (sublessonData) {
         setQuizTitle(
-          `${lessonData.title} - Quiz`
+          `${sublessonData.title} - Quiz`
         );
       }
     } catch (err) {
       console.error(
-        "Failed to load lesson:",
+        "Failed to load sublesson:",
         err
       );
 
       setError(
         err.response?.data?.message ||
-          "Failed to load lesson."
+          "Failed to load sublesson."
       );
     } finally {
       setLoading(false);
@@ -87,18 +111,24 @@ const QuizCreatePage = () => {
   };
 
   useEffect(() => {
-    fetchLesson();
-  }, [lessonId]);
+    fetchSublesson();
+  }, [sublessonId]);
 
   /*
-   * Convert Gemini correct answer such as:
-   *
-   * "O3: const"
-   *
-   * into:
-   *
-   * "const"
-   */
+  |--------------------------------------------------------------------------
+  | Normalise Correct Answer
+  |--------------------------------------------------------------------------
+  |
+  | Convert Gemini correct answer such as:
+  |
+  | "O3: const"
+  |
+  | into:
+  |
+  | "const"
+  |
+  */
+
   const normaliseCorrectAnswer = (
     question
   ) => {
@@ -146,14 +176,17 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Generate quiz using AI.
-   *
-   * IMPORTANT:
-   * This should NOT save anything
-   * to the database.
-   */
+  |--------------------------------------------------------------------------
+  | Generate Quiz With AI
+  |--------------------------------------------------------------------------
+  |
+  | This only generates a preview.
+  | Nothing is saved yet.
+  |
+  */
+
   const handleGenerateQuiz = async () => {
-    if (!lesson) {
+    if (!sublesson) {
       return;
     }
 
@@ -178,8 +211,8 @@ const QuizCreatePage = () => {
         await axiosInstance.post(
           "/api/teacher/ai/generate-quiz",
           {
-            lessonId:
-              Number(lessonId),
+            sublessonId:
+              Number(sublessonId),
 
             numQuestions:
               Number(numQuestions),
@@ -210,7 +243,7 @@ const QuizCreatePage = () => {
 
       const editableQuestions =
         generatedQuestions.map(
-          (question, index) => ({
+          (question) => ({
             id:
               question.id ||
               crypto.randomUUID(),
@@ -252,7 +285,7 @@ const QuizCreatePage = () => {
 
       setQuizTitle(
         quiz.title ||
-          `${lesson.title} - Quiz`
+          `${sublesson.title} - Quiz`
       );
 
       setQuestions(
@@ -285,9 +318,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Update question text,
-   * explanation or difficulty.
-   */
+  |--------------------------------------------------------------------------
+  | Update Question
+  |--------------------------------------------------------------------------
+  */
+
   const updateQuestion = (
     questionIndex,
     field,
@@ -307,8 +342,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Update individual option.
-   */
+  |--------------------------------------------------------------------------
+  | Update Individual Option
+  |--------------------------------------------------------------------------
+  */
+
   const updateOption = (
     questionIndex,
     optionIndex,
@@ -341,11 +379,6 @@ const QuizCreatePage = () => {
 
             options: newOptions,
 
-            /*
-             * If the edited option was
-             * the correct answer,
-             * update correctAnswer too.
-             */
             correctAnswer:
               question.correctAnswer ===
               oldOption
@@ -358,8 +391,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Add another option.
-   */
+  |--------------------------------------------------------------------------
+  | Add Option
+  |--------------------------------------------------------------------------
+  */
+
   const addOption = (
     questionIndex
   ) => {
@@ -380,8 +416,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Delete an option.
-   */
+  |--------------------------------------------------------------------------
+  | Remove Option
+  |--------------------------------------------------------------------------
+  */
+
   const removeOption = (
     questionIndex,
     optionIndex
@@ -422,8 +461,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Remove whole question.
-   */
+  |--------------------------------------------------------------------------
+  | Remove Question
+  |--------------------------------------------------------------------------
+  */
+
   const removeQuestion = (
     questionIndex
   ) => {
@@ -436,30 +478,41 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Add manual question.
-   */
+  |--------------------------------------------------------------------------
+  | Add Manual Question
+  |--------------------------------------------------------------------------
+  */
+
   const addQuestion = () => {
     setQuestions((current) => [
       ...current,
       {
         id: crypto.randomUUID(),
+
         question: "",
+
         options: [
           "",
           "",
           "",
           "",
         ],
+
         correctAnswer: "",
+
         explanation: "",
+
         difficulty: "medium",
       },
     ]);
   };
 
   /*
-   * Validate before save.
-   */
+  |--------------------------------------------------------------------------
+  | Validate Quiz Before Save
+  |--------------------------------------------------------------------------
+  */
+
   const validateQuiz = () => {
     if (!quizTitle.trim()) {
       setError(
@@ -546,8 +599,11 @@ const QuizCreatePage = () => {
   };
 
   /*
-   * Save final edited quiz.
-   */
+  |--------------------------------------------------------------------------
+  | Save Final Edited Quiz
+  |--------------------------------------------------------------------------
+  */
+
   const handleSaveQuiz = async () => {
     setError("");
     setSuccess("");
@@ -585,13 +641,16 @@ const QuizCreatePage = () => {
 
       const response =
         await axiosInstance.post(
-          `/api/teacher/lessons/${lessonId}/quizzes`,
+          `/api/teacher/sublessons/${sublessonId}/quizzes`,
           {
             title:
               quizTitle.trim(),
 
             questions:
               cleanedQuestions,
+
+            source_type:
+              "ai",
           }
         );
 
@@ -605,8 +664,14 @@ const QuizCreatePage = () => {
           "Quiz saved successfully."
       );
 
+      /*
+       * Return to the nested Quiz List.
+       */
       navigate(
-        `/teacher/lessons/${lessonId}/quizzes`
+        quizListPath,
+        {
+          replace: true,
+        }
       );
     } catch (err) {
       console.error(
@@ -629,6 +694,12 @@ const QuizCreatePage = () => {
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Loading
+  |--------------------------------------------------------------------------
+  */
+
   if (loading) {
     return (
       <TeacherLayout>
@@ -639,42 +710,57 @@ const QuizCreatePage = () => {
     );
   }
 
-  if (!lesson) {
+  /*
+  |--------------------------------------------------------------------------
+  | Sublesson Not Found
+  |--------------------------------------------------------------------------
+  */
+
+  if (!sublesson) {
     return (
       <TeacherLayout>
         <div className="p-6 lg:p-8">
           <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
-            Lesson not found.
+            {error ||
+              "Sublesson not found."}
           </div>
         </div>
       </TeacherLayout>
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Page
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <TeacherLayout>
       <div className="p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
 
+          {/* Back */}
           <button
             type="button"
             onClick={() =>
-              navigate(
-                `/teacher/lessons/${lessonId}`
-              )
+              navigate(quizListPath)
             }
             className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Lesson
+            Back to Quizzes
           </button>
 
+          {/* Header */}
           <div className="mb-8 flex items-start gap-4">
+
             <div className="rounded-xl bg-purple-50 p-3 text-purple-600">
               <HelpCircle className="h-6 w-6" />
             </div>
 
             <div>
+
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600">
                 Quiz
               </p>
@@ -686,18 +772,22 @@ const QuizCreatePage = () => {
               <p className="mt-2 text-gray-600">
                 Generate and review a quiz for{" "}
                 <span className="font-semibold text-gray-900">
-                  {lesson.title}
+                  {sublesson.title}
                 </span>
               </p>
+
             </div>
+
           </div>
 
+          {/* Error */}
           {error && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
             </div>
           )}
 
+          {/* Success */}
           {success && (
             <div className="mb-6 flex gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -705,7 +795,7 @@ const QuizCreatePage = () => {
             </div>
           )}
 
-          {/* Generator */}
+          {/* AI Generator */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
             <h2 className="mb-5 flex items-center gap-2 font-semibold text-gray-900">
@@ -731,6 +821,7 @@ const QuizCreatePage = () => {
             />
 
             <div className="mt-6">
+
               <button
                 type="button"
                 onClick={
@@ -739,6 +830,7 @@ const QuizCreatePage = () => {
                 disabled={generating}
                 className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-60"
               >
+
                 {generating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -750,14 +842,18 @@ const QuizCreatePage = () => {
                     Generate with AI
                   </>
                 )}
+
               </button>
+
             </div>
+
           </div>
 
           {/* Quiz Editor */}
           {questions.length > 0 && (
             <div className="mt-8">
 
+              {/* Quiz Title */}
               <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6">
 
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -777,7 +873,9 @@ const QuizCreatePage = () => {
 
               </div>
 
+              {/* Questions */}
               <div className="space-y-6">
+
                 {questions.map(
                   (
                     question,
@@ -790,12 +888,12 @@ const QuizCreatePage = () => {
                       className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
                     >
 
+                      {/* Question Header */}
                       <div className="mb-5 flex items-center justify-between">
 
                         <h3 className="font-bold text-gray-900">
                           Question{" "}
-                          {questionIndex +
-                            1}
+                          {questionIndex + 1}
                         </h3>
 
                         <button
@@ -810,8 +908,10 @@ const QuizCreatePage = () => {
                           <Trash2 className="h-4 w-4" />
                           Remove
                         </button>
+
                       </div>
 
+                      {/* Question */}
                       <textarea
                         value={
                           question.question
@@ -822,14 +922,14 @@ const QuizCreatePage = () => {
                           updateQuestion(
                             questionIndex,
                             "question",
-                            event.target
-                              .value
+                            event.target.value
                           )
                         }
                         rows="3"
                         className="w-full rounded-xl border border-gray-300 px-4 py-3"
                       />
 
+                      {/* Options */}
                       <div className="mt-5 space-y-3">
 
                         <label className="block text-sm font-semibold text-gray-700">
@@ -853,9 +953,8 @@ const QuizCreatePage = () => {
                                 name={`correct-${question.id}`}
                                 checked={
                                   question.correctAnswer ===
-                                  option &&
-                                  option !==
-                                    ""
+                                    option &&
+                                  option !== ""
                                 }
                                 onChange={() =>
                                   updateQuestion(
@@ -868,26 +967,20 @@ const QuizCreatePage = () => {
 
                               <input
                                 type="text"
-                                value={
-                                  option
-                                }
+                                value={option}
                                 onChange={(
                                   event
                                 ) =>
                                   updateOption(
                                     questionIndex,
                                     optionIndex,
-                                    event
-                                      .target
-                                      .value
+                                    event.target.value
                                   )
                                 }
                                 className="flex-1 rounded-xl border border-gray-300 px-4 py-3"
                               />
 
-                              {question
-                                .options
-                                .length >
+                              {question.options.length >
                                 2 && (
                                 <button
                                   type="button"
@@ -922,6 +1015,7 @@ const QuizCreatePage = () => {
 
                       </div>
 
+                      {/* Explanation */}
                       <div className="mt-5">
 
                         <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -938,8 +1032,7 @@ const QuizCreatePage = () => {
                             updateQuestion(
                               questionIndex,
                               "explanation",
-                              event.target
-                                .value
+                              event.target.value
                             )
                           }
                           rows="3"
@@ -948,6 +1041,7 @@ const QuizCreatePage = () => {
 
                       </div>
 
+                      {/* Difficulty */}
                       <div className="mt-5">
 
                         <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -964,21 +1058,24 @@ const QuizCreatePage = () => {
                             updateQuestion(
                               questionIndex,
                               "difficulty",
-                              event.target
-                                .value
+                              event.target.value
                             )
                           }
                           className="rounded-xl border border-gray-300 px-4 py-3"
                         >
+
                           <option value="easy">
                             Easy
                           </option>
+
                           <option value="medium">
                             Medium
                           </option>
+
                           <option value="hard">
                             Hard
                           </option>
+
                         </select>
 
                       </div>
@@ -986,8 +1083,10 @@ const QuizCreatePage = () => {
                     </div>
                   )
                 )}
+
               </div>
 
+              {/* Bottom Actions */}
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
 
                 <button
@@ -1007,6 +1106,7 @@ const QuizCreatePage = () => {
                   disabled={saving}
                   className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
                 >
+
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1018,6 +1118,7 @@ const QuizCreatePage = () => {
                       Save Quiz
                     </>
                   )}
+
                 </button>
 
               </div>

@@ -49,6 +49,9 @@ const QuizDetailPage = () => {
   const [success, setSuccess] =
     useState("");
 
+  /*
+   * Load Quiz
+   */
   const fetchQuiz = async () => {
     try {
       setLoading(true);
@@ -97,6 +100,9 @@ const QuizDetailPage = () => {
     fetchQuiz();
   }, [quizId]);
 
+  /*
+   * Update Question
+   */
   const updateQuestion = (
     questionIndex,
     field,
@@ -115,6 +121,9 @@ const QuizDetailPage = () => {
     );
   };
 
+  /*
+   * Update Option
+   */
   const updateOption = (
     questionIndex,
     optionIndex,
@@ -158,6 +167,9 @@ const QuizDetailPage = () => {
     );
   };
 
+  /*
+   * Remove Question
+   */
   const removeQuestion = (
     questionIndex
   ) => {
@@ -179,6 +191,9 @@ const QuizDetailPage = () => {
     );
   };
 
+  /*
+   * Add Question
+   */
   const addQuestion = () => {
     setQuestions((current) => [
       ...current,
@@ -203,6 +218,9 @@ const QuizDetailPage = () => {
     ]);
   };
 
+  /*
+   * Add Option
+   */
   const addOption = (
     questionIndex
   ) => {
@@ -223,6 +241,9 @@ const QuizDetailPage = () => {
     );
   };
 
+  /*
+   * Remove Option
+   */
   const removeOption = (
     questionIndex,
     optionIndex
@@ -269,6 +290,9 @@ const QuizDetailPage = () => {
     );
   };
 
+  /*
+   * Validate Quiz
+   */
   const validateQuiz = () => {
     setError("");
 
@@ -355,6 +379,9 @@ const QuizDetailPage = () => {
     return true;
   };
 
+  /*
+   * Save Quiz Changes
+   */
   const handleSave = async () => {
     if (!validateQuiz()) {
       return;
@@ -419,8 +446,14 @@ const QuizDetailPage = () => {
         err
       );
 
+      console.error(
+        "Laravel response:",
+        err.response?.data
+      );
+
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to update quiz."
       );
     } finally {
@@ -428,6 +461,9 @@ const QuizDetailPage = () => {
     }
   };
 
+  /*
+   * Publish / Unpublish Quiz
+   */
   const handlePublishToggle =
     async () => {
       if (!quiz) {
@@ -480,6 +516,9 @@ const QuizDetailPage = () => {
       }
     };
 
+  /*
+   * Delete Quiz
+   */
   const handleDeleteQuiz =
     async () => {
       if (
@@ -498,14 +537,18 @@ const QuizDetailPage = () => {
           `/api/teacher/quizzes/${quizId}`
         );
 
-        const lessonId =
-          typeof quiz.lessonId ===
+        /*
+         * Quiz now belongs to Sublesson,
+         * not directly to Lesson.
+         */
+        const sublessonId =
+          typeof quiz.sublessonId ===
           "object"
-            ? quiz.lessonId.id
-            : quiz.lessonId;
+            ? quiz.sublessonId.id
+            : quiz.sublessonId;
 
         navigate(
-          `/teacher/lessons/${lessonId}/quizzes`
+          `/teacher/sublessons/${sublessonId}/quizzes`
         );
       } catch (err) {
         console.error(
@@ -522,6 +565,9 @@ const QuizDetailPage = () => {
       }
     };
 
+  /*
+   * Loading
+   */
   if (loading) {
     return (
       <TeacherLayout>
@@ -532,6 +578,9 @@ const QuizDetailPage = () => {
     );
   }
 
+  /*
+   * Quiz Not Found
+   */
   if (!quiz) {
     return (
       <TeacherLayout>
@@ -542,22 +591,37 @@ const QuizDetailPage = () => {
     );
   }
 
-  const lessonId =
-    typeof quiz.lessonId ===
+  /*
+   * Get parent Sublesson ID.
+   *
+   * Backend may return:
+   *
+   * sublessonId: 5
+   *
+   * OR:
+   *
+   * sublessonId: {
+   *   id: 5,
+   *   title: "Variables"
+   * }
+   */
+  const sublessonId =
+    typeof quiz.sublessonId ===
     "object"
-      ? quiz.lessonId.id
-      : quiz.lessonId;
+      ? quiz.sublessonId.id
+      : quiz.sublessonId;
 
   return (
     <TeacherLayout>
       <div className="p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
 
+          {/* Back */}
           <button
             type="button"
             onClick={() =>
               navigate(
-                `/teacher/lessons/${lessonId}/quizzes`
+                `/teacher/sublessons/${sublessonId}/quizzes`
               )
             }
             className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
@@ -566,6 +630,7 @@ const QuizDetailPage = () => {
             Back to Quizzes
           </button>
 
+          {/* Header */}
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
 
             <div>
@@ -593,6 +658,7 @@ const QuizDetailPage = () => {
 
             <div className="flex flex-wrap gap-3">
 
+              {/* Publish / Unpublish */}
               <button
                 type="button"
                 onClick={
@@ -616,6 +682,7 @@ const QuizDetailPage = () => {
                   : "Publish"}
               </button>
 
+              {/* Delete */}
               <button
                 type="button"
                 onClick={
@@ -636,12 +703,14 @@ const QuizDetailPage = () => {
             </div>
           </div>
 
+          {/* Error */}
           {error && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
             </div>
           )}
 
+          {/* Success */}
           {success && (
             <div className="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
               <CheckCircle2 className="h-5 w-5" />
@@ -649,6 +718,7 @@ const QuizDetailPage = () => {
             </div>
           )}
 
+          {/* Quiz Title */}
           <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6">
 
             <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -668,6 +738,7 @@ const QuizDetailPage = () => {
 
           </div>
 
+          {/* Questions */}
           <div className="space-y-6">
 
             {questions.map(
@@ -683,6 +754,7 @@ const QuizDetailPage = () => {
                   className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
                 >
 
+                  {/* Question Header */}
                   <div className="mb-5 flex items-center justify-between">
 
                     <h2 className="font-bold text-gray-900">
@@ -705,6 +777,7 @@ const QuizDetailPage = () => {
 
                   </div>
 
+                  {/* Question Text */}
                   <textarea
                     value={
                       question.question
@@ -720,6 +793,7 @@ const QuizDetailPage = () => {
                     className="w-full rounded-xl border border-gray-300 px-4 py-3"
                   />
 
+                  {/* Answer Options */}
                   <div className="mt-5 space-y-3">
 
                     <label className="block text-sm font-semibold text-gray-700">
@@ -738,6 +812,7 @@ const QuizDetailPage = () => {
                           className="flex items-center gap-3"
                         >
 
+                          {/* Correct Answer */}
                           <input
                             type="radio"
                             name={`correct-${questionIndex}`}
@@ -755,6 +830,7 @@ const QuizDetailPage = () => {
                             }
                           />
 
+                          {/* Option Text */}
                           <input
                             type="text"
                             value={option}
@@ -772,6 +848,7 @@ const QuizDetailPage = () => {
                             className="flex-1 rounded-xl border border-gray-300 px-4 py-3"
                           />
 
+                          {/* Remove Option */}
                           {question.options
                             .length >
                             2 && (
@@ -793,6 +870,7 @@ const QuizDetailPage = () => {
                       )
                     )}
 
+                    {/* Add Option */}
                     <button
                       type="button"
                       onClick={() =>
@@ -808,6 +886,7 @@ const QuizDetailPage = () => {
 
                   </div>
 
+                  {/* Explanation */}
                   <div className="mt-5">
 
                     <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -832,6 +911,7 @@ const QuizDetailPage = () => {
 
                   </div>
 
+                  {/* Difficulty */}
                   <div className="mt-5">
 
                     <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -873,8 +953,10 @@ const QuizDetailPage = () => {
 
           </div>
 
+          {/* Bottom Actions */}
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
 
+            {/* Add Question */}
             <button
               type="button"
               onClick={addQuestion}
@@ -884,6 +966,7 @@ const QuizDetailPage = () => {
               Add Question
             </button>
 
+            {/* Save */}
             <button
               type="button"
               onClick={handleSave}

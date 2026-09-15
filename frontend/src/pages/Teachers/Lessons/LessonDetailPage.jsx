@@ -87,21 +87,9 @@ const LessonDetailPage = () => {
     }
   };
 
-  const handleCreateContent = () => {
-    navigate(
-      `/teacher/lessons/${lessonId}/contents/create`
-    );
-  };
-
-  const handleQuizManagement = () => {
+const handleManageSublessons = () => {
   navigate(
-    `/teacher/lessons/${lessonId}/quizzes`
-  );
-};
-
-  const handleFlashcardManagement = () => {
-  navigate(
-    `/teacher/lessons/${lessonId}/flashcards`
+    `/teacher/lessons/${lessonId}/sublessons`
   );
 };
 
@@ -279,54 +267,18 @@ const LessonDetailPage = () => {
 
             <button
               type="button"
-              onClick={handleCreateContent}
+              onClick={handleManageSublessons}
               className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
             >
               <FilePlus2 className="h-5 w-5 text-blue-600" />
 
               <div>
                 <p className="font-semibold text-gray-900">
-                  Create Lesson Content
+                  Manage Sublessons
                 </p>
 
                 <p className="text-xs text-gray-500">
-                  Add learning material
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleQuizManagement}
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-purple-300 hover:bg-purple-50"
-            >
-              <HelpCircle className="h-5 w-5 text-purple-600" />
-
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Manage Quiz
-                </p>
-
-                <p className="text-xs text-gray-500">
-                  Add lesson questions
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFlashcardManagement }
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-green-300 hover:bg-green-50"
-            >
-              <CreditCard className="h-5 w-5 text-green-600" />
-
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Create Flashcards
-                </p>
-
-                <p className="text-xs text-gray-500">
-                  Create revision cards
+                  View and manage lesson sections
                 </p>
               </div>
             </button>

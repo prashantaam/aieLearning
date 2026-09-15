@@ -1,25 +1,54 @@
-import React, { useState } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
+import {
+  useState,
+} from "react";
 
-const AppLayout = ({children}) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+import {
+  Outlet,
+} from "react-router-dom";
 
-  const toggleSidebar=()=>{
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+import Header from "./Header";
+import Sidebar from "./Sidebar";
+
+const AppLayout = () => {
+  const [
+    isSidebarOpen,
+    setIsSidebarOpen,
+  ] = useState(false);
+
+  const openSidebar = () => {
+    setIsSidebarOpen(true);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
 
   return (
-    <div className="flex h-screen bg-neutral-50 text-neutral-900">
-      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-  )
-}
+    <div className="min-h-screen bg-gray-50">
 
-export default AppLayout
+      {/* Student Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
+      />
+
+      {/* Main Application Area */}
+      <div className="min-h-screen lg:pl-64">
+
+        {/* Student Header */}
+        <Header
+          onMenuClick={openSidebar}
+        />
+
+        {/* Page Content */}
+        <main className="min-h-[calc(100vh-4rem)]">
+          <Outlet />
+        </main>
+
+      </div>
+
+    </div>
+  );
+};
+
+export default AppLayout;

@@ -24,6 +24,7 @@ use App\Http\Controllers\Teacher\FlashcardController;
 */
 
 use App\Http\Controllers\Student\AuthController as StudentAuthController;
+use App\Http\Controllers\Student\CourseController as StudentCourseController;
 
 
 /*
@@ -50,6 +51,7 @@ Route::prefix('student')->group(function () {
         'login',
     ]);
 
+
     /*
     |--------------------------------------------------------------------------
     | Authenticated Student Routes
@@ -57,6 +59,12 @@ Route::prefix('student')->group(function () {
     */
 
     Route::middleware('auth:sanctum')->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Authentication
+        |--------------------------------------------------------------------------
+        */
 
         Route::get('/me', [
             StudentAuthController::class,
@@ -67,6 +75,28 @@ Route::prefix('student')->group(function () {
             StudentAuthController::class,
             'logout',
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Courses
+        |--------------------------------------------------------------------------
+        |
+        | Students can only access courses exposed through the
+        | Student CourseController.
+        |
+        */
+
+        Route::get('/courses', [
+            StudentCourseController::class,
+            'index',
+        ]);
+
+        Route::get('/courses/{slug}', [
+            StudentCourseController::class,
+            'show',
+        ]);
+
     });
 });
 
@@ -94,6 +124,7 @@ Route::prefix('teacher')->group(function () {
         AuthController::class,
         'login',
     ]);
+
 
     /*
     |--------------------------------------------------------------------------
@@ -498,5 +529,6 @@ Route::prefix('teacher')->group(function () {
                 'generateFlashcards',
             ]
         );
+
     });
 });

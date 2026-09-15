@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import authService from "../../../services/authService";
-import AuthSplitLayout from "../../../components/auth/AuthSplitLayout";
 import { ArrowRight, Lock, Mail, User } from "lucide-react";
 import toast from "react-hot-toast";
+
+import axiosInstance from "../../../utils/axiosInstance";
+import AuthSplitLayout from "../../../components/auth/AuthSplitLayout";
 
 const RegisterPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,17 +25,42 @@ const RegisterPage = () => {
       return;
     }
 
+    if (password !== passwordConfirmation) {
+      setError("Password confirmation does not match.");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
     try {
-      await authService.register(username, email, password);
+      await axiosInstance.post("/api/student/register", {
+        username: username.trim(),
+        email: email.trim(),
+        password,
+        password_confirmation: passwordConfirmation,
+      });
 
       toast.success("Registration successful! Please log in.");
+
       navigate("/login");
     } catch (err) {
-      const message =
-        err?.message || "Failed to register. Please try again.";
+      console.error("Student registration failed:", err);
+      console.error("Laravel response:", err.response?.data);
+
+      const validationErrors = err.response?.data?.errors;
+
+      let message =
+        err.response?.data?.message ||
+        "Failed to register. Please try again.";
+
+      if (validationErrors) {
+        const firstError = Object.values(validationErrors)?.[0];
+
+        if (Array.isArray(firstError) && firstError.length > 0) {
+          message = firstError[0];
+        }
+      }
 
       setError(message);
       toast.error(message);
@@ -129,6 +157,30 @@ const RegisterPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 6 characters"
+                autoComplete="new-password"
+                required
+                className="h-12 w-full rounded-md border border-slate-300 bg-white pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B1F3A] focus:ring-4 focus:ring-[#0B1F3A]/5"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="password_confirmation"
+              className="mb-2 block text-sm font-semibold text-slate-700"
+            >
+              Confirm password
+            </label>
+
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+
+              <input
+                id="password_confirmation"
+                type="password"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                placeholder="Enter password again"
                 autoComplete="new-password"
                 required
                 className="h-12 w-full rounded-md border border-slate-300 bg-white pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0B1F3A] focus:ring-4 focus:ring-[#0B1F3A]/5"

@@ -1,19 +1,22 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import authService from "../../../services/authService";
-import AuthSplitLayout from "../../../components/auth/AuthSplitLayout";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import toast from "react-hot-toast";
+
+
+import axiosInstance from "../../../utils/axiosInstance";
+import AuthSplitLayout from "../../../components/auth/AuthSplitLayout";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginStudent } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,21 +25,85 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const { token, user } = await authService.login(email, password);
+      const response = await axiosInstance.post(
+        "/api/student/login",
+        {
+          email: email.trim(),
+          password,
+        }
+      );
 
-      login(user, token);
-      toast.success("Logged in successfully!");
+      const token =
+        response.data?.data?.token;
 
-      if (user?.role === "teacher") {
-        navigate("/teacher/subjects");
-      } else {
-        navigate("/dashboard");
+      const student =
+        response.data?.data?.student;
+
+      if (!token || !student) {
+        throw new Error(
+          "Invalid response received from the server."
+        );
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Store Student authentication
+      |--------------------------------------------------------------------------
+      */
+      loginStudent(student, token);
+      
+      /*
+      |--------------------------------------------------------------------------
+      | Remove old authentication values if they exist
+      |--------------------------------------------------------------------------
+      */
+
+      toast.success(
+        "Logged in successfully!"
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Student dashboard
+      |--------------------------------------------------------------------------
+      */
+
+      navigate("/dashboard");
     } catch (err) {
-      const message =
-        err?.message || "Failed to login. Please check your credentials.";
+      console.error(
+        "Student login failed:",
+        err
+      );
+
+      console.error(
+        "Laravel response:",
+        err.response?.data
+      );
+
+      const validationErrors =
+        err.response?.data?.errors;
+
+      let message =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to login. Please check your credentials.";
+
+      if (validationErrors) {
+        const firstError =
+          Object.values(
+            validationErrors
+          )?.[0];
+
+        if (
+          Array.isArray(firstError) &&
+          firstError.length > 0
+        ) {
+          message = firstError[0];
+        }
+      }
 
       setError(message);
+
       toast.error(message);
     } finally {
       setLoading(false);
@@ -64,7 +131,10 @@ const LoginPage = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
           <div>
             <label
               htmlFor="email"
@@ -80,7 +150,11 @@ const LoginPage = () => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) =>
+                  setEmail(
+                    e.target.value
+                  )
+                }
                 placeholder="you@example.com"
                 autoComplete="email"
                 required
@@ -106,7 +180,11 @@ const LoginPage = () => {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(
+                    e.target.value
+                  )
+                }
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 required
@@ -117,7 +195,9 @@ const LoginPage = () => {
 
           {error && (
             <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
-              <p className="text-sm font-medium text-red-700">{error}</p>
+              <p className="text-sm font-medium text-red-700">
+                {error}
+              </p>
             </div>
           )}
 

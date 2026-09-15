@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('teacher_id')->constrained('teachers')->cascadeOnDelete();
             $table->string('title');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('thumbnail')->nullable();
             $table->string('status')->default('draft');

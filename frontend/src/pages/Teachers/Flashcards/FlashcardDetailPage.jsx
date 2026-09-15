@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import {
   ArrowLeft,
   Loader2,
@@ -41,10 +46,9 @@ const FlashcardDetailPage = () => {
   const [success, setSuccess] =
     useState("");
 
-  useEffect(() => {
-    fetchFlashcard();
-  }, [flashcardId]);
-
+  /*
+   * Load Flashcard Set
+   */
   const fetchFlashcard = async () => {
     try {
       setLoading(true);
@@ -54,6 +58,11 @@ const FlashcardDetailPage = () => {
         await axiosInstance.get(
           `/api/teacher/flashcards/${flashcardId}`
         );
+
+      console.log(
+        "Flashcard detail response:",
+        response.data
+      );
 
       const flashcardData =
         response.data?.data?.flashcard;
@@ -67,7 +76,9 @@ const FlashcardDetailPage = () => {
       setFlashcard(flashcardData);
 
       setCards(
-        Array.isArray(flashcardData.cards)
+        Array.isArray(
+          flashcardData.cards
+        )
           ? flashcardData.cards
           : []
       );
@@ -92,6 +103,13 @@ const FlashcardDetailPage = () => {
     }
   };
 
+  useEffect(() => {
+    fetchFlashcard();
+  }, [flashcardId]);
+
+  /*
+   * Update individual card
+   */
   const updateCard = (
     index,
     field,
@@ -110,6 +128,9 @@ const FlashcardDetailPage = () => {
     );
   };
 
+  /*
+   * Add Card
+   */
   const addCard = () => {
     setCards((currentCards) => [
       ...currentCards,
@@ -118,8 +139,14 @@ const FlashcardDetailPage = () => {
         back: "",
       },
     ]);
+
+    setSuccess("");
+    setError("");
   };
 
+  /*
+   * Remove Card
+   */
   const removeCard = (index) => {
     if (cards.length <= 1) {
       setError(
@@ -140,6 +167,9 @@ const FlashcardDetailPage = () => {
     setError("");
   };
 
+  /*
+   * Validate Cards
+   */
   const validateCards = () => {
     if (cards.length === 0) {
       setError(
@@ -176,6 +206,9 @@ const FlashcardDetailPage = () => {
     return true;
   };
 
+  /*
+   * Save Changes
+   */
   const handleSave = async () => {
     setError("");
     setSuccess("");
@@ -205,6 +238,7 @@ const FlashcardDetailPage = () => {
           `/api/teacher/flashcards/${flashcardId}`,
           {
             cards: cleanedCards,
+
             source_type:
               flashcard?.sourceType ||
               "manual",
@@ -249,6 +283,7 @@ const FlashcardDetailPage = () => {
 
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to update flashcards."
       );
     } finally {
@@ -256,6 +291,9 @@ const FlashcardDetailPage = () => {
     }
   };
 
+  /*
+   * Publish / Unpublish
+   */
   const handlePublishToggle =
     async () => {
       if (!flashcard) {
@@ -318,6 +356,7 @@ const FlashcardDetailPage = () => {
 
         setError(
           err.response?.data?.message ||
+            err.response?.data?.error ||
             "Failed to update flashcard status."
         );
       } finally {
@@ -325,6 +364,29 @@ const FlashcardDetailPage = () => {
       }
     };
 
+  /*
+   * Resolve Sublesson ID
+   *
+   * Backend may return:
+   *
+   * sublessonId: 5
+   *
+   * OR
+   *
+   * sublessonId: {
+   *   id: 5,
+   *   title: "Variables"
+   * }
+   */
+  const sublessonId =
+    typeof flashcard?.sublessonId ===
+    "object"
+      ? flashcard.sublessonId?.id
+      : flashcard?.sublessonId;
+
+  /*
+   * Delete Flashcard Set
+   */
   const handleDelete = async () => {
     if (
       !window.confirm(
@@ -334,11 +396,13 @@ const FlashcardDetailPage = () => {
       return;
     }
 
-    const lessonId =
-      typeof flashcard?.lessonId ===
-      "object"
-        ? flashcard.lessonId.id
-        : flashcard?.lessonId;
+    if (!sublessonId) {
+      setError(
+        "Unable to determine the parent sublesson."
+      );
+
+      return;
+    }
 
     try {
       setDeleting(true);
@@ -349,7 +413,7 @@ const FlashcardDetailPage = () => {
       );
 
       navigate(
-        `/teacher/lessons/${lessonId}/flashcards`
+        `/teacher/sublessons/${sublessonId}/flashcards`
       );
     } catch (err) {
       console.error(
@@ -364,6 +428,7 @@ const FlashcardDetailPage = () => {
 
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to delete flashcards."
       );
     } finally {
@@ -371,12 +436,9 @@ const FlashcardDetailPage = () => {
     }
   };
 
-  const lessonId =
-    typeof flashcard?.lessonId ===
-    "object"
-      ? flashcard.lessonId.id
-      : flashcard?.lessonId;
-
+  /*
+   * Loading
+   */
   if (loading) {
     return (
       <TeacherLayout>
@@ -390,15 +452,22 @@ const FlashcardDetailPage = () => {
     );
   }
 
+  /*
+   * Flashcard Not Found
+   */
   if (!flashcard) {
     return (
       <TeacherLayout>
+
         <div className="mx-auto max-w-5xl px-4 py-8">
+
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
             {error ||
               "Flashcard set not found."}
           </div>
+
         </div>
+
       </TeacherLayout>
     );
   }
@@ -408,25 +477,38 @@ const FlashcardDetailPage = () => {
 
   return (
     <TeacherLayout>
+
       <div className="mx-auto max-w-5xl px-4 py-8">
+
+        {/* Back */}
         <button
           type="button"
-          onClick={() =>
-            navigate(
-              `/teacher/lessons/${lessonId}/flashcards`
-            )
-          }
+          onClick={() => {
+            if (sublessonId) {
+              navigate(
+                `/teacher/sublessons/${sublessonId}/flashcards`
+              );
+            } else {
+              navigate(-1);
+            }
+          }}
           className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-purple-700"
         >
           <ArrowLeft size={18} />
+
           Back to Flashcards
         </button>
 
+        {/* Header */}
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+
           <div>
+
             <div className="flex flex-wrap items-center gap-3">
+
               <h1 className="text-3xl font-bold text-gray-900">
-                Manage Flashcards
+                {flashcard.title ||
+                  "Manage Flashcards"}
               </h1>
 
               <span
@@ -438,17 +520,22 @@ const FlashcardDetailPage = () => {
               >
                 {flashcard.status}
               </span>
+
             </div>
 
-            {typeof flashcard.lessonId ===
-              "object" && (
-              <p className="mt-2 text-gray-600">
-                {
-                  flashcard.lessonId
-                    .title
-                }
-              </p>
-            )}
+            {/* Sublesson title */}
+            {typeof flashcard.sublessonId ===
+              "object" &&
+              flashcard.sublessonId
+                ?.title && (
+                <p className="mt-2 text-gray-600">
+                  {
+                    flashcard
+                      .sublessonId
+                      .title
+                  }
+                </p>
+              )}
 
             <p className="mt-2 text-sm text-gray-500">
               {cards.length}{" "}
@@ -456,9 +543,13 @@ const FlashcardDetailPage = () => {
                 ? "card"
                 : "cards"}
             </p>
+
           </div>
 
+          {/* Actions */}
           <div className="flex flex-wrap gap-3">
+
+            {/* Publish */}
             <button
               type="button"
               onClick={
@@ -487,6 +578,7 @@ const FlashcardDetailPage = () => {
                 : "Publish"}
             </button>
 
+            {/* Delete */}
             <button
               type="button"
               onClick={handleDelete}
@@ -504,31 +596,40 @@ const FlashcardDetailPage = () => {
 
               Delete Set
             </button>
+
           </div>
+
         </div>
 
+        {/* Error */}
         {error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
 
+        {/* Success */}
         {success && (
           <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
             {success}
           </div>
         )}
 
+        {/* Cards */}
         <div className="space-y-5">
+
           {cards.map(
             (card, index) => (
+
               <div
                 key={
                   card.id || index
                 }
                 className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
               >
+
                 <div className="mb-5 flex items-center justify-between gap-4">
+
                   <h2 className="font-semibold text-gray-900">
                     Card {index + 1}
                   </h2>
@@ -543,12 +644,17 @@ const FlashcardDetailPage = () => {
                     <Trash2
                       size={16}
                     />
+
                     Remove Card
                   </button>
+
                 </div>
 
                 <div className="space-y-5">
+
+                  {/* Front */}
                   <div>
+
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Front
                     </label>
@@ -571,9 +677,12 @@ const FlashcardDetailPage = () => {
                       placeholder="Question or term"
                       className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                     />
+
                   </div>
 
+                  {/* Back */}
                   <div>
+
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Back
                     </label>
@@ -596,23 +705,33 @@ const FlashcardDetailPage = () => {
                       placeholder="Answer or explanation"
                       className="w-full resize-y rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                     />
+
                   </div>
+
                 </div>
+
               </div>
+
             )
           )}
+
         </div>
 
+        {/* Bottom Actions */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+
+          {/* Add Card */}
           <button
             type="button"
             onClick={addCard}
             className="flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
           >
             <Plus size={18} />
+
             Add Card
           </button>
 
+          {/* Save */}
           <button
             type="button"
             onClick={handleSave}
@@ -625,17 +744,22 @@ const FlashcardDetailPage = () => {
                   size={18}
                   className="animate-spin"
                 />
+
                 Saving...
               </>
             ) : (
               <>
                 <Save size={18} />
+
                 Save Changes
               </>
             )}
           </button>
+
         </div>
+
       </div>
+
     </TeacherLayout>
   );
 };

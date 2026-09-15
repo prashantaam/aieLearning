@@ -1,4 +1,5 @@
 import React from "react";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -20,9 +21,17 @@ import NotFoundPage from "./pages/NotFoundPage";
 |--------------------------------------------------------------------------
 */
 
-import LoginPage from "./pages/Auth/Student/LoginPage";
-import RegisterPage from "./pages/Auth/Student/RegisterPage";
+import StudentLoginPage from "./pages/Auth/Student/LoginPage";
+import StudentRegisterPage from "./pages/Auth/Student/RegisterPage";
 
+import DashboardPage from "./pages/Students/DashboardPage";
+
+import StudentFlashcardsPage from "./pages/Students/StudentFlashcardsPage";
+import StudentQuizPage from "./pages/Students/StudentQuizPage";
+
+import QuizTakePage from "./pages/Students/Quizzes/QuizTakePage";
+import QuizResultPage from "./pages/Students/Quizzes/QuizResultPage";
+import QuizAttemptResultPage from "./pages/Students/Quizzes/QuizAttemptResultPage";
 /*
 |--------------------------------------------------------------------------
 | Teacher Authentication
@@ -31,10 +40,7 @@ import RegisterPage from "./pages/Auth/Student/RegisterPage";
 
 import TeacherLoginPage from "./pages/Auth/Teacher/LoginPage";
 import TeacherRegistrationPage from "./pages/Auth/Teacher/RegisterPage";
-import QuizCreatePage from "./pages/Teachers/Quizzes/QuizCreatePage";
-import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
-import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
-import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
+
 /*
 |--------------------------------------------------------------------------
 | Authentication / Route Protection
@@ -42,6 +48,7 @@ import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage
 */
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AppLayout from "./components/layout/AppLayout";
 import { useAuth } from "./context/AuthContext";
 
 /*
@@ -50,13 +57,13 @@ import { useAuth } from "./context/AuthContext";
 |--------------------------------------------------------------------------
 */
 
-import DashboardPage from "./pages/Students/DashboardPage";
-import StudentFlashcardsPage from "./pages/Students/StudentFlashcardsPage";
-import StudentQuizPage from "./pages/Students/StudentQuizPage";
+import CourseListPage from "./pages/Students/CourseListPage";
+import StudentCourseDetailPage from "./pages/Students/CourseDetailPage";
+import CourseLearningPage from "./pages/Students/CourseLearningPage";
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Pages - Dashboard
+| Teacher Dashboard
 |--------------------------------------------------------------------------
 */
 
@@ -64,7 +71,7 @@ import TeacherDashboardPage from "./pages/Teachers/DashboardPage";
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Pages - Courses
+| Teacher Courses
 |--------------------------------------------------------------------------
 */
 
@@ -74,32 +81,70 @@ import CourseDetailPage from "./pages/Teachers/Courses/CourseDetailPage";
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Pages - Lessons
+| Teacher Lessons
 |--------------------------------------------------------------------------
 */
 
 import LessonCreatePage from "./pages/Teachers/Lessons/LessonCreatePage";
 import LessonDetailPage from "./pages/Teachers/Lessons/LessonDetailPage";
+import LessonContentCreate from "./pages/Teachers/LessonContents/LessonContentCreate";
 
 /*
 |--------------------------------------------------------------------------
-| Existing / Legacy Pages
+| Teacher Sublessons
+|--------------------------------------------------------------------------
+*/
+
+import SublessonListPage from "./pages/Teachers/Sublessons/SublessonListPage";
+import CreateSublessonPage from "./pages/Teachers/Sublessons/CreateSublessonPage";
+import SublessonDetailPage from "./pages/Teachers/Sublessons/SublessonDetailPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Sublesson Contents
+|--------------------------------------------------------------------------
+*/
+
+import SublessonContentListPage from "./pages/Teachers/SublessonContents/SublessonContentListPage";
+import CreateSublessonContentPage from "./pages/Teachers/SublessonContents/CreateSublessonContentPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Quizzes
+|--------------------------------------------------------------------------
+*/
+
+import QuizListPage from "./pages/Teachers/Quizzes/QuizListPage";
+import QuizCreatePage from "./pages/Teachers/Quizzes/QuizCreatePage";
+import QuizDetailPage from "./pages/Teachers/Quizzes/QuizDetailPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Flashcards
+|--------------------------------------------------------------------------
+*/
+
+import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
+import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
+import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
+import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
+
+/*
+|--------------------------------------------------------------------------
+| Documents
 |--------------------------------------------------------------------------
 */
 
 import DocumentListPage from "./pages/Documents/DocumentListPage";
 import DocumentDetailPage from "./pages/Documents/DocumentDetailPage";
 
-import FlashcardsListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
-import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
-import QuizDetailPage from "./pages/Teachers/Quizzes/QuizDetailPage";
-import QuizListPage from "./pages/Teachers/Quizzes/QuizListPage";
-import QuizTakePage from "./pages/Students/Quizzes/QuizTakePage";
-import QuizResultPage from "./pages/Students/Quizzes/QuizResultPage";
-import QuizAttemptResultPage from "./pages/Students/Quizzes/QuizAttemptResultPage";
+/*
+|--------------------------------------------------------------------------
+| Profile
+|--------------------------------------------------------------------------
+*/
 
 import ProfilePage from "./pages/Profile/ProfilePage";
-import LessonContentCreate from "./pages/Teachers/LessonContents/LessonContentCreate";
 
 const App = () => {
   const { loading } = useAuth();
@@ -140,13 +185,13 @@ const App = () => {
         */}
 
         <Route
-          path="/student/login"
-          element={<LoginPage />}
+          path="/login"
+          element={<StudentLoginPage />}
         />
 
         <Route
-          path="/student/register"
-          element={<RegisterPage />}
+          path="/register"
+          element={<StudentRegisterPage />}
         />
 
         {/*
@@ -175,25 +220,52 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Student
+          | Student Application
           |--------------------------------------------------------------------------
+          |
+          | These pages use the shared student AppLayout:
+          |
+          | AppLayout
+          | ├── Sidebar
+          | ├── Header
+          | └── Outlet
+          |
           */}
 
-          <Route
-            path="/dashboard"
-            element={<DashboardPage />}
-          />
+          <Route element={<AppLayout />}>
+
+            <Route
+              path="/dashboard"
+              element={<DashboardPage />}
+            />
+
+            <Route
+              path="/courses"
+              element={<CourseListPage />}
+            />
+
+            <Route
+              path="/courses/:slug"
+              element={<StudentCourseDetailPage />}
+            />
+
+            <Route
+              path="/practice/flashcards"
+              element={<StudentFlashcardsPage />}
+            />
+
+            <Route
+              path="/practice/quizzes"
+              element={<StudentQuizPage />}
+            />
+           
+          </Route>
 
           <Route
-            path="/practice/flashcards"
-            element={<StudentFlashcardsPage />}
+            path="/courses/:slug/learn/:sublessonId"
+            element={<CourseLearningPage />}
           />
-
-          <Route
-            path="/practice/quizzes"
-            element={<StudentQuizPage />}
-          />
-
+          
           {/*
           |--------------------------------------------------------------------------
           | Teacher Dashboard
@@ -226,7 +298,6 @@ const App = () => {
             element={<CourseDetailPage />}
           />
 
-            
           {/*
           |--------------------------------------------------------------------------
           | Teacher Lessons
@@ -243,40 +314,104 @@ const App = () => {
             element={<LessonDetailPage />}
           />
 
-            <Route
-              path="/teacher/lessons/:lessonId/contents/create"
-              element={<LessonContentCreate />}
-            />
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Sublessons
+          |--------------------------------------------------------------------------
+          */}
 
-            <Route
-              path="/teacher/lessons/:lessonId/quizzes/create"
-              element={<QuizCreatePage />}
-            />
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons"
+            element={<SublessonListPage />}
+          />
 
-            <Route
-              path="/teacher/lessons/:lessonId/quizzes"
-              element={<QuizListPage />}
-            />
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/create"
+            element={<CreateSublessonPage />}
+          />
 
-            <Route
-              path="/teacher/quizzes/:quizId"
-              element={<QuizDetailPage />}
-            />
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId"
+            element={<SublessonDetailPage />}
+          />
 
-            <Route
-              path="/teacher/lessons/:lessonId/flashcards"
-              element={<FlashcardListPage />}
-            />
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Sublesson Content
+          |--------------------------------------------------------------------------
+          */}
 
-            <Route
-            path="/teacher/lessons/:lessonId/flashcards/create"
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents"
+            element={<SublessonContentListPage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents/create"
+            element={<CreateSublessonContentPage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents/:contentId/edit"
+            element={<CreateSublessonContentPage />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Legacy Lesson Content
+          |--------------------------------------------------------------------------
+          |
+          | Keep temporarily while the old LessonContent functionality still exists.
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/contents/create"
+            element={<LessonContentCreate />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Sublesson Quizzes
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes"
+            element={<QuizListPage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes/create"
+            element={<QuizCreatePage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes/:quizId"
+            element={<QuizDetailPage />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Sublesson Flashcards
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards"
+            element={<FlashcardListPage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards/create"
             element={<FlashcardCreatePage />}
           />
 
           <Route
-            path="/teacher/flashcards/:flashcardId"
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards/:flashcardId"
             element={<FlashcardDetailPage />}
           />
+
           {/*
           |--------------------------------------------------------------------------
           | Documents
@@ -295,14 +430,9 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Flashcards
+          | Legacy Document Flashcards
           |--------------------------------------------------------------------------
           */}
-
-          <Route
-            path="/flashcards"
-            element={<FlashcardsListPage />}
-          />
 
           <Route
             path="/documents/:id/flashcards"
@@ -311,7 +441,7 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Quizzes
+          | Student Quizzes
           |--------------------------------------------------------------------------
           */}
 

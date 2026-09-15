@@ -12,9 +12,12 @@ import {
 import toast from "react-hot-toast";
 
 import axiosInstance from "../../../utils/axiosInstance";
+import { useAuth } from "../../../context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+
+  const { loginTeacher } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -42,18 +45,12 @@ const LoginPage = () => {
   |--------------------------------------------------------------------------
   | Teacher Login
   |--------------------------------------------------------------------------
-  |
-  | This will authenticate against the dedicated Teacher model/table.
-  |
-  | Backend endpoint:
-  | POST /api/teacher/login
-  |
   */
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!formData.email || !formData.password) {
+    if (!formData.email.trim() || !formData.password) {
       toast.error("Please enter your email and password.");
       return;
     }
@@ -63,39 +60,81 @@ const LoginPage = () => {
 
       const response = await axiosInstance.post(
         "/api/teacher/login",
-        formData
+        {
+          email: formData.email.trim(),
+          password: formData.password,
+        }
       );
-
-      const { token, teacher } = response.data;
 
       /*
       |--------------------------------------------------------------------------
-      | Store Teacher Authentication
+      | Get Authentication Data
       |--------------------------------------------------------------------------
       |
-      | We are keeping teacher authentication clearly identifiable.
-      | We can integrate this with a dedicated TeacherAuthContext later.
+      | Supports both:
+      |
+      | response.data.token
+      | response.data.teacher
+      |
+      | and:
+      |
+      | response.data.data.token
+      | response.data.data.teacher
       |
       */
 
-      localStorage.setItem("token", token);
-      localStorage.setItem(
-        "teacher",
-        JSON.stringify(teacher)
-      );
+      const token =
+        response.data?.data?.token ||
+        response.data?.token;
+
+      const teacher =
+        response.data?.data?.teacher ||
+        response.data?.teacher;
+
+      if (!token || !teacher) {
+        throw new Error(
+          "Invalid authentication response received from the server."
+        );
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Update Authentication Context
+      |--------------------------------------------------------------------------
+      |
+      | loginTeacher() handles:
+      |
+      | - localStorage token
+      | - localStorage teacher
+      | - React authentication state
+      | - authType = teacher
+      | - removing student session data
+      |
+      */
+
+      loginTeacher(teacher, token);
 
       toast.success("Welcome back!");
 
       /*
       |--------------------------------------------------------------------------
-      | Redirect to Teacher Portal
+      | Redirect to Teacher Dashboard
       |--------------------------------------------------------------------------
       */
 
-      navigate("/teacher/dashboard");
+      navigate("/teacher/dashboard", {
+        replace: true,
+      });
     } catch (error) {
+      console.error(
+        "Teacher login failed:",
+        error
+      );
+
       const message =
         error.response?.data?.message ||
+        error.response?.data?.errors?.email?.[0] ||
+        error.message ||
         "Unable to sign in. Please check your credentials.";
 
       toast.error(message);
@@ -106,7 +145,6 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-2">
-
       {/*
       |--------------------------------------------------------------------------
       | Left Panel - Teacher Portal Branding
@@ -114,7 +152,6 @@ const LoginPage = () => {
       */}
 
       <div className="relative hidden overflow-hidden bg-indigo-950 lg:flex lg:flex-col lg:justify-between">
-
         {/* Decorative background */}
 
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-purple-500/20" />
@@ -159,14 +196,14 @@ const LoginPage = () => {
           </h1>
 
           <p className="mt-6 text-lg leading-8 text-indigo-200">
-            Build structured courses, create engaging lessons and use AI
-            to generate learning content, quizzes and flashcards.
+            Build structured courses, create engaging lessons
+            and use AI to generate learning content, quizzes
+            and flashcards.
           </p>
 
           {/* Feature cards */}
 
           <div className="mt-10 grid grid-cols-3 gap-4">
-
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <BookOpen
                 size={22}
@@ -211,7 +248,6 @@ const LoginPage = () => {
                 Track learning
               </p>
             </div>
-
           </div>
         </div>
 
@@ -219,7 +255,6 @@ const LoginPage = () => {
           AI Learning Platform · Teacher Workspace
         </div>
       </div>
-
 
       {/*
       |--------------------------------------------------------------------------
@@ -229,7 +264,6 @@ const LoginPage = () => {
 
       <div className="flex min-h-screen items-center justify-center px-6 py-12 sm:px-10">
         <div className="w-full max-w-md">
-
           {/* Mobile logo */}
 
           <div className="mb-10 flex items-center gap-3 lg:hidden">
@@ -270,7 +304,6 @@ const LoginPage = () => {
             onSubmit={handleSubmit}
             className="space-y-5"
           >
-
             {/* Email */}
 
             <div>
@@ -295,7 +328,8 @@ const LoginPage = () => {
                   onChange={handleChange}
                   placeholder="teacher@example.com"
                   autoComplete="email"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                  disabled={loading}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                 />
               </div>
             </div>
@@ -324,7 +358,8 @@ const LoginPage = () => {
                   onChange={handleChange}
                   placeholder="Enter your password"
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                  disabled={loading}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                 />
               </div>
             </div>
@@ -340,7 +375,9 @@ const LoginPage = () => {
                 ? "Signing in..."
                 : "Sign in to Teacher Portal"}
 
-              {!loading && <ArrowRight size={18} />}
+              {!loading && (
+                <ArrowRight size={18} />
+              )}
             </button>
           </form>
 
@@ -362,14 +399,13 @@ const LoginPage = () => {
             <p className="text-sm text-slate-500">
               Are you a student?{" "}
               <Link
-                to="/student/login"
+                to="/login"
                 className="font-semibold text-slate-700 transition hover:text-indigo-600"
               >
                 Go to Student Login
               </Link>
             </p>
           </div>
-
         </div>
       </div>
     </div>

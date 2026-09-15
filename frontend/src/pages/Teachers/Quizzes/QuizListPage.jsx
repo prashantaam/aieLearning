@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   useNavigate,
   useParams,
@@ -15,11 +16,18 @@ import axiosInstance from "../../../utils/axiosInstance";
 import TeacherLayout from "../../../components/teachers/TeacherLayout";
 
 const QuizListPage = () => {
-  const { lessonId } = useParams();
+  const {
+    lessonId,
+    sublessonId,
+  } = useParams();
+
   const navigate = useNavigate();
 
-  const [lesson, setLesson] = useState(null);
-  const [quizzes, setQuizzes] = useState([]);
+  const [sublesson, setSublesson] =
+    useState(null);
+
+  const [quizzes, setQuizzes] =
+    useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -27,6 +35,27 @@ const QuizListPage = () => {
   const [error, setError] =
     useState("");
 
+  /*
+  |--------------------------------------------------------------------------
+  | Frontend Route Helpers
+  |--------------------------------------------------------------------------
+  */
+
+  const sublessonPath =
+    `/teacher/lessons/${lessonId}/sublessons/${sublessonId}`;
+
+  const quizListPath =
+    `${sublessonPath}/quizzes`;
+
+  const createQuizPath =
+    `${quizListPath}/create`;
+
+  const quizDetailPath = (quizId) =>
+    `${quizListPath}/${quizId}`;
+
+  /*
+   * Load all quizzes for this Sublesson.
+   */
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
@@ -34,7 +63,7 @@ const QuizListPage = () => {
 
       const response =
         await axiosInstance.get(
-          `/api/teacher/lessons/${lessonId}/quizzes`
+          `/api/teacher/sublessons/${sublessonId}/quizzes`
         );
 
       console.log(
@@ -42,8 +71,16 @@ const QuizListPage = () => {
         response.data
       );
 
-      setLesson(
-        response.data?.data?.lesson ||
+      /*
+       * Backend response:
+       *
+       * data: {
+       *   sublesson: {...},
+       *   quizzes: [...]
+       * }
+       */
+      setSublesson(
+        response.data?.data?.sublesson ||
           null
       );
 
@@ -60,8 +97,14 @@ const QuizListPage = () => {
         err
       );
 
+      console.error(
+        "Laravel response:",
+        err.response?.data
+      );
+
       setError(
         err.response?.data?.message ||
+          err.response?.data?.error ||
           "Failed to load quizzes."
       );
     } finally {
@@ -71,8 +114,11 @@ const QuizListPage = () => {
 
   useEffect(() => {
     fetchQuizzes();
-  }, [lessonId]);
+  }, [sublessonId]);
 
+  /*
+   * Loading State
+   */
   if (loading) {
     return (
       <TeacherLayout>
@@ -88,20 +134,19 @@ const QuizListPage = () => {
       <div className="p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
 
+          {/* Back to Sublesson */}
           <button
             type="button"
             onClick={() =>
-              navigate(
-                `/teacher/lessons/${lessonId}`
-              )
+              navigate(sublessonPath)
             }
             className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
-
-            Back to Lesson
+            Back to Sublesson
           </button>
 
+          {/* Page Header */}
           <div className="mb-8 flex items-start justify-between gap-4">
 
             <div className="flex items-start gap-4">
@@ -119,11 +164,11 @@ const QuizListPage = () => {
                   Quiz Management
                 </h1>
 
-                {lesson && (
+                {sublesson && (
                   <p className="mt-2 text-gray-600">
                     Manage quizzes for{" "}
                     <span className="font-semibold text-gray-900">
-                      {lesson.title}
+                      {sublesson.title}
                     </span>
                   </p>
                 )}
@@ -131,28 +176,28 @@ const QuizListPage = () => {
 
             </div>
 
+            {/* Create Quiz */}
             <button
               type="button"
               onClick={() =>
-                navigate(
-                  `/teacher/lessons/${lessonId}/quizzes/create`
-                )
+                navigate(createQuizPath)
               }
               className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-purple-700"
             >
               <Plus className="h-4 w-4" />
-
               Create Quiz
             </button>
 
           </div>
 
+          {/* Error */}
           {error && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
             </div>
           )}
 
+          {/* Empty State */}
           {quizzes.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
 
@@ -163,75 +208,101 @@ const QuizListPage = () => {
               </h2>
 
               <p className="mt-2 text-sm text-gray-500">
-                Create an AI-generated quiz for this lesson.
+                Create an AI-generated quiz for this sublesson.
               </p>
 
               <button
                 type="button"
                 onClick={() =>
-                  navigate(
-                    `/teacher/lessons/${lessonId}/quizzes/create`
-                  )
+                  navigate(createQuizPath)
                 }
                 className="mt-6 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white hover:bg-purple-700"
               >
                 <Plus className="h-4 w-4" />
-
                 Create Quiz
               </button>
 
             </div>
           ) : (
+
+            /* Quiz List */
             <div className="space-y-4">
 
-             {quizzes.map((quiz) => (
-  <div
-    key={quiz.id}
-    className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
-  >
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div className="flex-1">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {quiz.title}
-        </h2>
+              {quizzes.map((quiz) => (
+                <div
+                  key={quiz.id}
+                  className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
 
-        <div className="mt-3 flex flex-wrap gap-3 text-sm text-gray-500">
-          <span>{quiz.totalQuestions} questions</span>
-          <span>•</span>
-          <span className="capitalize">{quiz.status}</span>
-          <span>•</span>
-          <span>
-            {quiz.sourceType === "ai"
-              ? "AI generated"
-              : "Manual"}
-          </span>
-        </div>
-      </div>
+                    {/* Quiz Information */}
+                    <div className="flex-1">
 
-      <div className="flex flex-col items-end gap-3">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-            quiz.status === "published"
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {quiz.status}
-        </span>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {quiz.title}
+                      </h2>
 
-        <button
-          type="button"
-          onClick={() =>
-            navigate(`/teacher/quizzes/${quiz.id}`)
-          }
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 hover:border-purple-300 hover:text-purple-700"
-        >
-          Manage Quiz
-        </button>
-      </div>
-    </div>
-  </div>
-))}
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-gray-500">
+
+                        <span>
+                          {quiz.totalQuestions}{" "}
+                          questions
+                        </span>
+
+                        <span>•</span>
+
+                        <span className="capitalize">
+                          {quiz.status}
+                        </span>
+
+                        <span>•</span>
+
+                        <span>
+                          {quiz.sourceType ===
+                          "ai"
+                            ? "AI generated"
+                            : "Manual"}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                    {/* Quiz Actions */}
+                    <div className="flex flex-col items-end gap-3">
+
+                      {/* Status */}
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                          quiz.status ===
+                          "published"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {quiz.status}
+                      </span>
+
+                      {/* Manage Quiz */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            quizDetailPath(
+                              quiz.id
+                            )
+                          )
+                        }
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-gray-50 hover:text-purple-700"
+                      >
+                        Manage Quiz
+                      </button>
+
+                    </div>
+
+                  </div>
+                </div>
+              ))}
 
             </div>
           )}
