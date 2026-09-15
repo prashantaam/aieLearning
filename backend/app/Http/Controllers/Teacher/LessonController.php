@@ -103,6 +103,10 @@ class LessonController extends Controller
             ], 403);
         }
 
+        /*
+        * Load the course first so we can verify
+        * that this lesson belongs to the teacher.
+        */
         $lesson->load('course');
 
         if (
@@ -115,10 +119,14 @@ class LessonController extends Controller
             ], 403);
         }
 
+        /*
+        * A Lesson now contains Sublessons.
+        *
+        * Content, quizzes, flashcards and exercises
+        * belong to a Sublesson, not directly to Lesson.
+        */
         $lesson->load([
-            'lessonContents',
-            'quizzes',
-            'flashcards',
+            'sublessons',
         ]);
 
         return response()->json([

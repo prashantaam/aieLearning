@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->string('title');
             $table->string('file_name');
             $table->string('file_path');
@@ -20,9 +20,11 @@ return new class extends Migration
             $table->timestamp('upload_date')->useCurrent();
             $table->timestamp('last_accessed')->useCurrent();
             $table->enum('status', ['processing', 'ready', 'failed'])->default('processing');
+            $table->unsignedInteger('flashcards_count')->default(0);
+            $table->unsignedInteger('quizzes_count')->default(0);
             $table->timestamps();
 
-            $table->index(['user_id', 'upload_date']);
+            $table->index(['student_id', 'upload_date']);
         });
     }
 

@@ -10,13 +10,12 @@ return new class extends Migration
     {
         Schema::create('chat_histories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('document_id')->constrained()->cascadeOnDelete();
-            // Each element: { role, content, timestamp, relevantChunks[] }
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->foreignId('document_id')->constrained('documents')->cascadeOnDelete();
             $table->json('messages')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'document_id']);
+            $table->index(['student_id', 'document_id']);
         });
     }
 

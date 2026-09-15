@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
-            $table->string('username', 191)->unique();
+            $table->string('username');
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('is_active')->default(true);

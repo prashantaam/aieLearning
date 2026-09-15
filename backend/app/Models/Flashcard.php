@@ -4,73 +4,97 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Flashcard extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'lesson_id',
+        'sublesson_id',
+        'title',
         'cards',
+        'source_type',
+        'sort_order',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
             'cards' => 'array',
+            'sort_order' => 'integer',
         ];
     }
 
-    public function user()
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function sublesson(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(
+            Sublesson::class
+        );
     }
 
-    public function lesson()
-    {
-        return $this->belongsTo(Lesson::class);
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | API Response
+    |--------------------------------------------------------------------------
+    */
 
-    /**
-     * Normalise a raw list of {question, answer, difficulty} into the
-     * full card shape, giving each card a stable id the same way
-     * MongoDB auto-assigns an `_id` to every subdocument.
-     */
-    public static function buildCards(array $rawCards): array
-    {
-        return array_map(function (array $card) {
-            return [
-                'id' => (string) Str::uuid(),
-                'question' => $card['question'],
-                'answer' => $card['answer'],
-                'difficulty' => $card['difficulty'] ?? 'medium',
-                'lastReviewed' => null,
-                'reviewCount' => 0,
-                'isStarred' => false,
-            ];
-        }, $rawCards);
-    }
-
-    public function toResponseArray(?Lesson $lesson = null): array
-    {
-        $lesson ??= $this->relationLoaded('lesson')
-            ? $this->lesson
-            : null;
+    public function toResponseArray(
+        ?Sublesson $sublesson = null
+    ): array {
+        $sublesson ??=
+            $this->relationLoaded('sublesson')
+                ? $this->sublesson
+                : null;
 
         return [
             'id' => $this->id,
-            'userId' => $this->user_id,
-            'lessonId' => $lesson
-                ? [
-                    'id' => $lesson->id,
-                    'title' => $lesson->title,
-                ]
-                : $this->lesson_id,
-            'cards' => $this->cards ?? [],
-            'createdAt' => $this->created_at?->toIso8601String(),
-            'updatedAt' => $this->updated_at?->toIso8601String(),
+
+            'sublessonId' =>
+                $sublesson
+                    ? [
+                        'id' =>
+                            $sublesson->id,
+
+                        'title' =>
+                            $sublesson->title,
+                    ]
+                    : $this->sublesson_id,
+
+            'title' =>
+                $this->title,
+
+            'cards' =>
+                $this->cards ?? [],
+
+            'totalCards' =>
+                count(
+                    $this->cards ?? []
+                ),
+
+            'sourceType' =>
+                $this->source_type,
+
+            'sortOrder' =>
+                $this->sort_order,
+
+            'status' =>
+                $this->status,
+
+            'createdAt' =>
+                $this->created_at
+                    ?->toIso8601String(),
+
+            'updatedAt' =>
+                $this->updated_at
+                    ?->toIso8601String(),
         ];
     }
 }

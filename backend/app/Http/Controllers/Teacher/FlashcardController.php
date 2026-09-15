@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Flashcard;
-use App\Models\Lesson;
+use App\Models\Sublesson;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,10 +12,12 @@ use Illuminate\Support\Str;
 class FlashcardController extends Controller
 {
     /**
-     * List all flashcard sets for a lesson.
+     * List all flashcard sets for a sublesson.
      */
-    public function index(Request $request, Lesson $lesson)
-    {
+    public function index(
+        Request $request,
+        Sublesson $sublesson
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -24,44 +26,56 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        $lesson->load('course');
-
-        if (! $lesson->course) {
-            return response()->json([
-                'message' => 'Course not found for this lesson.',
-            ], 404);
-        }
+        $sublesson->load('lesson.course');
 
         if (
-            (int) $lesson->course->teacher_id !==
-            (int) $teacher->id
+            ! $this->teacherOwnsSublesson(
+                $teacher,
+                $sublesson
+            )
         ) {
             return response()->json([
-                'message' => 'You are not authorised to view flashcards for this lesson.',
+                'message' =>
+                    'You are not authorised to view flashcards for this sublesson.',
             ], 403);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Get Flashcards
+        |--------------------------------------------------------------------------
+        */
+
         $flashcards = Flashcard::where(
-            'lesson_id',
-            $lesson->id
+            'sublesson_id',
+            $sublesson->id
         )
-            ->latest()
+            ->orderBy('sort_order')
+            ->latest('id')
             ->get();
 
         return response()->json([
             'success' => true,
+
             'data' => [
-                'lesson' => [
-                    'id' => $lesson->id,
-                    'title' => $lesson->title,
+                'sublesson' => [
+                    'id' =>
+                        $sublesson->id,
+
+                    'title' =>
+                        $sublesson->title,
                 ],
 
-                'flashcards' => $flashcards
-                    ->map(
-                        fn ($flashcard) =>
-                            $this->toResponseArray($flashcard)
-                    )
-                    ->values(),
+                'flashcards' =>
+                    $flashcards
+                        ->map(
+                            fn ($flashcard) =>
+                                $this->toResponseArray(
+                                    $flashcard,
+                                    $sublesson
+                                )
+                        )
+                        ->values(),
             ],
         ]);
     }
@@ -81,34 +95,39 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsFlashcard(
-            $teacher,
-            $flashcard
-        )) {
+        if (
+            ! $this->teacherOwnsFlashcard(
+                $teacher,
+                $flashcard
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to view this flashcard set.',
+                'message' =>
+                    'You are not authorised to view this flashcard set.',
             ], 403);
         }
 
-        $flashcard->load('lesson');
+        $flashcard->load('sublesson');
 
         return response()->json([
             'success' => true,
+
             'data' => [
                 'flashcard' =>
                     $this->toResponseArray(
-                        $flashcard
+                        $flashcard,
+                        $flashcard->sublesson
                     ),
             ],
         ]);
     }
 
     /**
-     * Create/save flashcards for a lesson.
+     * Create/save flashcards for a sublesson.
      */
     public function store(
         Request $request,
-        Lesson $lesson
+        Sublesson $sublesson
     ) {
         $teacher = $request->user();
 
@@ -118,20 +137,17 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        $lesson->load('course');
-
-        if (! $lesson->course) {
-            return response()->json([
-                'message' => 'Course not found for this lesson.',
-            ], 404);
-        }
+        $sublesson->load('lesson.course');
 
         if (
-            (int) $lesson->course->teacher_id !==
-            (int) $teacher->id
+            ! $this->teacherOwnsSublesson(
+                $teacher,
+                $sublesson
+            )
         ) {
             return response()->json([
-                'message' => 'You are not authorised to create flashcards for this lesson.',
+                'message' =>
+                    'You are not authorised to create flashcards for this sublesson.',
             ], 403);
         }
 
@@ -139,27 +155,72 @@ class FlashcardController extends Controller
             $this->validationRules()
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Build Cards
+        |--------------------------------------------------------------------------
+        */
+
         $cards = $this->buildCards(
             $validated['cards']
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Sort Order
+        |--------------------------------------------------------------------------
+        */
+
+        $maxSortOrder =
+            Flashcard::where(
+                'sublesson_id',
+                $sublesson->id
+            )->max('sort_order');
+
+        $nextSortOrder =
+            ($maxSortOrder ?? 0) + 1;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Flashcard Set
+        |--------------------------------------------------------------------------
+        */
+
         $flashcard = Flashcard::create([
-            'lesson_id' => $lesson->id,
-            'cards' => $cards,
+            'sublesson_id' =>
+                $sublesson->id,
+
+            'title' =>
+                $validated['title']
+                ?? $sublesson->title . ' - Flashcards',
+
+            'cards' =>
+                $cards,
+
             'source_type' =>
-                $validated['source_type'] ?? 'ai',
-            'status' => 'draft',
+                $validated['source_type']
+                ?? 'ai',
+
+            'sort_order' =>
+                $nextSortOrder,
+
+            'status' =>
+                'draft',
         ]);
 
-        $flashcard->load('lesson');
+        $flashcard->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Flashcards saved successfully.',
+
+            'message' =>
+                'Flashcards saved successfully.',
+
             'data' => [
                 'flashcard' =>
                     $this->toResponseArray(
-                        $flashcard
+                        $flashcard,
+                        $flashcard->sublesson
                     ),
             ],
         ], 201);
@@ -180,12 +241,15 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsFlashcard(
-            $teacher,
-            $flashcard
-        )) {
+        if (
+            ! $this->teacherOwnsFlashcard(
+                $teacher,
+                $flashcard
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to update this flashcard set.',
+                'message' =>
+                    'You are not authorised to update this flashcard set.',
             ], 403);
         }
 
@@ -198,18 +262,31 @@ class FlashcardController extends Controller
         );
 
         $flashcard->update([
-            'cards' => $cards,
+            'title' =>
+                $validated['title']
+                ?? $flashcard->title,
+
+            'cards' =>
+                $cards,
+
+            'source_type' =>
+                $validated['source_type']
+                ?? $flashcard->source_type,
         ]);
 
-        $flashcard->load('lesson');
+        $flashcard->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Flashcards updated successfully.',
+
+            'message' =>
+                'Flashcards updated successfully.',
+
             'data' => [
                 'flashcard' =>
                     $this->toResponseArray(
-                        $flashcard
+                        $flashcard,
+                        $flashcard->sublesson
                     ),
             ],
         ]);
@@ -230,24 +307,32 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsFlashcard(
-            $teacher,
-            $flashcard
-        )) {
+        if (
+            ! $this->teacherOwnsFlashcard(
+                $teacher,
+                $flashcard
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to delete this flashcard set.',
+                'message' =>
+                    'You are not authorised to delete this flashcard set.',
             ], 403);
         }
 
-        $lessonId = $flashcard->lesson_id;
+        $sublessonId =
+            $flashcard->sublesson_id;
 
         $flashcard->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Flashcard set deleted successfully.',
+
+            'message' =>
+                'Flashcard set deleted successfully.',
+
             'data' => [
-                'lessonId' => $lessonId,
+                'sublessonId' =>
+                    $sublessonId,
             ],
         ]);
     }
@@ -267,20 +352,25 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsFlashcard(
-            $teacher,
-            $flashcard
-        )) {
+        if (
+            ! $this->teacherOwnsFlashcard(
+                $teacher,
+                $flashcard
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to publish this flashcard set.',
+                'message' =>
+                    'You are not authorised to publish this flashcard set.',
             ], 403);
         }
 
-        $cards = $flashcard->cards ?? [];
+        $cards =
+            $flashcard->cards ?? [];
 
         if (count($cards) === 0) {
             return response()->json([
-                'message' => 'A flashcard set must contain at least one card before publishing.',
+                'message' =>
+                    'A flashcard set must contain at least one card before publishing.',
             ], 422);
         }
 
@@ -288,15 +378,19 @@ class FlashcardController extends Controller
             'status' => 'published',
         ]);
 
-        $flashcard->load('lesson');
+        $flashcard->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Flashcards published successfully.',
+
+            'message' =>
+                'Flashcards published successfully.',
+
             'data' => [
                 'flashcard' =>
                     $this->toResponseArray(
-                        $flashcard
+                        $flashcard,
+                        $flashcard->sublesson
                     ),
             ],
         ]);
@@ -317,12 +411,15 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsFlashcard(
-            $teacher,
-            $flashcard
-        )) {
+        if (
+            ! $this->teacherOwnsFlashcard(
+                $teacher,
+                $flashcard
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to unpublish this flashcard set.',
+                'message' =>
+                    'You are not authorised to unpublish this flashcard set.',
             ], 403);
         }
 
@@ -330,41 +427,82 @@ class FlashcardController extends Controller
             'status' => 'draft',
         ]);
 
-        $flashcard->load('lesson');
+        $flashcard->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Flashcards moved back to draft.',
+
+            'message' =>
+                'Flashcards moved back to draft.',
+
             'data' => [
                 'flashcard' =>
                     $this->toResponseArray(
-                        $flashcard
+                        $flashcard,
+                        $flashcard->sublesson
                     ),
             ],
         ]);
     }
 
     /**
-     * Check whether teacher owns the course
-     * containing this flashcard set.
+     * Check whether the authenticated teacher
+     * owns this sublesson.
      */
-    private function teacherOwnsFlashcard(
+    private function teacherOwnsSublesson(
         Teacher $teacher,
-        Flashcard $flashcard
+        Sublesson $sublesson
     ): bool {
-        $flashcard->loadMissing('lesson.course');
+        $sublesson->loadMissing(
+            'lesson.course'
+        );
 
         if (
-            ! $flashcard->lesson ||
-            ! $flashcard->lesson->course
+            ! $sublesson->lesson ||
+            ! $sublesson->lesson->course
         ) {
             return false;
         }
 
         return
-            (int) $flashcard->lesson
+            (int) $sublesson
+                ->lesson
                 ->course
-                ->teacher_id ===
+                ->teacher_id
+            ===
+            (int) $teacher->id;
+    }
+
+    /**
+     * Check whether the authenticated teacher
+     * owns the course containing this flashcard set.
+     */
+    private function teacherOwnsFlashcard(
+        Teacher $teacher,
+        Flashcard $flashcard
+    ): bool {
+        $flashcard->loadMissing(
+            'sublesson.lesson.course'
+        );
+
+        if (
+            ! $flashcard->sublesson ||
+            ! $flashcard->sublesson->lesson ||
+            ! $flashcard
+                ->sublesson
+                ->lesson
+                ->course
+        ) {
+            return false;
+        }
+
+        return
+            (int) $flashcard
+                ->sublesson
+                ->lesson
+                ->course
+                ->teacher_id
+            ===
             (int) $teacher->id;
     }
 
@@ -378,17 +516,19 @@ class FlashcardController extends Controller
             function (array $card) {
                 return [
                     'id' =>
-                        $card['id'] ??
-                        (string) Str::uuid(),
+                        $card['id']
+                        ?? (string) Str::uuid(),
 
                     'front' =>
                         trim(
-                            $card['front'] ?? ''
+                            $card['front']
+                            ?? ''
                         ),
 
                     'back' =>
                         trim(
-                            $card['back'] ?? ''
+                            $card['back']
+                            ?? ''
                         ),
                 ];
             },
@@ -402,6 +542,12 @@ class FlashcardController extends Controller
     private function validationRules(): array
     {
         return [
+            'title' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'source_type' => [
                 'nullable',
                 'string',
@@ -430,23 +576,41 @@ class FlashcardController extends Controller
      * Standard API response.
      */
     private function toResponseArray(
-        Flashcard $flashcard
+        Flashcard $flashcard,
+        ?Sublesson $sublesson = null
     ): array {
-        $lesson = $flashcard->relationLoaded(
-            'lesson'
-        )
-            ? $flashcard->lesson
-            : null;
+        /*
+         * Use supplied Sublesson first.
+         *
+         * Otherwise use the loaded relationship.
+         */
+        if (! $sublesson) {
+            $sublesson =
+                $flashcard->relationLoaded(
+                    'sublesson'
+                )
+                    ? $flashcard->sublesson
+                    : null;
+        }
 
         return [
-            'id' => $flashcard->id,
+            'id' =>
+                $flashcard->id,
 
-            'lessonId' => $lesson
-                ? [
-                    'id' => $lesson->id,
-                    'title' => $lesson->title,
-                ]
-                : $flashcard->lesson_id,
+            'sublessonId' =>
+                $sublesson
+                    ? [
+                        'id' =>
+                            $sublesson->id,
+
+                        'title' =>
+                            $sublesson->title,
+                    ]
+                    : $flashcard
+                        ->sublesson_id,
+
+            'title' =>
+                $flashcard->title,
 
             'cards' =>
                 $flashcard->cards ?? [],
@@ -459,15 +623,20 @@ class FlashcardController extends Controller
             'sourceType' =>
                 $flashcard->source_type,
 
+            'sortOrder' =>
+                $flashcard->sort_order,
+
             'status' =>
                 $flashcard->status,
 
             'createdAt' =>
-                $flashcard->created_at
+                $flashcard
+                    ->created_at
                     ?->toIso8601String(),
 
             'updatedAt' =>
-                $flashcard->updated_at
+                $flashcard
+                    ->updated_at
                     ?->toIso8601String(),
         ];
     }

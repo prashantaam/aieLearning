@@ -13,11 +13,12 @@ class Quiz extends Model
     use HasFactory;
 
     protected $fillable = [
-        'lesson_id',
+        'sublesson_id',
         'title',
         'questions',
         'total_questions',
         'source_type',
+        'sort_order',
         'status',
     ];
 
@@ -26,71 +27,94 @@ class Quiz extends Model
         return [
             'questions' => 'array',
             'total_questions' => 'integer',
+            'sort_order' => 'integer',
         ];
     }
 
-    /**
-     * Quiz belongs to a lesson.
-     */
-    public function lesson(): BelongsTo
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function sublesson(): BelongsTo
     {
-        return $this->belongsTo(Lesson::class);
+        return $this->belongsTo(
+            Sublesson::class
+        );
     }
 
-    /**
-     * Student attempts for this quiz.
-     */
     public function attempts(): HasMany
     {
-        return $this->hasMany(QuizAttempt::class);
+        return $this->hasMany(
+            QuizAttempt::class
+        );
     }
 
-    /**
-     * Normalise AI-generated questions into
-     * the structure stored in the quizzes table.
-     */
-    public static function buildQuestions(array $rawQuestions): array
-    {
-        return array_map(function (array $q) {
-            return [
-                'id' => (string) Str::uuid(),
+    /*
+    |--------------------------------------------------------------------------
+    | Build Questions
+    |--------------------------------------------------------------------------
+    |
+    | Normalise AI-generated questions into the structure stored
+    | inside the quizzes.questions JSON column.
+    |
+    */
 
-                'question' => $q['question'] ?? '',
+    public static function buildQuestions(
+        array $rawQuestions
+    ): array {
+        return array_map(
+            function (array $question) {
+                return [
+                    'id' => (string) Str::uuid(),
 
-                'options' => array_values(
-                    $q['options'] ?? []
-                ),
+                    'question' =>
+                        $question['question'] ?? '',
 
-                'correctAnswer' =>
-                    $q['correctAnswer'] ?? null,
+                    'options' => array_values(
+                        $question['options'] ?? []
+                    ),
 
-                'explanation' =>
-                    $q['explanation'] ?? '',
+                    'correctAnswer' =>
+                        $question['correctAnswer'] ?? null,
 
-                'difficulty' =>
-                    $q['difficulty'] ?? 'medium',
-            ];
-        }, $rawQuestions);
+                    'explanation' =>
+                        $question['explanation'] ?? '',
+
+                    'difficulty' =>
+                        $question['difficulty'] ?? 'medium',
+                ];
+            },
+            $rawQuestions
+        );
     }
 
-    /**
-     * API response structure for teacher/student UI.
-     */
-    public function toResponseArray(?Lesson $lesson = null): array
-    {
-        $lesson ??= $this->relationLoaded('lesson')
-            ? $this->lesson
+    /*
+    |--------------------------------------------------------------------------
+    | API Response
+    |--------------------------------------------------------------------------
+    |
+    | Standard response structure used by the teacher/student frontend.
+    |
+    */
+
+    public function toResponseArray(
+        ?Sublesson $sublesson = null
+    ): array {
+        $sublesson ??= $this->relationLoaded('sublesson')
+            ? $this->sublesson
             : null;
 
         return [
             'id' => $this->id,
 
-            'lessonId' => $lesson
+            'sublessonId' => $sublesson
                 ? [
-                    'id' => $lesson->id,
-                    'title' => $lesson->title,
+                    'id' => $sublesson->id,
+                    'title' => $sublesson->title,
                 ]
-                : $this->lesson_id,
+                : $this->sublesson_id,
 
             'title' => $this->title,
 
@@ -102,6 +126,9 @@ class Quiz extends Model
 
             'sourceType' =>
                 $this->source_type,
+
+            'sortOrder' =>
+                $this->sort_order,
 
             'status' =>
                 $this->status,

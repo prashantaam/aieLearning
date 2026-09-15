@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Lesson;
 use App\Models\Quiz;
+use App\Models\Sublesson;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
 {
     /**
-     * List all quizzes for a lesson.
+     * List all quizzes for a sublesson.
      */
-    public function index(Request $request, Lesson $lesson)
-    {
+    public function index(
+        Request $request,
+        Sublesson $sublesson
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -23,42 +25,61 @@ class QuizController extends Controller
             ], 403);
         }
 
-        $lesson->load('course');
+        /*
+        |--------------------------------------------------------------------------
+        | Load ownership hierarchy
+        |--------------------------------------------------------------------------
+        |
+        | Sublesson
+        |   → Lesson
+        |       → Course
+        |           → Teacher
+        |
+        */
 
-        if (! $lesson->course) {
-            return response()->json([
-                'message' => 'Course not found for this lesson.',
-            ], 404);
-        }
+        $sublesson->load('lesson.course');
 
         if (
-            (int) $lesson->course->teacher_id !==
-            (int) $teacher->id
+            ! $this->teacherOwnsSublesson(
+                $teacher,
+                $sublesson
+            )
         ) {
             return response()->json([
-                'message' => 'You are not authorised to view quizzes for this lesson.',
+                'message' =>
+                    'You are not authorised to view quizzes for this sublesson.',
             ], 403);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Get Sublesson Quizzes
+        |--------------------------------------------------------------------------
+        */
+
         $quizzes = Quiz::where(
-            'lesson_id',
-            $lesson->id
+            'sublesson_id',
+            $sublesson->id
         )
-            ->latest()
+            ->orderBy('sort_order')
+            ->latest('id')
             ->get();
 
         return response()->json([
             'success' => true,
+
             'data' => [
-                'lesson' => [
-                    'id' => $lesson->id,
-                    'title' => $lesson->title,
+                'sublesson' => [
+                    'id' => $sublesson->id,
+                    'title' => $sublesson->title,
                 ],
 
                 'quizzes' => $quizzes
                     ->map(
                         fn ($quiz) =>
-                            $quiz->toResponseArray()
+                            $quiz->toResponseArray(
+                                $sublesson
+                            )
                     )
                     ->values(),
             ],
@@ -68,8 +89,10 @@ class QuizController extends Controller
     /**
      * View a single quiz.
      */
-    public function show(Request $request, Quiz $quiz)
-    {
+    public function show(
+        Request $request,
+        Quiz $quiz
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -78,29 +101,39 @@ class QuizController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsQuiz($teacher, $quiz)) {
+        if (
+            ! $this->teacherOwnsQuiz(
+                $teacher,
+                $quiz
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to view this quiz.',
+                'message' =>
+                    'You are not authorised to view this quiz.',
             ], 403);
         }
 
-        $quiz->load('lesson');
+        $quiz->load('sublesson');
 
         return response()->json([
             'success' => true,
+
             'data' => [
-                'quiz' => $quiz->toResponseArray(
-                    $quiz->lesson
-                ),
+                'quiz' =>
+                    $quiz->toResponseArray(
+                        $quiz->sublesson
+                    ),
             ],
         ]);
     }
 
     /**
-     * Create/save a quiz for a lesson.
+     * Create/save a quiz for a sublesson.
      */
-    public function store(Request $request, Lesson $lesson)
-    {
+    public function store(
+        Request $request,
+        Sublesson $sublesson
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -109,20 +142,17 @@ class QuizController extends Controller
             ], 403);
         }
 
-        $lesson->load('course');
-
-        if (! $lesson->course) {
-            return response()->json([
-                'message' => 'Course not found for this lesson.',
-            ], 404);
-        }
+        $sublesson->load('lesson.course');
 
         if (
-            (int) $lesson->course->teacher_id !==
-            (int) $teacher->id
+            ! $this->teacherOwnsSublesson(
+                $teacher,
+                $sublesson
+            )
         ) {
             return response()->json([
-                'message' => 'You are not authorised to create a quiz for this lesson.',
+                'message' =>
+                    'You are not authorised to create a quiz for this sublesson.',
             ], 403);
         }
 
@@ -130,28 +160,73 @@ class QuizController extends Controller
             $this->quizValidationRules()
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Build Questions
+        |--------------------------------------------------------------------------
+        */
+
         $questions = Quiz::buildQuestions(
             $validated['questions']
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Sort Order
+        |--------------------------------------------------------------------------
+        */
+
+        $maxSortOrder = Quiz::where(
+            'sublesson_id',
+            $sublesson->id
+        )->max('sort_order');
+
+        $nextSortOrder =
+            ($maxSortOrder ?? 0) + 1;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save Quiz
+        |--------------------------------------------------------------------------
+        */
+
         $quiz = Quiz::create([
-            'lesson_id' => $lesson->id,
-            'title' => $validated['title'],
-            'questions' => $questions,
-            'total_questions' => count($questions),
-            'source_type' => $validated['source_type'] ?? 'ai',
-            'status' => 'draft',
+            'sublesson_id' =>
+                $sublesson->id,
+
+            'title' =>
+                $validated['title'],
+
+            'questions' =>
+                $questions,
+
+            'total_questions' =>
+                count($questions),
+
+            'source_type' =>
+                $validated['source_type']
+                    ?? 'ai',
+
+            'sort_order' =>
+                $nextSortOrder,
+
+            'status' =>
+                'draft',
         ]);
 
-        $quiz->load('lesson');
+        $quiz->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Quiz saved successfully.',
+
+            'message' =>
+                'Quiz saved successfully.',
+
             'data' => [
-                'quiz' => $quiz->toResponseArray(
-                    $quiz->lesson
-                ),
+                'quiz' =>
+                    $quiz->toResponseArray(
+                        $quiz->sublesson
+                    ),
             ],
         ], 201);
     }
@@ -159,8 +234,10 @@ class QuizController extends Controller
     /**
      * Update quiz title and questions.
      */
-    public function update(Request $request, Quiz $quiz)
-    {
+    public function update(
+        Request $request,
+        Quiz $quiz
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -169,9 +246,15 @@ class QuizController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsQuiz($teacher, $quiz)) {
+        if (
+            ! $this->teacherOwnsQuiz(
+                $teacher,
+                $quiz
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to update this quiz.',
+                'message' =>
+                    'You are not authorised to update this quiz.',
             ], 403);
         }
 
@@ -184,20 +267,33 @@ class QuizController extends Controller
         );
 
         $quiz->update([
-            'title' => $validated['title'],
-            'questions' => $questions,
-            'total_questions' => count($questions),
+            'title' =>
+                $validated['title'],
+
+            'questions' =>
+                $questions,
+
+            'total_questions' =>
+                count($questions),
+
+            'source_type' =>
+                $validated['source_type']
+                    ?? $quiz->source_type,
         ]);
 
-        $quiz->load('lesson');
+        $quiz->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Quiz updated successfully.',
+
+            'message' =>
+                'Quiz updated successfully.',
+
             'data' => [
-                'quiz' => $quiz->toResponseArray(
-                    $quiz->lesson
-                ),
+                'quiz' =>
+                    $quiz->toResponseArray(
+                        $quiz->sublesson
+                    ),
             ],
         ]);
     }
@@ -205,8 +301,10 @@ class QuizController extends Controller
     /**
      * Delete a whole quiz.
      */
-    public function destroy(Request $request, Quiz $quiz)
-    {
+    public function destroy(
+        Request $request,
+        Quiz $quiz
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -215,21 +313,32 @@ class QuizController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsQuiz($teacher, $quiz)) {
+        if (
+            ! $this->teacherOwnsQuiz(
+                $teacher,
+                $quiz
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to delete this quiz.',
+                'message' =>
+                    'You are not authorised to delete this quiz.',
             ], 403);
         }
 
-        $lessonId = $quiz->lesson_id;
+        $sublessonId =
+            $quiz->sublesson_id;
 
         $quiz->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Quiz deleted successfully.',
+
+            'message' =>
+                'Quiz deleted successfully.',
+
             'data' => [
-                'lessonId' => $lessonId,
+                'sublessonId' =>
+                    $sublessonId,
             ],
         ]);
     }
@@ -237,8 +346,10 @@ class QuizController extends Controller
     /**
      * Publish a quiz.
      */
-    public function publish(Request $request, Quiz $quiz)
-    {
+    public function publish(
+        Request $request,
+        Quiz $quiz
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -247,17 +358,25 @@ class QuizController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsQuiz($teacher, $quiz)) {
+        if (
+            ! $this->teacherOwnsQuiz(
+                $teacher,
+                $quiz
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to publish this quiz.',
+                'message' =>
+                    'You are not authorised to publish this quiz.',
             ], 403);
         }
 
-        $questions = $quiz->questions ?? [];
+        $questions =
+            $quiz->questions ?? [];
 
         if (count($questions) === 0) {
             return response()->json([
-                'message' => 'A quiz must contain at least one question before publishing.',
+                'message' =>
+                    'A quiz must contain at least one question before publishing.',
             ], 422);
         }
 
@@ -265,15 +384,19 @@ class QuizController extends Controller
             'status' => 'published',
         ]);
 
-        $quiz->load('lesson');
+        $quiz->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Quiz published successfully.',
+
+            'message' =>
+                'Quiz published successfully.',
+
             'data' => [
-                'quiz' => $quiz->toResponseArray(
-                    $quiz->lesson
-                ),
+                'quiz' =>
+                    $quiz->toResponseArray(
+                        $quiz->sublesson
+                    ),
             ],
         ]);
     }
@@ -281,8 +404,10 @@ class QuizController extends Controller
     /**
      * Move a published quiz back to draft.
      */
-    public function unpublish(Request $request, Quiz $quiz)
-    {
+    public function unpublish(
+        Request $request,
+        Quiz $quiz
+    ) {
         $teacher = $request->user();
 
         if (! $teacher instanceof Teacher) {
@@ -291,9 +416,15 @@ class QuizController extends Controller
             ], 403);
         }
 
-        if (! $this->teacherOwnsQuiz($teacher, $quiz)) {
+        if (
+            ! $this->teacherOwnsQuiz(
+                $teacher,
+                $quiz
+            )
+        ) {
             return response()->json([
-                'message' => 'You are not authorised to unpublish this quiz.',
+                'message' =>
+                    'You are not authorised to unpublish this quiz.',
             ], 403);
         }
 
@@ -301,38 +432,78 @@ class QuizController extends Controller
             'status' => 'draft',
         ]);
 
-        $quiz->load('lesson');
+        $quiz->load('sublesson');
 
         return response()->json([
             'success' => true,
-            'message' => 'Quiz moved back to draft.',
+
+            'message' =>
+                'Quiz moved back to draft.',
+
             'data' => [
-                'quiz' => $quiz->toResponseArray(
-                    $quiz->lesson
-                ),
+                'quiz' =>
+                    $quiz->toResponseArray(
+                        $quiz->sublesson
+                    ),
             ],
         ]);
     }
 
     /**
-     * Check whether the authenticated teacher owns
-     * the course containing this quiz.
+     * Check whether the authenticated teacher
+     * owns the Sublesson.
      */
-    private function teacherOwnsQuiz(
+    private function teacherOwnsSublesson(
         Teacher $teacher,
-        Quiz $quiz
+        Sublesson $sublesson
     ): bool {
-        $quiz->loadMissing('lesson.course');
+        $sublesson->loadMissing(
+            'lesson.course'
+        );
 
         if (
-            ! $quiz->lesson ||
-            ! $quiz->lesson->course
+            ! $sublesson->lesson ||
+            ! $sublesson->lesson->course
         ) {
             return false;
         }
 
         return
-            (int) $quiz->lesson->course->teacher_id ===
+            (int) $sublesson
+                ->lesson
+                ->course
+                ->teacher_id
+            ===
+            (int) $teacher->id;
+    }
+
+    /**
+     * Check whether the authenticated teacher
+     * owns the course containing this quiz.
+     */
+    private function teacherOwnsQuiz(
+        Teacher $teacher,
+        Quiz $quiz
+    ): bool {
+        $quiz->loadMissing(
+            'sublesson.lesson.course'
+        );
+
+        if (
+            ! $quiz->sublesson ||
+            ! $quiz->sublesson->lesson ||
+            ! $quiz->sublesson->lesson->course
+        ) {
+            return false;
+        }
+
+        return
+            (int) $quiz
+                ->sublesson
+                ->lesson
+                ->course
+                ->teacher_id
+            ===
             (int) $teacher->id;
     }
 

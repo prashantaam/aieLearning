@@ -10,31 +10,21 @@ return new class extends Migration
     {
         Schema::create('quiz_attempts', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('quiz_id')
-                ->constrained('quizzes')
-                ->cascadeOnDelete();
-
-            $table->foreignId('user_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
-            $table->unsignedInteger('attempt_number');
-
+            $table->foreignId('quiz_id')->constrained('quizzes')->cascadeOnDelete();
+            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->unsignedInteger('attempt_number')->default(1);
             $table->unsignedInteger('correct_count')->default(0);
-
             $table->unsignedInteger('total_questions')->default(0);
-
             $table->unsignedInteger('score')->default(0);
-
             $table->json('user_answers')->nullable();
-
             $table->timestamp('completed_at')->nullable();
-
             $table->timestamps();
 
-            $table->unique(['quiz_id', 'attempt_number']);
-            $table->index(['user_id', 'quiz_id']);
+            $table->unique(
+                ['quiz_id', 'student_id', 'attempt_number'],
+                'quiz_student_attempt_unique'
+            );
+            $table->index(['student_id', 'quiz_id']);
         });
     }
 
@@ -43,4 +33,3 @@ return new class extends Migration
         Schema::dropIfExists('quiz_attempts');
     }
 };
-

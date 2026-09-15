@@ -10,13 +10,16 @@ return new class extends Migration
     {
         Schema::create('flashcards', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('document_id')->constrained()->cascadeOnDelete();
-            // Each element: { id, question, answer, difficulty, lastReviewed, reviewCount, isStarred }
+            $table->foreignId('sublesson_id')->constrained('sublessons')->cascadeOnDelete();
+            $table->string('title')->nullable();
             $table->json('cards')->nullable();
+            $table->unsignedInteger('sort_order')->default(1);
+            $table->string('source_type')->default('ai');
+            $table->string('status')->default('draft');
             $table->timestamps();
 
-            $table->index(['user_id', 'document_id']);
+            $table->index(['sublesson_id', 'sort_order']);
+            $table->index(['sublesson_id', 'status']);
         });
     }
 

@@ -8,20 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('subjects', function (Blueprint $table) {
+        Schema::create('courses', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('teacher_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
+            $table->foreignId('teacher_id')->constrained('teachers')->cascadeOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('thumbnail')->nullable();
-
-            $table->string('status')
-                ->default('draft');
-
+            $table->string('status')->default('draft');
             $table->timestamps();
 
             $table->index(['teacher_id', 'status']);
@@ -30,6 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('subjects');
+        Schema::dropIfExists('courses');
     }
 };

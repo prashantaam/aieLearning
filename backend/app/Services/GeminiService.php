@@ -191,62 +191,55 @@ class GeminiService
         return $this->generateContent($prompt, 'Failed to explain concept');
     }
 
-    public function generateLearningContent(string $title): string
-    {
-        $prompt = <<<PROMPT
-        You are an expert educator and instructional content creator for an online learning platform.
+   public function generateLearningContent(
+    string $title
+): string {
+    $prompt = <<<PROMPT
+You are an expert teacher creating bite-sized learning content
+for an interactive e-learning platform similar to Codecademy
+or DataCamp.
 
-        Create a clear, accurate, engaging, and well-structured lesson about the following topic:
+Create learning content for this specific sublesson:
 
-        Topic: "{$title}"
+SUBLESSON:
+{$title}
 
-        Target audience:
-        Beginner to intermediate learners.
+IMPORTANT:
+This is ONE small sublesson, not a complete lesson or course.
 
-        Adapt the lesson to the subject automatically. The topic may come from areas such as programming, mathematics, statistics, finance, science, business, languages, technology, or other academic and professional subjects.
+CONTENT RULES:
+- Keep the content short and focused.
+- Target approximately 100 to 200 words.
+- The learner should be able to read it in 1 to 2 minutes.
+- Explain only the topic given above.
+- Use simple, beginner-friendly language.
+- Use short paragraphs.
+- Focus on practical understanding.
+- Avoid unnecessary background information.
+- Avoid repetition.
+- Do not write a long introduction.
+- Do not write a long conclusion.
+- Do not generate quiz questions.
+- Do not generate flashcards.
+- Do not mention these instructions.
 
-        Requirements:
-        - Explain the topic clearly and accurately.
-        - Start with a short introduction explaining what the topic is and why it is important.
-        - Organise the lesson using meaningful headings and subheadings.
-        - Introduce foundational concepts before more advanced concepts.
-        - Explain important concepts step by step.
-        - Define important terminology when it first appears.
-        - Include practical examples where appropriate.
-        - Include worked examples for mathematics, statistics, finance, or other calculation-based topics.
-        - Show formulas and explain each variable or component when relevant.
-        - Show calculations step by step when solving numerical problems.
-        - Include code examples only when relevant to the topic.
-        - Explain code examples clearly when code is included.
-        - Include real-world examples or applications when appropriate.
-        - Include important rules, principles, assumptions, key points, or best practices where relevant.
-        - Highlight common mistakes or misunderstandings when useful.
-        - Do not force programming examples into non-programming subjects.
-        - Do not force formulas or calculations into topics where they are not relevant.
-        - Finish with a concise summary of the key learning points.
-        - Avoid unnecessary conversational text.
+FORMATTING:
+- Return the content in Markdown.
+- Use a short heading only when useful.
+- Use bullet points only when they improve clarity.
+- Highlight important terms using Markdown.
+- If this is a programming topic, include ONE small code example.
+- Keep any code example concise.
+- Do not wrap the entire response in a Markdown code fence.
 
-        Formatting requirements:
-        - Return the entire response in Markdown.
-        - Use # for the main lesson heading.
-        - Use ## for major sections.
-        - Use ### for subsections when needed.
-        - Use bullet lists or numbered lists where appropriate.
-        - Use **bold text** for important terms and concepts.
-        - Use inline code only for programming-related terms, commands, variables, functions, or syntax.
-        - Use fenced code blocks with the appropriate programming language only when code examples are relevant.
-        - Write mathematical and statistical formulas clearly using standard mathematical notation.
-        - Keep worked calculations easy to follow.
-        - Do not wrap the entire response inside one code block.
-        - Do not include introductory phrases such as "Here is your lesson".
-        - Return only the educational lesson content.
-        PROMPT;
+The final response must contain ONLY the learning content.
+PROMPT;
 
-        return $this->generateContent(
-            $prompt,
-            'Failed to generate learning content'
-        );
-    }
+    return $this->generateContent(
+        $prompt,
+        'Failed to generate learning content.'
+    );
+}
 
     private function truncate(string $text, int $maxChars): string
     {

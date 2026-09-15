@@ -18,15 +18,18 @@ class Lesson extends Model
         'status',
     ];
 
+    public function sublessons()
+    {
+        return $this->hasMany(
+            Sublesson::class
+        )->orderBy('sort_order');
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class);
     }
 
-    public function lessonContents()
-    {
-        return $this->hasMany(LessonContent::class);
-    }
 
     public function quizzes()
     {
