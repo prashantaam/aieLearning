@@ -43,47 +43,73 @@ class CourseController extends Controller
     */
 
     public function show(string $slug): JsonResponse
-{
-    $course = Course::query()
-        ->where('slug', $slug)
-        ->where('status', 'published')
-        ->with([
-            'lessons' => function ($query) {
-                $query
-                    ->where(
-                        'status',
-                        'published'
-                    )
-                    ->with([
-                        'sublessons' => function ($query) {
-                            $query
-                                ->where(
-                                    'status',
-                                    'published'
-                                )
-                                ->orderBy(
-                                    'sort_order'
-                                )
-                                ->with([
-                                    'contents' => function ($query) {
-                                        $query
-                                            ->where(
-                                                'status',
-                                                'published'
-                                            )
-                                            ->orderBy(
-                                                'sort_order'
-                                            );
-                                    },
-                                ]);
-                        },
-                    ]);
-            },
-        ])
-        ->firstOrFail();
+    {
+        $course = Course::query()
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->with([
+                'lessons' => function ($query) {
+                    $query
+                        ->where(
+                            'status',
+                            'published'
+                        )
+                        ->with([
+                            'sublessons' => function ($query) {
+                                $query
+                                    ->where(
+                                        'status',
+                                        'published'
+                                    )
+                                    ->orderBy(
+                                        'sort_order'
+                                    )
+                                    ->with([
 
-    return response()->json([
-        'data' => $course,
-    ]);
-}
+                                        /*
+                                        |--------------------------------------------------------------------------
+                                        | Published Content
+                                        |--------------------------------------------------------------------------
+                                        */
+
+                                        'contents' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
+
+
+                                        /*
+                                        |--------------------------------------------------------------------------
+                                        | Published Quizzes
+                                        |--------------------------------------------------------------------------
+                                        */
+
+                                        'quizzes' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
+
+                                    ]);
+                            },
+                        ]);
+                },
+            ])
+            ->firstOrFail();
+
+        return response()->json([
+            'data' => $course,
+        ]);
+    }
 }

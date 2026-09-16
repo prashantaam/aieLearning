@@ -266,6 +266,10 @@ const App = () => {
             element={<CourseLearningPage />}
           />
           
+          <Route
+            path="/courses/:slug/learn/:sublessonId/quiz"
+            element={<CourseLearningPage />}
+          />
           {/*
           |--------------------------------------------------------------------------
           | Teacher Dashboard

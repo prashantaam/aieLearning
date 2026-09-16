@@ -87,32 +87,58 @@ class CourseController extends Controller
     /**
      * Show one course belonging to the authenticated teacher.
      */
-    public function show(Request $request, Course $course)
+    public function show(string $slug): JsonResponse
     {
-        $teacher = $request->user();
+        $course = Course::query()
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->with([
+                'lessons' => function ($query) {
+                    $query
+                        ->where(
+                            'status',
+                            'published'
+                        )
+                        ->with([
+                            'sublessons' => function ($query) {
+                                $query
+                                    ->where(
+                                        'status',
+                                        'published'
+                                    )
+                                    ->orderBy(
+                                        'sort_order'
+                                    )
+                                    ->with([
+                                        'contents' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
 
-        if (!$teacher instanceof Teacher) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Teacher access required.',
-            ], 403);
-        }
-
-        if ($course->teacher_id !== $teacher->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorised to view this course.',
-            ], 403);
-        }
-
-        $course->load([
-            'lessons' => function ($query) {
-                $query->orderBy('lesson_order');
-            },
-        ]);
+                                        'quizzes' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
+                                    ]);
+                            },
+                        ]);
+                },
+            ])
+            ->firstOrFail();
 
         return response()->json([
-            'success' => true,
             'data' => $course,
         ]);
     }

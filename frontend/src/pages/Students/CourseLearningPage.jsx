@@ -1,11 +1,8 @@
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpen,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   LoaderCircle,
   Menu,
   RefreshCw,
@@ -19,30 +16,67 @@ import {
 } from "react";
 
 import {
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
 
 import axiosInstance from "../../utils/axiosInstance";
+
 import LearningHeader from "../../components/layout/LearningHeader";
+import CourseIndex from "../../components/students/learning/CourseIndex";
+import ContentArea from "../../components/students/learning/ContentArea";
+import QuizArea from "../../components/students/learning/QuizArea";
 
 
 export default function CourseLearningPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     slug,
     sublessonId,
   } = useParams();
 
-  const [course, setCourse] =
-    useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  /*
+  |--------------------------------------------------------------------------
+  | Current Learning Mode
+  |--------------------------------------------------------------------------
+  |
+  | /learn/1       = content
+  | /learn/1/quiz  = quiz
+  |
+  */
 
-  const [error, setError] =
-    useState("");
+  const currentMode =
+    location.pathname.endsWith(
+      "/quiz"
+    )
+      ? "quiz"
+      : "content";
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | State
+  |--------------------------------------------------------------------------
+  */
+
+  const [
+    course,
+    setCourse,
+  ] = useState(null);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
 
   const [
     expandedLessons,
@@ -53,6 +87,11 @@ export default function CourseLearningPage() {
     mobileIndexOpen,
     setMobileIndexOpen,
   ] = useState(false);
+
+  const [
+    indexOpen,
+    setIndexOpen,
+  ] = useState(true);
 
 
   /*
@@ -132,12 +171,8 @@ export default function CourseLearningPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Flatten All Sublessons
+  | Flatten Sublessons
   |--------------------------------------------------------------------------
-  |
-  | This gives us one ordered list of all sublessons so Previous / Next
-  | navigation can move across lessons automatically.
-  |
   */
 
   const allSublessons =
@@ -210,7 +245,7 @@ export default function CourseLearningPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Previous / Next
+  | Previous / Next Sublesson
   |--------------------------------------------------------------------------
   */
 
@@ -233,21 +268,21 @@ export default function CourseLearningPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Current Sublesson Content
+  | Quiz Availability
   |--------------------------------------------------------------------------
   */
 
-  const contents =
+  const hasQuiz =
     Array.isArray(
-      currentSublesson?.contents
-    )
-      ? currentSublesson.contents
-      : [];
+      currentSublesson?.quizzes
+    ) &&
+    currentSublesson.quizzes.length >
+      0;
 
 
   /*
   |--------------------------------------------------------------------------
-  | Automatically Expand Current Lesson
+  | Expand Current Lesson
   |--------------------------------------------------------------------------
   */
 
@@ -291,7 +326,7 @@ export default function CourseLearningPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Navigate to Sublesson
+  | Go To Sublesson Content
   |--------------------------------------------------------------------------
   */
 
@@ -303,144 +338,183 @@ export default function CourseLearningPage() {
     );
 
     setMobileIndexOpen(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
 
   /*
   |--------------------------------------------------------------------------
-  | Render Content Block
+  | Go To Quiz
   |--------------------------------------------------------------------------
   */
 
-  const renderContent = (
-    content
+  const goToQuiz = (
+    id
   ) => {
-    const type =
-      content?.type ||
-      "text";
+    navigate(
+      `/courses/${slug}/learn/${id}/quiz`
+    );
 
-    const value =
-      content?.content ||
-      "";
+    setMobileIndexOpen(false);
 
-    switch (type) {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Next Learning Item
+  |--------------------------------------------------------------------------
+  |
+  | Content:
+  |   if quiz exists -> Quiz
+  |   otherwise      -> Next Sublesson
+  |
+  | Quiz:
+  |   -> Next Sublesson
+  |
+  */
+
+  const handleNext = () => {
+    if (
+      currentMode === "content" &&
+      hasQuiz
+    ) {
+      goToQuiz(
+        currentSublesson.id
+      );
+
+      return;
+    }
+
+    if (nextSublesson) {
+      goToSublesson(
+        nextSublesson.id
+      );
+
+      return;
+    }
+
+    navigate(
+      `/courses/${slug}`
+    );
+  };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Previous Learning Item
+  |--------------------------------------------------------------------------
+  |
+  | Quiz:
+  |   -> Current Sublesson Content
+  |
+  | Content:
+  |   -> Previous Sublesson
+  |
+  */
+
+  const handlePrevious = () => {
+    if (
+      currentMode === "quiz"
+    ) {
+      goToSublesson(
+        currentSublesson.id
+      );
+
+      return;
+    }
+
+    if (previousSublesson) {
       /*
-      |--------------------------------------------------------------------------
-      | Heading
-      |--------------------------------------------------------------------------
-      */
+       * If previous sublesson has a quiz,
+       * go to its quiz because that is the
+       * learning item immediately before
+       * this content.
+       */
 
-      case "heading":
-        return (
-          <h2 className="mt-10 text-2xl font-bold tracking-tight text-[#0B1F3A] first:mt-0">
-            {value}
-          </h2>
+      const previousHasQuiz =
+        Array.isArray(
+          previousSublesson.quizzes
+        ) &&
+        previousSublesson.quizzes
+          .length > 0;
+
+      if (previousHasQuiz) {
+        goToQuiz(
+          previousSublesson.id
         );
 
+        return;
+      }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Code
-      |--------------------------------------------------------------------------
-      */
-
-      case "code":
-        return (
-          <div className="my-6 overflow-hidden rounded-xl bg-[#0B1F3A]">
-
-            <div className="border-b border-white/10 px-5 py-3">
-
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Code
-              </span>
-
-            </div>
-
-            <pre className="overflow-x-auto p-5 text-sm leading-7 text-slate-100">
-              <code>
-                {value}
-              </code>
-            </pre>
-
-          </div>
-        );
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Image
-      |--------------------------------------------------------------------------
-      */
-
-      case "image":
-        return (
-          <div className="my-7">
-
-            <img
-              src={value}
-              alt=""
-              className="max-w-full rounded-xl"
-            />
-
-          </div>
-        );
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Video
-      |--------------------------------------------------------------------------
-      */
-
-      case "video":
-        return (
-          <div className="my-7 overflow-hidden rounded-xl bg-black">
-
-            <video
-              controls
-              className="w-full"
-            >
-              <source
-                src={value}
-              />
-
-              Your browser does not
-              support video playback.
-            </video>
-
-          </div>
-        );
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Markdown
-      |--------------------------------------------------------------------------
-      */
-
-      case "markdown":
-        return (
-          <div className="whitespace-pre-wrap text-base leading-8 text-slate-700">
-            {value}
-          </div>
-        );
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | Text
-      |--------------------------------------------------------------------------
-      */
-
-      case "text":
-      default:
-        return (
-          <div className="whitespace-pre-wrap text-base leading-8 text-slate-700">
-            {value}
-          </div>
-        );
+      goToSublesson(
+        previousSublesson.id
+      );
     }
   };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Course Index Toggle
+  |--------------------------------------------------------------------------
+  */
+
+  const handleIndexToggle = () => {
+    if (
+      window.innerWidth >= 1024
+    ) {
+      setIndexOpen(
+        (previous) =>
+          !previous
+      );
+
+      return;
+    }
+
+    setMobileIndexOpen(true);
+  };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Previous Button Available?
+  |--------------------------------------------------------------------------
+  */
+
+  const hasPreviousItem =
+    currentMode === "quiz" ||
+    previousSublesson !== null;
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Next Button Label
+  |--------------------------------------------------------------------------
+  */
+
+  const nextButtonLabel = (() => {
+    if (
+      currentMode === "content" &&
+      hasQuiz
+    ) {
+      return "Next: Quiz";
+    }
+
+    if (nextSublesson) {
+      return "Next Sublesson";
+    }
+
+    return "Course Detail";
+  })();
 
 
   /*
@@ -596,161 +670,55 @@ export default function CourseLearningPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Course Index
+  | Invalid Quiz
   |--------------------------------------------------------------------------
   */
 
-  const CourseIndex = () => (
-    <div>
+  if (
+    currentMode === "quiz" &&
+    !hasQuiz
+  ) {
+    return (
+      <div className="min-h-screen bg-slate-50">
 
-      {/* Course Title */}
-      <div className="border-b border-slate-200 p-5">
+        <LearningHeader />
 
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Course
-        </p>
+        <div className="mx-auto max-w-3xl p-6 lg:p-10">
 
-        <h2 className="mt-1 text-base font-bold text-[#0B1F3A]">
-          {course.title}
-        </h2>
-
-      </div>
-
-
-      {/* Lessons */}
-      <div className="p-3">
-
-        {lessons.map(
-          (
-            lesson,
-            lessonIndex
-          ) => {
-            const sublessons =
-              Array.isArray(
-                lesson.sublessons
+          <button
+            type="button"
+            onClick={() =>
+              goToSublesson(
+                currentSublesson.id
               )
-                ? lesson.sublessons
-                : [];
+            }
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-[#0B1F3A]"
+          >
+            <ArrowLeft
+              size={17}
+            />
 
-            const isExpanded =
-              !!expandedLessons[
-                lesson.id
-              ];
+            Back to Sublesson
+          </button>
 
-            return (
-              <div
-                key={lesson.id}
-                className="mb-2"
-              >
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-8">
 
-                {/* Lesson */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    toggleLesson(
-                      lesson.id
-                    )
-                  }
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-slate-100"
-                >
+            <h1 className="text-xl font-bold text-[#0B1F3A]">
+              Quiz not available
+            </h1>
 
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#F4C95D] text-xs font-bold text-[#0B1F3A]">
-                    {lessonIndex + 1}
-                  </div>
+            <p className="mt-2 text-sm text-slate-600">
+              There is no published quiz
+              for this sublesson.
+            </p>
 
-                  <span className="min-w-0 flex-1 text-sm font-bold text-[#0B1F3A]">
-                    {lesson.title}
-                  </span>
+          </div>
 
-                  {isExpanded ? (
-                    <ChevronUp
-                      size={17}
-                      className="text-slate-400"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={17}
-                      className="text-slate-400"
-                    />
-                  )}
-
-                </button>
-
-
-                {/* Sublessons */}
-                {isExpanded && (
-
-                  <div className="ml-4 mt-1 border-l border-slate-200 pl-4">
-
-                    {sublessons.map(
-                      (
-                        sublesson,
-                        subIndex
-                      ) => {
-                        const isActive =
-                          String(
-                            sublesson.id
-                          ) ===
-                          String(
-                            sublessonId
-                          );
-
-                        return (
-                          <button
-                            key={
-                              sublesson.id
-                            }
-                            type="button"
-                            onClick={() =>
-                              goToSublesson(
-                                sublesson.id
-                              )
-                            }
-                            className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                              isActive
-                                ? "bg-[#0B1F3A] font-semibold text-white"
-                                : "text-slate-600 hover:bg-slate-100 hover:text-[#0B1F3A]"
-                            }`}
-                          >
-
-                            <span
-                              className={`shrink-0 text-xs font-bold ${
-                                isActive
-                                  ? "text-[#F4C95D]"
-                                  : "text-slate-400"
-                              }`}
-                            >
-                              {lessonIndex +
-                                1}
-                              .
-                              {subIndex +
-                                1}
-                            </span>
-
-                            <span className="min-w-0 flex-1">
-                              {
-                                sublesson.title
-                              }
-                            </span>
-
-                          </button>
-                        );
-                      }
-                    )}
-
-                  </div>
-
-                )}
-
-              </div>
-            );
-          }
-        )}
+        </div>
 
       </div>
-
-    </div>
-  );
+    );
+  }
 
 
   /*
@@ -762,30 +730,28 @@ export default function CourseLearningPage() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Minimal Learning Navbar */}
+      {/* Header */}
       <LearningHeader />
 
 
-      {/* Current Sublesson Header */}
+      {/* Learning Toolbar */}
       <div className="sticky top-16 z-30 border-b border-slate-200 bg-white">
 
-        <div className="flex h-16 items-center gap-4 px-4 lg:px-6">
+        <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
 
-          {/* Mobile Course Index */}
+          {/* Course Index Toggle */}
           <button
             type="button"
-            onClick={() =>
-              setMobileIndexOpen(
-                true
-              )
+            onClick={
+              handleIndexToggle
             }
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-[#0B1F3A] lg:hidden"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-[#0B1F3A] transition hover:bg-slate-100"
           >
             <Menu size={20} />
           </button>
 
 
-          {/* Back to Course */}
+          {/* Course Detail */}
           <button
             type="button"
             onClick={() =>
@@ -793,37 +759,47 @@ export default function CourseLearningPage() {
                 `/courses/${slug}`
               )
             }
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-[#0B1F3A]"
+            className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-[#0B1F3A]"
           >
             <ArrowLeft
               size={17}
             />
 
             <span className="hidden sm:inline">
-              Course Index
+              Course Detail
             </span>
           </button>
 
 
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="hidden h-6 w-px bg-slate-200 sm:block" />
 
 
-          {/* Current Sublesson */}
+          {/* Current Learning Item */}
           <div className="min-w-0 flex-1">
 
-            <p className="text-xs font-semibold text-slate-400">
-              Sublesson{" "}
+            <h1 className="truncate text-sm font-bold text-[#0B1F3A] sm:text-base">
+
               {currentSublesson.lessonIndex +
                 1}
+
               .
+
               {currentSublesson.sublessonIndex +
                 1}
-            </p>
 
-            <h1 className="truncate text-sm font-bold text-[#0B1F3A] sm:text-base">
+              {" "}
+
               {
                 currentSublesson.title
               }
+
+              {currentMode ===
+                "quiz" && (
+                <span className="text-[#B8860B]">
+                  {" "}— Quiz
+                </span>
+              )}
+
             </h1>
 
           </div>
@@ -833,177 +809,147 @@ export default function CourseLearningPage() {
       </div>
 
 
-      {/* Learning Workspace */}
-      <div className="flex">
+      {/* Workspace */}
+      <div className="flex min-w-0">
 
         {/* Desktop Course Index */}
-        <aside className="hidden w-80 shrink-0 border-r border-slate-200 bg-white lg:block">
+        {indexOpen && (
 
-          <div className="sticky top-32 max-h-[calc(100vh-8rem)] overflow-y-auto">
-            <CourseIndex />
-          </div>
+          <aside className="hidden w-80 shrink-0 border-r border-slate-200 bg-white lg:block">
 
-        </aside>
+            <div className="sticky top-32 h-[calc(100vh-8rem)] overflow-y-auto">
+
+              <CourseIndex
+                course={course}
+                lessons={lessons}
+                currentSublessonId={
+                  sublessonId
+                }
+                currentMode={
+                  currentMode
+                }
+                expandedLessons={
+                  expandedLessons
+                }
+                toggleLesson={
+                  toggleLesson
+                }
+                goToSublesson={
+                  goToSublesson
+                }
+                goToQuiz={
+                  goToQuiz
+                }
+              />
+
+            </div>
+
+          </aside>
+
+        )}
 
 
-        {/* Main Learning Area */}
+        {/* Main Area */}
         <main className="min-w-0 flex-1">
 
-          <div className="mx-auto max-w-5xl px-5 py-8 lg:px-10 lg:py-10">
+          <div
+            className={`mx-auto px-5 py-8 lg:px-10 lg:py-10 ${
+              indexOpen
+                ? "max-w-5xl"
+                : "max-w-6xl"
+            }`}
+          >
 
-            {/* Sublesson */}
-            <article className="mx-auto max-w-4xl">
+            <div className="mx-auto max-w-4xl">
 
-              {/* Sublesson Number */}
-              <p className="text-sm font-bold text-[#D9A900]">
-                {currentSublesson.lessonIndex +
-                  1}
-                .
-                {currentSublesson.sublessonIndex +
-                  1}
-              </p>
+              {/* CONTENT MODE */}
+              {currentMode ===
+                "content" && (
 
-
-              {/* Sublesson Title */}
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#0B1F3A] md:text-4xl">
-                {
-                  currentSublesson.title
-                }
-              </h1>
-
-
-              {/* Description */}
-              {currentSublesson.description && (
-
-                <p className="mt-4 text-lg leading-8 text-slate-500">
-                  {
-                    currentSublesson.description
+                <ContentArea
+                  sublesson={
+                    currentSublesson
                   }
-                </p>
+                />
 
               )}
 
 
-              {/* Divider */}
-              <div className="my-8 border-t border-slate-200" />
+              {/* QUIZ MODE */}
+              {currentMode ===
+                "quiz" && (
+
+                <QuizArea
+                  sublesson={
+                    currentSublesson
+                  }
+                />
+
+              )}
 
 
-              {/* Actual Sublesson Content */}
-              {contents.length > 0 ? (
+              {/* Navigation */}
+              <div className="mt-12 flex items-center justify-between gap-4 border-t border-slate-200 pt-6">
 
-                <div className="space-y-6">
+                {/* Previous */}
+                <div>
 
-                  {contents.map(
-                    (content) => (
+                  {hasPreviousItem && (
 
-                      <div
-                        key={
-                          content.id
-                        }
-                      >
-                        {renderContent(
-                          content
-                        )}
-                      </div>
+                    <button
+                      type="button"
+                      onClick={
+                        handlePrevious
+                      }
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0B1F3A] transition hover:bg-slate-50"
+                    >
+                      <ChevronLeft
+                        size={18}
+                      />
 
-                    )
+                      {currentMode ===
+                      "quiz"
+                        ? "Back to Content"
+                        : "Previous"}
+                    </button>
+
                   )}
 
                 </div>
 
-              ) : (
 
-                <div className="py-10">
+                {/* Next */}
+                <button
+                  type="button"
+                  onClick={
+                    handleNext
+                  }
+                  className={`inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-bold transition ${
+                    currentMode ===
+                      "content" &&
+                    hasQuiz
+                      ? "bg-[#F4C95D] text-[#0B1F3A] hover:bg-[#e8bc4f]"
+                      : "bg-[#0B1F3A] text-white hover:bg-[#102b4f]"
+                  }`}
+                >
+                  {
+                    nextButtonLabel
+                  }
 
-                  <BookOpen
-                    size={30}
-                    className="text-slate-300"
-                  />
-
-                  <p className="mt-3 text-sm text-slate-500">
-                    No learning content has
-                    been published for this
-                    sublesson yet.
-                  </p>
-
-                </div>
-
-              )}
-
-            </article>
-
-
-            {/* Previous / Next */}
-            <div className="mx-auto mt-12 flex max-w-4xl items-center justify-between gap-4 border-t border-slate-200 pt-6">
-
-              {/* Previous */}
-              <div>
-
-                {previousSublesson && (
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      goToSublesson(
-                        previousSublesson.id
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0B1F3A] transition hover:bg-slate-50"
-                  >
-                    <ChevronLeft
-                      size={18}
-                    />
-
-                    <span>
-                      Previous
-                    </span>
-                  </button>
-
-                )}
-
-              </div>
-
-
-              {/* Next */}
-              <div>
-
-                {nextSublesson ? (
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      goToSublesson(
-                        nextSublesson.id
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#F4C95D] px-5 py-3 text-sm font-bold text-[#0B1F3A] transition hover:bg-[#e8bc4f]"
-                  >
-                    Next
-
+                  {nextSublesson ||
+                  (currentMode ===
+                    "content" &&
+                    hasQuiz) ? (
                     <ChevronRight
                       size={18}
                     />
-                  </button>
-
-                ) : (
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/courses/${slug}`
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#0B1F3A] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#102b4f]"
-                  >
-                    Course Index
-
+                  ) : (
                     <ArrowRight
                       size={17}
                     />
-                  </button>
+                  )}
 
-                )}
+                </button>
 
               </div>
 
@@ -1034,10 +980,10 @@ export default function CourseLearningPage() {
           />
 
 
-          {/* Mobile Sidebar */}
+          {/* Drawer */}
           <aside className="absolute inset-y-0 left-0 w-[88%] max-w-sm overflow-y-auto bg-white shadow-xl">
 
-            <div className="flex items-center justify-between border-b border-slate-200 p-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
 
               <span className="font-bold text-[#0B1F3A]">
                 Course Index
@@ -1057,7 +1003,29 @@ export default function CourseLearningPage() {
 
             </div>
 
-            <CourseIndex />
+
+            <CourseIndex
+              course={course}
+              lessons={lessons}
+              currentSublessonId={
+                sublessonId
+              }
+              currentMode={
+                currentMode
+              }
+              expandedLessons={
+                expandedLessons
+              }
+              toggleLesson={
+                toggleLesson
+              }
+              goToSublesson={
+                goToSublesson
+              }
+              goToQuiz={
+                goToQuiz
+              }
+            />
 
           </aside>
 
