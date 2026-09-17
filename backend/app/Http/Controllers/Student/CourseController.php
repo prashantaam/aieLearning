@@ -101,6 +101,22 @@ class CourseController extends Controller
                                                 );
                                         },
 
+                                         /*
+                                        |--------------------------------------------------------------------------
+                                        | Published Exercises
+                                        |--------------------------------------------------------------------------
+                                        */
+                                        'exercises' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
+
                                     ]);
                             },
                         ]);

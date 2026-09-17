@@ -16,7 +16,7 @@ use App\Http\Controllers\Teacher\SublessonController;
 use App\Http\Controllers\Teacher\SublessonContentController;
 use App\Http\Controllers\Teacher\QuizController;
 use App\Http\Controllers\Teacher\FlashcardController;
-
+use App\Http\Controllers\Teacher\ExerciseController;
 /*
 |--------------------------------------------------------------------------
 | Student Controllers
@@ -487,7 +487,78 @@ Route::prefix('teacher')->group(function () {
             ]
         );
 
+        /*
+|--------------------------------------------------------------------------
+| Sublesson Exercise Management
+|--------------------------------------------------------------------------
+|
+| Sublesson
+|     └── Exercises
+|
+*/
 
+// List Exercises belonging to a Sublesson
+Route::get(
+    '/sublessons/{sublesson}/exercises',
+    [
+        ExerciseController::class,
+        'index',
+    ]
+);
+
+// Create Exercise under a Sublesson
+Route::post(
+    '/sublessons/{sublesson}/exercises',
+    [
+        ExerciseController::class,
+        'store',
+    ]
+);
+
+// View a single Exercise
+Route::get(
+    '/sublessons/{sublesson}/exercises/{exercise}',
+    [
+        ExerciseController::class,
+        'show',
+    ]
+);
+
+// Update Exercise
+Route::put(
+    '/sublessons/{sublesson}/exercises/{exercise}',
+    [
+        ExerciseController::class,
+        'update',
+    ]
+);
+
+// Delete Exercise
+Route::delete(
+    '/sublessons/{sublesson}/exercises/{exercise}',
+    [
+        ExerciseController::class,
+        'destroy',
+    ]
+);
+
+// Publish Exercise
+Route::patch(
+    '/sublessons/{sublesson}/exercises/{exercise}/publish',
+    [
+        ExerciseController::class,
+        'publish',
+    ]
+);
+
+// Move Exercise back to draft
+Route::patch(
+    '/sublessons/{sublesson}/exercises/{exercise}/unpublish',
+    [
+        ExerciseController::class,
+        'unpublish',
+    ]
+);
         /*
         |--------------------------------------------------------------------------
         | AI Course Authoring

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class CourseController extends Controller
 {
@@ -87,56 +88,45 @@ class CourseController extends Controller
     /**
      * Show one course belonging to the authenticated teacher.
      */
-    public function show(string $slug): JsonResponse
+    public function show(Request $request,Course $course): JsonResponse 
     {
-        $course = Course::query()
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->with([
-                'lessons' => function ($query) {
-                    $query
-                        ->where(
-                            'status',
-                            'published'
-                        )
-                        ->with([
-                            'sublessons' => function ($query) {
-                                $query
-                                    ->where(
-                                        'status',
-                                        'published'
-                                    )
-                                    ->orderBy(
-                                        'sort_order'
-                                    )
-                                    ->with([
-                                        'contents' => function ($query) {
-                                            $query
-                                                ->where(
-                                                    'status',
-                                                    'published'
-                                                )
-                                                ->orderBy(
-                                                    'sort_order'
-                                                );
-                                        },
+        $teacher = $request->user();
 
-                                        'quizzes' => function ($query) {
-                                            $query
-                                                ->where(
-                                                    'status',
-                                                    'published'
-                                                )
-                                                ->orderBy(
-                                                    'sort_order'
-                                                );
-                                        },
-                                    ]);
-                            },
-                        ]);
-                },
-            ])
-            ->firstOrFail();
+        abort_unless(
+            $teacher instanceof Teacher,
+            403,
+            'Teacher authentication required.'
+        );
+
+        abort_unless(
+            (int) $course->teacher_id ===
+                (int) $teacher->id,
+            404,
+            'Resource not found.'
+        );
+
+        $course->load([
+            'lessons' => function ($query) {
+                $query->with([
+                    'sublessons' => function ($query) {
+                        $query
+                            ->orderBy('sort_order')
+                            ->with([
+                                'contents' => function ($query) {
+                                    $query->orderBy(
+                                        'sort_order'
+                                    );
+                                },
+                                'quizzes' => function ($query) {
+                                    $query->orderBy(
+                                        'sort_order'
+                                    );
+                                },
+                            ]);
+                    },
+                ]);
+            },
+        ]);
 
         return response()->json([
             'data' => $course,
