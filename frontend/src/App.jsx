@@ -1,3 +1,4 @@
+
 import React from "react";
 
 import {
@@ -32,6 +33,7 @@ import StudentQuizPage from "./pages/Students/StudentQuizPage";
 import QuizTakePage from "./pages/Students/Quizzes/QuizTakePage";
 import QuizResultPage from "./pages/Students/Quizzes/QuizResultPage";
 import QuizAttemptResultPage from "./pages/Students/Quizzes/QuizAttemptResultPage";
+
 /*
 |--------------------------------------------------------------------------
 | Teacher Authentication
@@ -128,6 +130,7 @@ import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
 import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
 import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
 import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
+
 import ExerciseListPage from "./pages/Teachers/Exercises/ExerciseListPage";
 import ExerciseCreatePage from "./pages/Teachers/Exercises/ExerciseCreatePage";
 
@@ -168,7 +171,6 @@ const App = () => {
   return (
     <Router>
       <Routes>
-
         {/*
         |--------------------------------------------------------------------------
         | Public
@@ -219,7 +221,6 @@ const App = () => {
         */}
 
         <Route element={<ProtectedRoute />}>
-
           {/*
           |--------------------------------------------------------------------------
           | Student Application
@@ -235,7 +236,6 @@ const App = () => {
           */}
 
           <Route element={<AppLayout />}>
-
             <Route
               path="/dashboard"
               element={<DashboardPage />}
@@ -248,35 +248,57 @@ const App = () => {
 
             <Route
               path="/courses/:slug"
-              element={<StudentCourseDetailPage />}
+              element={
+                <StudentCourseDetailPage />
+              }
+            />
+
+            {/*
+            |--------------------------------------------------------------------------
+            | Course Learning
+            |--------------------------------------------------------------------------
+            |
+            | These routes must stay inside AppLayout because CourseLearningPage
+            | receives the Course Index state through useOutletContext().
+            |
+            */}
+
+            <Route
+              path="/courses/:slug/learn/:sublessonId"
+              element={
+                <CourseLearningPage />
+              }
+            />
+
+            <Route
+              path="/courses/:slug/learn/:sublessonId/quiz"
+              element={
+                <CourseLearningPage />
+              }
+            />
+
+            <Route
+              path="/courses/:slug/learn/:sublessonId/exercise/:exerciseId"
+              element={
+                <CourseLearningPage />
+              }
             />
 
             <Route
               path="/practice/flashcards"
-              element={<StudentFlashcardsPage />}
+              element={
+                <StudentFlashcardsPage />
+              }
             />
 
             <Route
               path="/practice/quizzes"
-              element={<StudentQuizPage />}
+              element={
+                <StudentQuizPage />
+              }
             />
-           
           </Route>
 
-          <Route
-            path="/courses/:slug/learn/:sublessonId"
-            element={<CourseLearningPage />}
-          />
-          
-          <Route
-            path="/courses/:slug/learn/:sublessonId/quiz"
-            element={<CourseLearningPage />}
-          />
-
-          <Route
-            path="/courses/:slug/learn/:sublessonId/exercise/:exerciseId"
-            element={<CourseLearningPage />}
-          />
           {/*
           |--------------------------------------------------------------------------
           | Teacher Dashboard
@@ -285,7 +307,9 @@ const App = () => {
 
           <Route
             path="/teacher/dashboard"
-            element={<TeacherDashboardPage />}
+            element={
+              <TeacherDashboardPage />
+            }
           />
 
           {/*
@@ -301,12 +325,16 @@ const App = () => {
 
           <Route
             path="/teacher/courses/create"
-            element={<CreateCoursePage />}
+            element={
+              <CreateCoursePage />
+            }
           />
 
           <Route
             path="/teacher/courses/:courseId"
-            element={<CourseDetailPage />}
+            element={
+              <CourseDetailPage />
+            }
           />
 
           {/*
@@ -317,12 +345,16 @@ const App = () => {
 
           <Route
             path="/teacher/courses/:courseId/lessons/create"
-            element={<LessonCreatePage />}
+            element={
+              <LessonCreatePage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId"
-            element={<LessonDetailPage />}
+            element={
+              <LessonDetailPage />
+            }
           />
 
           {/*
@@ -333,17 +365,23 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons"
-            element={<SublessonListPage />}
+            element={
+              <SublessonListPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/create"
-            element={<CreateSublessonPage />}
+            element={
+              <CreateSublessonPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId"
-            element={<SublessonDetailPage />}
+            element={
+              <SublessonDetailPage />
+            }
           />
 
           {/*
@@ -354,17 +392,23 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents"
-            element={<SublessonContentListPage />}
+            element={
+              <SublessonContentListPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents/create"
-            element={<CreateSublessonContentPage />}
+            element={
+              <CreateSublessonContentPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents/:contentId/edit"
-            element={<CreateSublessonContentPage />}
+            element={
+              <CreateSublessonContentPage />
+            }
           />
 
           {/*
@@ -378,7 +422,9 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/contents/create"
-            element={<LessonContentCreate />}
+            element={
+              <LessonContentCreate />
+            }
           />
 
           {/*
@@ -389,17 +435,23 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes"
-            element={<QuizListPage />}
+            element={
+              <QuizListPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes/create"
-            element={<QuizCreatePage />}
+            element={
+              <QuizCreatePage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/quizzes/:quizId"
-            element={<QuizDetailPage />}
+            element={
+              <QuizDetailPage />
+            }
           />
 
           {/*
@@ -410,17 +462,23 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards"
-            element={<FlashcardListPage />}
+            element={
+              <FlashcardListPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards/create"
-            element={<FlashcardCreatePage />}
+            element={
+              <FlashcardCreatePage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards/:flashcardId"
-            element={<FlashcardDetailPage />}
+            element={
+              <FlashcardDetailPage />
+            }
           />
 
           {/*
@@ -431,12 +489,16 @@ const App = () => {
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/exercises"
-            element={<ExerciseListPage />}
+            element={
+              <ExerciseListPage />
+            }
           />
 
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/exercises/create"
-            element={<ExerciseCreatePage />}
+            element={
+              <ExerciseCreatePage />
+            }
           />
 
           {/*
@@ -447,12 +509,16 @@ const App = () => {
 
           <Route
             path="/documents"
-            element={<DocumentListPage />}
+            element={
+              <DocumentListPage />
+            }
           />
 
           <Route
             path="/documents/:id"
-            element={<DocumentDetailPage />}
+            element={
+              <DocumentDetailPage />
+            }
           />
 
           {/*
@@ -463,7 +529,9 @@ const App = () => {
 
           <Route
             path="/documents/:id/flashcards"
-            element={<FlashcardPage />}
+            element={
+              <FlashcardPage />
+            }
           />
 
           {/*
@@ -479,12 +547,16 @@ const App = () => {
 
           <Route
             path="/quizzes/:quizId/results"
-            element={<QuizResultPage />}
+            element={
+              <QuizResultPage />
+            }
           />
 
           <Route
             path="/quizzes/:quizId/attempts/:attemptId"
-            element={<QuizAttemptResultPage />}
+            element={
+              <QuizAttemptResultPage />
+            }
           />
 
           {/*
@@ -497,7 +569,6 @@ const App = () => {
             path="/profile"
             element={<ProfilePage />}
           />
-
         </Route>
 
         {/*
@@ -510,10 +581,10 @@ const App = () => {
           path="*"
           element={<NotFoundPage />}
         />
-
       </Routes>
     </Router>
   );
 };
 
 export default App;
+

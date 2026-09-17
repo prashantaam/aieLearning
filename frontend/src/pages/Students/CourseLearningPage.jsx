@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   LoaderCircle,
-  Menu,
   RefreshCw,
   X,
 } from "lucide-react";
@@ -18,12 +17,12 @@ import {
 import {
   useLocation,
   useNavigate,
+  useOutletContext,
   useParams,
 } from "react-router-dom";
 
 import axiosInstance from "../../utils/axiosInstance";
 
-import LearningHeader from "../../components/layout/LearningHeader";
 import CourseIndex from "../../components/students/learning/CourseIndex";
 import ContentArea from "../../components/students/learning/ContentArea";
 import QuizArea from "../../components/students/learning/QuizArea";
@@ -32,6 +31,11 @@ import ExerciseArea from "../../components/students/learning/ExerciseArea";
 export default function CourseLearningPage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const {
+    learningIndexOpen,
+    setLearningIndexOpen,
+  } = useOutletContext();
 
  const {
   slug,
@@ -74,7 +78,7 @@ export default function CourseLearningPage() {
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] = useState(false);
 
   const [
     error,
@@ -86,15 +90,6 @@ export default function CourseLearningPage() {
     setExpandedLessons,
   ] = useState({});
 
-  const [
-    mobileIndexOpen,
-    setMobileIndexOpen,
-  ] = useState(false);
-
-  const [
-    indexOpen,
-    setIndexOpen,
-  ] = useState(true);
 
 
   /*
@@ -362,7 +357,7 @@ const currentExercise =
       `/courses/${slug}/learn/${id}`
     );
 
-    setMobileIndexOpen(false);
+    setLearningIndexOpen(false);
 
     window.scrollTo({
       top: 0,
@@ -384,7 +379,7 @@ const currentExercise =
       `/courses/${slug}/learn/${id}/quiz`
     );
 
-    setMobileIndexOpen(false);
+    setLearningIndexOpen(false);
 
     window.scrollTo({
       top: 0,
@@ -406,7 +401,7 @@ const goToExercise = (
     `/courses/${slug}/learn/${sublessonId}/exercise/${exerciseId}`
   );
 
-  setMobileIndexOpen(false);
+  setLearningIndexOpen(false);
 
   window.scrollTo({
     top: 0,
@@ -563,26 +558,6 @@ const goToExercise = (
   };
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Course Index Toggle
-  |--------------------------------------------------------------------------
-  */
-
-  const handleIndexToggle = () => {
-    if (
-      window.innerWidth >= 1024
-    ) {
-      setIndexOpen(
-        (previous) =>
-          !previous
-      );
-
-      return;
-    }
-
-    setMobileIndexOpen(true);
-  };
 
 
   /*
@@ -641,7 +616,6 @@ const nextButtonLabel = (() => {
     return (
       <div className="min-h-screen bg-slate-50">
 
-        <LearningHeader />
 
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
 
@@ -675,7 +649,6 @@ const nextButtonLabel = (() => {
     return (
       <div className="min-h-screen bg-slate-50">
 
-        <LearningHeader />
 
         <div className="p-6 lg:p-8">
 
@@ -741,7 +714,6 @@ const nextButtonLabel = (() => {
     return (
       <div className="min-h-screen bg-slate-50">
 
-        <LearningHeader />
 
         <div className="p-6 lg:p-8">
 
@@ -795,7 +767,6 @@ const nextButtonLabel = (() => {
     return (
       <div className="min-h-screen bg-slate-50">
 
-        <LearningHeader />
 
         <div className="mx-auto max-w-3xl p-6 lg:p-10">
 
@@ -842,327 +813,137 @@ const nextButtonLabel = (() => {
   */
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="relative h-[calc(100vh-4rem)] overflow-hidden bg-slate-50">
+      <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-slate-50">
+        <div
+          className={`min-h-0 flex-1 ${
+            currentMode === "exercise"
+              ? "overflow-hidden"
+              : "overflow-y-auto"
+          }`}
+        >
+          {currentMode === "content" && (
+            <div className="mx-auto max-w-4xl px-5 py-8 lg:px-10 lg:py-10">
+              <ContentArea sublesson={currentSublesson} />
+            </div>
+          )}
 
-      {/* Header */}
-      <LearningHeader />
+          {currentMode === "quiz" && (
+            <div className="mx-auto max-w-4xl px-5 py-8 lg:px-10 lg:py-10">
+              <QuizArea sublesson={currentSublesson} />
+            </div>
+          )}
 
-
-      {/* Learning Toolbar */}
-      <div className="sticky top-16 z-30 border-b border-slate-200 bg-white">
-
-        <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
-
-          {/* Course Index Toggle */}
-          <button
-            type="button"
-            onClick={
-              handleIndexToggle
-            }
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-[#0B1F3A] transition hover:bg-slate-100"
-          >
-            <Menu size={20} />
-          </button>
-
-
-          {/* Course Detail */}
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                `/courses/${slug}`
-              )
-            }
-            className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-[#0B1F3A]"
-          >
-            <ArrowLeft
-              size={17}
-            />
-
-            <span className="hidden sm:inline">
-              Course Detail
-            </span>
-          </button>
-
-
-          <div className="hidden h-6 w-px bg-slate-200 sm:block" />
-
-
-          {/* Current Learning Item */}
-          <div className="min-w-0 flex-1">
-
-            <h1 className="truncate text-sm font-bold text-[#0B1F3A] sm:text-base">
-
-              {currentSublesson.lessonIndex +
-                1}
-
-              .
-
-              {currentSublesson.sublessonIndex +
-                1}
-
-              {" "}
-
-              {
-                currentSublesson.title
-              }
-
-              {currentMode ===
-                "quiz" && (
-                <span className="text-[#B8860B]">
-                  {" "}— Quiz
-                </span>
-              )}
-
-            </h1>
-
-          </div>
-
+          {currentMode === "exercise" && (
+            <div className="h-full min-h-0">
+              <ExerciseArea exercise={currentExercise} />
+            </div>
+          )}
         </div>
 
-      </div>
-
-
-      {/* Workspace */}
-      <div className="flex min-w-0">
-
-        {/* Desktop Course Index */}
-        {indexOpen && (
-
-          <aside className="hidden w-80 shrink-0 border-r border-slate-200 bg-white lg:block">
-
-            <div className="sticky top-32 h-[calc(100vh-8rem)] overflow-y-auto">
-
-              <CourseIndex
-                course={course}
-                lessons={lessons}
-                currentSublessonId={
-                  sublessonId
-                }
-                currentMode={
-                  currentMode
-                }
-                expandedLessons={
-                  expandedLessons
-                }
-                toggleLesson={
-                  toggleLesson
-                }
-                goToSublesson={
-                  goToSublesson
-                }
-                goToQuiz={
-                  goToQuiz
-                }
-
-                goToExercise={
-                  goToExercise
-                }
-              />
-
-            </div>
-
-          </aside>
-
-        )}
-
-
-        {/* Main Area */}
-        <main className="min-w-0 flex-1">
-
-          <div
-            className={`mx-auto px-5 py-8 lg:px-10 lg:py-10 ${
-              indexOpen
-                ? "max-w-5xl"
-                : "max-w-6xl"
-            }`}
-          >
-
-            <div  className={
-                currentMode === "exercise"
-                ? "mx-auto max-w-6xl"
-                : "mx-auto max-w-4xl"
-            }>
-
-              {/* CONTENT MODE */}
-              {currentMode ===
-                "content" && (
-
-                <ContentArea
-                  sublesson={
-                    currentSublesson
-                  }
-                />
-
-              )}
-
-
-              {/* QUIZ MODE */}
-              {currentMode ===
-                "quiz" && (
-
-                <QuizArea
-                  sublesson={
-                    currentSublesson
-                  }
-                />
-
-              )}
-
-              {/* EXERCISE MODE */}
-            {currentMode === "exercise" && (
-            <ExerciseArea
-                exercise={
-                currentExercise
-                }
-            />
+        {/* Fixed Previous / Next footer */}
+        <div className="z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-t border-slate-200 bg-white px-4 shadow-[0_-4px_12px_rgba(15,23,42,0.04)] lg:px-6">
+          <div>
+            {hasPreviousItem && (
+              <button
+                type="button"
+                onClick={handlePrevious}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#0B1F3A] transition hover:bg-slate-50"
+              >
+                <ChevronLeft size={18} />
+                <span className="hidden sm:inline">
+                  {currentMode === "quiz"
+                    ? "Back to Content"
+                    : currentMode === "exercise"
+                      ? hasQuiz
+                        ? "Back to Quiz"
+                        : "Back to Content"
+                      : "Previous"}
+                </span>
+              </button>
             )}
-
-              {/* Navigation */}
-              <div className="mt-12 flex items-center justify-between gap-4 border-t border-slate-200 pt-6">
-
-                {/* Previous */}
-                <div>
-
-                  {hasPreviousItem && (
-
-                    <button
-                      type="button"
-                      onClick={
-                        handlePrevious
-                      }
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-[#0B1F3A] transition hover:bg-slate-50"
-                    >
-                      <ChevronLeft
-                        size={18}
-                      />
-
-                      {currentMode ===
-                      "quiz"
-                        ? "Back to Content"
-                        : "Previous"}
-                    </button>
-
-                  )}
-
-                </div>
-
-
-                {/* Next */}
-                <button
-                  type="button"
-                  onClick={
-                    handleNext
-                  }
-                  className={`inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-bold transition ${
-                    currentMode ===
-                      "content" &&
-                    hasQuiz
-                      ? "bg-[#F4C95D] text-[#0B1F3A] hover:bg-[#e8bc4f]"
-                      : "bg-[#0B1F3A] text-white hover:bg-[#102b4f]"
-                  }`}
-                >
-                  {
-                    nextButtonLabel
-                  }
-
-                  {nextSublesson ||
-                  (currentMode ===
-                    "content" &&
-                    hasQuiz) ? (
-                    <ChevronRight
-                      size={18}
-                    />
-                  ) : (
-                    <ArrowRight
-                      size={17}
-                    />
-                  )}
-
-                </button>
-
-              </div>
-
-            </div>
-
           </div>
 
-        </main>
+          <button
+            type="button"
+            onClick={handleNext}
+            className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold transition ${
+              (currentMode === "content" && hasQuiz) ||
+              (currentMode === "content" && !hasQuiz && hasExercise) ||
+              (currentMode === "quiz" && hasExercise)
+                ? "bg-[#F4C95D] text-[#0B1F3A] hover:bg-[#e8bc4f]"
+                : "bg-[#0B1F3A] text-white hover:bg-[#102b4f]"
+            }`}
+          >
+            <span className="hidden sm:inline">{nextButtonLabel}</span>
+            {nextSublesson ||
+            (currentMode === "content" && (hasQuiz || hasExercise)) ||
+            (currentMode === "quiz" && hasExercise) ? (
+              <ChevronRight size={18} />
+            ) : (
+              <ArrowRight size={17} />
+            )}
+          </button>
+        </div>
+      </main>
 
-      </div>
-
-
-      {/* Mobile Course Index */}
-      {mobileIndexOpen && (
-
-        <div className="fixed inset-0 z-50 lg:hidden">
-
-          {/* Overlay */}
+      {/* Course Index overlay - hidden by default */}
+      {learningIndexOpen && (
+        <div className="fixed inset-x-0 bottom-0 top-16 z-40">
           <button
             type="button"
             aria-label="Close course index"
-            onClick={() =>
-              setMobileIndexOpen(
-                false
-              )
-            }
-            className="absolute inset-0 bg-slate-950/40"
+            onClick={() => setLearningIndexOpen(false)}
+            className="absolute inset-0 bg-slate-950/30 backdrop-blur-[1px]"
           />
 
-
-          {/* Drawer */}
-          <aside className="absolute inset-y-0 left-0 w-[88%] max-w-sm overflow-y-auto bg-white shadow-xl">
-
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white p-4">
-
-              <span className="font-bold text-[#0B1F3A]">
+          <aside className="absolute inset-y-0 left-0 flex w-[88%] max-w-[340px] flex-col border-r border-slate-200 bg-white shadow-2xl sm:w-[340px]">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 px-4">
+              <p className="text-sm font-bold text-[#0B1F3A]">
                 Course Index
-              </span>
+              </p>
 
               <button
                 type="button"
-                onClick={() =>
-                  setMobileIndexOpen(
-                    false
-                  )
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-[#0B1F3A]"
+                onClick={() => setLearningIndexOpen(false)}
+                aria-label="Close course index"
+                title="Close course index"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-[#0B1F3A]"
               >
-                <X size={18} />
+                <X size={19} />
               </button>
-
             </div>
 
+            <div className="shrink-0 border-b border-slate-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setLearningIndexOpen(false);
+                  navigate(`/courses/${slug}`);
+                }}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-[#0B1F3A]"
+              >
+                <ArrowLeft size={17} />
+                Course Detail
+              </button>
+            </div>
 
-            <CourseIndex
-              course={course}
-              lessons={lessons}
-              currentSublessonId={
-                sublessonId
-              }
-              currentMode={
-                currentMode
-              }
-              expandedLessons={
-                expandedLessons
-              }
-              toggleLesson={
-                toggleLesson
-              }
-              goToSublesson={
-                goToSublesson
-              }
-              goToQuiz={
-                goToQuiz
-              }
-            />
-
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <CourseIndex
+                course={course}
+                lessons={lessons}
+                currentSublessonId={sublessonId}
+                currentMode={currentMode}
+                expandedLessons={expandedLessons}
+                toggleLesson={toggleLesson}
+                goToSublesson={goToSublesson}
+                goToQuiz={goToQuiz}
+                goToExercise={goToExercise}
+              />
+            </div>
           </aside>
-
         </div>
-
       )}
-
     </div>
   );
 }

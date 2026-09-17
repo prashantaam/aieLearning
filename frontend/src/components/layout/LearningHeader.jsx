@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Home,
   LogOut,
+  Menu,
   User,
 } from "lucide-react";
 
@@ -18,7 +19,9 @@ import {
 
 import { useAuth } from "../../context/AuthContext";
 
-export default function LearningHeader() {
+export default function LearningHeader({
+  onToggleIndex,
+}) {
   const navigate = useNavigate();
 
   const {
@@ -50,7 +53,6 @@ export default function LearningHeader() {
       .charAt(0)
       .toUpperCase();
 
-
   /*
   |--------------------------------------------------------------------------
   | Logout
@@ -65,10 +67,9 @@ export default function LearningHeader() {
     navigate("/login");
   };
 
-
   /*
   |--------------------------------------------------------------------------
-  | Close Dropdown When Clicking Outside
+  | Close Profile Dropdown
   |--------------------------------------------------------------------------
   */
 
@@ -99,7 +100,6 @@ export default function LearningHeader() {
     };
   }, []);
 
-
   /*
   |--------------------------------------------------------------------------
   | Render
@@ -108,34 +108,65 @@ export default function LearningHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-
       <div className="flex h-16 items-center justify-between px-5 lg:px-7">
+        {/*
+        |--------------------------------------------------------------------------
+        | Left Side
+        |--------------------------------------------------------------------------
+        */}
 
-        {/* Logo */}
-        <button
-          type="button"
-          onClick={() =>
-            navigate("/dashboard")
-          }
-          className="flex items-center gap-3"
-        >
+        <div className="flex items-center">
+          {/* Logo */}
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/dashboard")
+            }
+            className="flex items-center gap-3"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0B1F3A] text-[#F4C95D]">
+              <BookOpen
+                size={19}
+              />
+            </div>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0B1F3A] text-[#F4C95D]">
-            <BookOpen
-              size={19}
-            />
-          </div>
+            <span className="hidden text-base font-bold text-[#0B1F3A] sm:block">
+              AI Learning
+            </span>
+          </button>
 
-          <span className="hidden text-base font-bold text-[#0B1F3A] sm:block">
-            AI Learning
-          </span>
+          {/*
+          |--------------------------------------------------------------------------
+          | Course Index Burger
+          |--------------------------------------------------------------------------
+          */}
 
-        </button>
+          {onToggleIndex && (
+            <>
+              <div className="mx-5 hidden h-7 w-px bg-slate-200 sm:block" />
 
+              <button
+                type="button"
+                onClick={onToggleIndex}
+                title="Course index"
+                aria-label="Open course index"
+                className="ml-3 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-[#0B1F3A] sm:ml-0"
+              >
+                <Menu
+                  size={21}
+                />
+              </button>
+            </>
+          )}
+        </div>
 
-        {/* Right Navigation */}
+        {/*
+        |--------------------------------------------------------------------------
+        | Right Navigation
+        |--------------------------------------------------------------------------
+        */}
+
         <div className="flex items-center gap-3">
-
           {/* Home */}
           <button
             type="button"
@@ -148,13 +179,16 @@ export default function LearningHeader() {
             <Home size={18} />
           </button>
 
+          {/*
+          |--------------------------------------------------------------------------
+          | Profile
+          |--------------------------------------------------------------------------
+          */}
 
-          {/* Profile */}
           <div
             ref={dropdownRef}
             className="relative"
           >
-
             <button
               type="button"
               onClick={() =>
@@ -168,7 +202,6 @@ export default function LearningHeader() {
                 profileOpen
               }
             >
-
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B1F3A] text-sm font-bold text-[#F4C95D]">
                 {initial}
               </div>
@@ -181,17 +214,17 @@ export default function LearningHeader() {
                     : ""
                 }`}
               />
-
             </button>
 
+            {/*
+            |--------------------------------------------------------------------------
+            | Profile Dropdown
+            |--------------------------------------------------------------------------
+            */}
 
-            {/* Dropdown */}
             {profileOpen && (
-
               <div className="absolute right-0 top-12 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-
                 <div className="border-b border-slate-100 px-4 py-3">
-
                   <p className="text-xs text-slate-400">
                     Signed in as
                   </p>
@@ -199,9 +232,7 @@ export default function LearningHeader() {
                   <p className="mt-1 truncate text-sm font-bold text-[#0B1F3A]">
                     {firstName}
                   </p>
-
                 </div>
-
 
                 {/* Profile */}
                 <button
@@ -222,7 +253,6 @@ export default function LearningHeader() {
                   Profile
                 </button>
 
-
                 {/* Logout */}
                 <button
                   type="button"
@@ -231,21 +261,17 @@ export default function LearningHeader() {
                   }
                   className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                 >
-                  <LogOut size={17} />
+                  <LogOut
+                    size={17}
+                  />
 
                   Logout
                 </button>
-
               </div>
-
             )}
-
           </div>
-
         </div>
-
       </div>
-
     </header>
   );
 }
