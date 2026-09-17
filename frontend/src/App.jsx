@@ -128,6 +128,8 @@ import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
 import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
 import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
 import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
+import ExerciseListPage from "./pages/Teachers/Exercises/ExerciseListPage";
+import ExerciseCreatePage from "./pages/Teachers/Exercises/ExerciseCreatePage";
 
 /*
 |--------------------------------------------------------------------------
@@ -268,6 +270,11 @@ const App = () => {
           
           <Route
             path="/courses/:slug/learn/:sublessonId/quiz"
+            element={<CourseLearningPage />}
+          />
+
+          <Route
+            path="/courses/:slug/learn/:sublessonId/exercise/:exerciseId"
             element={<CourseLearningPage />}
           />
           {/*
@@ -414,6 +421,22 @@ const App = () => {
           <Route
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/flashcards/:flashcardId"
             element={<FlashcardDetailPage />}
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Sublesson Exercises
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/exercises"
+            element={<ExerciseListPage />}
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/exercises/create"
+            element={<ExerciseCreatePage />}
           />
 
           {/*

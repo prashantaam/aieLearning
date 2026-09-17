@@ -346,7 +346,7 @@ export default function QuizArea({
   */
 
   return (
-    <section className="mt-12 border-t border-slate-200 pt-10">
+    <section>
 
       {/* Quiz Header */}
       <div className="mb-6">
@@ -354,10 +354,6 @@ export default function QuizArea({
         <div className="flex flex-wrap items-center justify-between gap-3">
 
           <div>
-
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#B8860B]">
-              Quick Quiz
-            </p>
 
             <h2 className="mt-2 text-xl font-bold text-[#0B1F3A]">
               {quiz.title ||

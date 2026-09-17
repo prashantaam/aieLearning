@@ -2,6 +2,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleHelp,
+  Code2,
 } from "lucide-react";
 
 export default function CourseIndex({
@@ -13,6 +14,7 @@ export default function CourseIndex({
   toggleLesson,
   goToSublesson,
   goToQuiz,
+  goToExercise,
 }) {
   return (
     <div className="p-4">
@@ -95,12 +97,31 @@ export default function CourseIndex({
                         isCurrentSublesson &&
                         currentMode === "quiz";
 
+                      const isExerciseActive =
+                        isCurrentSublesson &&
+                        currentMode === "exercise";
+
                       const hasQuiz =
                         Array.isArray(
                           sublesson.quizzes
                         ) &&
                         sublesson.quizzes
                           .length > 0;
+
+                      const exercises =
+                        Array.isArray(
+                            sublesson.exercises
+                        )
+                            ? sublesson.exercises
+                            : [];
+
+                        const hasExercise =
+                        exercises.length > 0;
+
+                        const firstExercise =
+                        hasExercise
+                            ? exercises[0]
+                            : null;
 
                       return (
                         <div
@@ -169,6 +190,37 @@ export default function CourseIndex({
                               </span>
                             </button>
                           )}
+
+                          {/* Exercise */}
+{hasExercise && firstExercise && (
+  <button
+    type="button"
+    onClick={() =>
+      goToExercise(
+        sublesson.id,
+        firstExercise.id
+      )
+    }
+    className={`ml-8 mt-1 flex w-[calc(100%-2rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+      isExerciseActive
+        ? "bg-blue-50 text-[#0B1F3A]"
+        : "text-slate-500 hover:bg-slate-50 hover:text-[#0B1F3A]"
+    }`}
+  >
+    <Code2
+      size={15}
+      className={
+        isExerciseActive
+          ? "text-blue-600"
+          : "text-slate-400"
+      }
+    />
+
+    <span>
+      Code Exercise
+    </span>
+  </button>
+)}
                         </div>
                       );
                     }

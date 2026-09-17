@@ -44,6 +44,28 @@ export const API_PATHS = {
     DELETE_QUIZ: (id) => `/api/quizzes/${id}`,
   },
 
+  TEACHER_EXERCISES: {
+  GET_BY_SUBLESSON: (sublessonId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises`,
+
+  CREATE: (sublessonId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises`,
+
+  GET_BY_ID: (sublessonId, exerciseId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises/${exerciseId}`,
+
+  UPDATE: (sublessonId, exerciseId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises/${exerciseId}`,
+
+  DELETE: (sublessonId, exerciseId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises/${exerciseId}`,
+
+  PUBLISH: (sublessonId, exerciseId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises/${exerciseId}/publish`,
+
+  UNPUBLISH: (sublessonId, exerciseId) =>
+    `/api/teacher/sublessons/${sublessonId}/exercises/${exerciseId}/unpublish`,
+},
   PROGRESS: {
     GET_DASHBOARD: "/api/progress/dashboard",
   },

@@ -8,6 +8,7 @@ import {
 import {
   ArrowLeft,
   BookOpen,
+  Code2,
   CreditCard,
   FileText,
   HelpCircle,
@@ -101,6 +102,15 @@ const SublessonDetailPage = () => {
       `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/flashcards`
     );
   };
+
+ /*
+ * Manage Exercises
+ */
+const handleManageExercises = () => {
+  navigate(
+    `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/exercises`
+  );
+};
 
   /**
    * Loading
@@ -221,7 +231,7 @@ const SublessonDetailPage = () => {
           </div>
 
           {/* Management Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 
             {/* Content */}
             <button
@@ -310,6 +320,27 @@ const SublessonDetailPage = () => {
 
             </button>
 
+            {/* Exercises */}
+            <button
+            type="button"
+            onClick={handleManageExercises}
+            className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:bg-orange-50"
+            >
+            <div className="rounded-xl bg-orange-50 p-3 text-orange-600">
+                <Code2 className="h-5 w-5" />
+            </div>
+
+            <div>
+                <p className="font-semibold text-gray-900">
+                Manage Exercises
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                Create, edit and publish practical
+                coding exercises for this sublesson.
+                </p>
+            </div>
+            </button>
           </div>
 
         </div>

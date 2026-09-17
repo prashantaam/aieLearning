@@ -27,18 +27,17 @@ import LearningHeader from "../../components/layout/LearningHeader";
 import CourseIndex from "../../components/students/learning/CourseIndex";
 import ContentArea from "../../components/students/learning/ContentArea";
 import QuizArea from "../../components/students/learning/QuizArea";
-
+import ExerciseArea from "../../components/students/learning/ExerciseArea";
 
 export default function CourseLearningPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const {
-    slug,
-    sublessonId,
-  } = useParams();
-
-
+ const {
+  slug,
+  sublessonId,
+  exerciseId,
+} = useParams();
   /*
   |--------------------------------------------------------------------------
   | Current Learning Mode
@@ -50,9 +49,13 @@ export default function CourseLearningPage() {
   */
 
   const currentMode =
-    location.pathname.endsWith(
-      "/quiz"
-    )
+  location.pathname.includes(
+    "/exercise/"
+  )
+    ? "exercise"
+    : location.pathname.endsWith(
+        "/quiz"
+      )
       ? "quiz"
       : "content";
 
@@ -279,6 +282,28 @@ export default function CourseLearningPage() {
     currentSublesson.quizzes.length >
       0;
 
+  /*
+|--------------------------------------------------------------------------
+| Exercise Availability
+|--------------------------------------------------------------------------
+*/
+
+const exercises =
+  Array.isArray(
+    currentSublesson?.exercises
+  )
+    ? currentSublesson.exercises
+    : [];
+
+const hasExercise =
+  exercises.length > 0;
+
+const currentExercise =
+  exercises.find(
+    (exercise) =>
+      String(exercise.id) ===
+      String(exerciseId)
+  ) || null;
 
   /*
   |--------------------------------------------------------------------------
@@ -367,6 +392,27 @@ export default function CourseLearningPage() {
     });
   };
 
+  /*
+|--------------------------------------------------------------------------
+| Go To Exercise
+|--------------------------------------------------------------------------
+*/
+
+const goToExercise = (
+  sublessonId,
+  exerciseId
+) => {
+  navigate(
+    `/courses/${slug}/learn/${sublessonId}/exercise/${exerciseId}`
+  );
+
+  setMobileIndexOpen(false);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -382,30 +428,69 @@ export default function CourseLearningPage() {
   |
   */
 
-  const handleNext = () => {
+    const handleNext = () => {
+    /*
+    * Content -> Quiz
+    */
     if (
-      currentMode === "content" &&
-      hasQuiz
+        currentMode === "content" &&
+        hasQuiz
     ) {
-      goToQuiz(
+        goToQuiz(
         currentSublesson.id
-      );
+        );
 
-      return;
+        return;
     }
 
-    if (nextSublesson) {
-      goToSublesson(
-        nextSublesson.id
-      );
+    /*
+    * Content -> Exercise
+    *
+    * Used when there is no quiz.
+    */
+    if (
+        currentMode === "content" &&
+        !hasQuiz &&
+        hasExercise
+    ) {
+        goToExercise(
+        currentSublesson.id,
+        exercises[0].id
+        );
 
-      return;
+        return;
+    }
+
+    /*
+    * Quiz -> Exercise
+    */
+    if (
+        currentMode === "quiz" &&
+        hasExercise
+    ) {
+        goToExercise(
+        currentSublesson.id,
+        exercises[0].id
+        );
+
+        return;
+    }
+
+    /*
+    * Otherwise -> Next Sublesson
+    */
+    if (nextSublesson) {
+        goToSublesson(
+        nextSublesson.id
+        );
+
+        return;
     }
 
     navigate(
-      `/courses/${slug}`
+        `/courses/${slug}`
     );
-  };
+    };
 
 
   /*
@@ -422,6 +507,22 @@ export default function CourseLearningPage() {
   */
 
   const handlePrevious = () => {
+    if (
+    currentMode === "exercise"
+    ) {
+    if (hasQuiz) {
+        goToQuiz(
+        currentSublesson.id
+        );
+    } else {
+        goToSublesson(
+        currentSublesson.id
+        );
+    }
+
+    return;
+    }
+    
     if (
       currentMode === "quiz"
     ) {
@@ -490,31 +591,44 @@ export default function CourseLearningPage() {
   |--------------------------------------------------------------------------
   */
 
-  const hasPreviousItem =
-    currentMode === "quiz" ||
-    previousSublesson !== null;
-
-
+const hasPreviousItem =
+  currentMode === "quiz" ||
+  currentMode === "exercise" ||
+  previousSublesson !== null;
   /*
   |--------------------------------------------------------------------------
   | Next Button Label
   |--------------------------------------------------------------------------
   */
+const nextButtonLabel = (() => {
+  if (
+    currentMode === "content" &&
+    hasQuiz
+  ) {
+    return "Next: Quiz";
+  }
 
-  const nextButtonLabel = (() => {
-    if (
-      currentMode === "content" &&
-      hasQuiz
-    ) {
-      return "Next: Quiz";
-    }
+  if (
+    currentMode === "content" &&
+    !hasQuiz &&
+    hasExercise
+  ) {
+    return "Next: Exercise";
+  }
 
-    if (nextSublesson) {
-      return "Next Sublesson";
-    }
+  if (
+    currentMode === "quiz" &&
+    hasExercise
+  ) {
+    return "Next: Exercise";
+  }
 
-    return "Course Detail";
-  })();
+  if (nextSublesson) {
+    return "Next Sublesson";
+  }
+
+  return "Course Detail";
+})();
 
 
   /*
@@ -840,6 +954,10 @@ export default function CourseLearningPage() {
                 goToQuiz={
                   goToQuiz
                 }
+
+                goToExercise={
+                  goToExercise
+                }
               />
 
             </div>
@@ -860,7 +978,11 @@ export default function CourseLearningPage() {
             }`}
           >
 
-            <div className="mx-auto max-w-4xl">
+            <div  className={
+                currentMode === "exercise"
+                ? "mx-auto max-w-6xl"
+                : "mx-auto max-w-4xl"
+            }>
 
               {/* CONTENT MODE */}
               {currentMode ===
@@ -887,6 +1009,14 @@ export default function CourseLearningPage() {
 
               )}
 
+              {/* EXERCISE MODE */}
+            {currentMode === "exercise" && (
+            <ExerciseArea
+                exercise={
+                currentExercise
+                }
+            />
+            )}
 
               {/* Navigation */}
               <div className="mt-12 flex items-center justify-between gap-4 border-t border-slate-200 pt-6">
