@@ -14,6 +14,10 @@ import {
   useState,
 } from "react";
 
+import {
+  createRuntime,
+} from "../../../runtimes/runtimeRegistry";
+
 export default function ExerciseArea({
   exercise,
 }) {
@@ -36,6 +40,11 @@ export default function ExerciseArea({
   ] = useState("loading");
 
   const [
+    runtimeName,
+    setRuntimeName,
+  ] = useState("");
+
+  const [
     isRunning,
     setIsRunning,
   ] = useState(false);
@@ -44,6 +53,11 @@ export default function ExerciseArea({
     resultStatus,
     setResultStatus,
   ] = useState(null);
+
+  const [
+    hasExecutionError,
+    setHasExecutionError,
+  ] = useState(false);
 
   const [
     workerVersion,
@@ -73,8 +87,42 @@ export default function ExerciseArea({
   */
 
   const workerRef = useRef(null);
+
+  const runtimeRef = useRef(null);
+
   const timeoutRef = useRef(null);
+
   const workspaceRef = useRef(null);
+
+  const previewIframeRef = useRef(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Runtime Key
+  |--------------------------------------------------------------------------
+  |
+  | Runtime is controlled by the exercise,
+  | not by ExerciseArea.
+  |
+  | Examples:
+  |
+  | pyodide
+  | javascript
+  | dotnet-wasm
+  | php-wasm
+  | sqlite
+  |
+  */
+
+  const runtimeKey =
+    exercise?.settings?.runtime;
+
+  const outputMode =
+  exercise?.settings?.output_mode ||
+  "text";
+
+  const isPreviewMode =
+    outputMode === "preview";
 
   /*
   |--------------------------------------------------------------------------
@@ -115,44 +163,100 @@ export default function ExerciseArea({
     );
 
     setOutput("");
+
     setResultStatus(null);
+
+    setHasExecutionError(false);
+
     setIsRunning(false);
   }, [exercise?.id]);
 
   /*
   |--------------------------------------------------------------------------
-  | Create Python Worker
+  | Create Runtime
   |--------------------------------------------------------------------------
+  |
+  | ExerciseArea no longer knows whether
+  | this is Python, JavaScript, PHP, C#,
+  | SQL, etc.
+  |
+  | It asks the Runtime Registry for the
+  | correct runtime.
+  |
   */
 
   useEffect(() => {
     clearExecutionTimeout();
 
-    if (
-      exercise?.language !== "python"
-    ) {
+    /*
+     * Clean up previous worker.
+     */
+    if (workerRef.current) {
+      workerRef.current.terminate();
+
+      workerRef.current = null;
+    }
+
+    runtimeRef.current = null;
+
+    /*
+     * Runtime must be configured.
+     */
+    if (!runtimeKey) {
+      setRuntimeName("");
+
       setRuntimeStatus(
         "unsupported"
       );
 
-      workerRef.current = null;
+      return undefined;
+    }
+
+    /*
+     * Ask registry for runtime.
+     */
+    const runtime =
+      createRuntime(runtimeKey);
+
+    /*
+     * Runtime is not registered.
+     */
+    if (!runtime) {
+      console.warn(
+        `Unsupported runtime: ${runtimeKey}`
+      );
+
+      setRuntimeName(
+        runtimeKey
+      );
+
+      setRuntimeStatus(
+        "unsupported"
+      );
 
       return undefined;
     }
 
-    setRuntimeStatus("loading");
+    runtimeRef.current = runtime;
+
+    setRuntimeName(
+      runtime.getName()
+    );
+
+    setRuntimeStatus(
+      "loading"
+    );
+
     setIsRunning(false);
 
-    const pythonWorker =
-      new Worker(
-        new URL(
-          "../../../workers/pythonWorker.js",
-          import.meta.url
-        )
-      );
+    /*
+     * Runtime adapter creates the
+     * appropriate worker.
+     */
+    const worker =
+      runtime.createWorker();
 
-    workerRef.current =
-      pythonWorker;
+    workerRef.current = worker;
 
     /*
     |--------------------------------------------------------------------------
@@ -160,7 +264,7 @@ export default function ExerciseArea({
     |--------------------------------------------------------------------------
     */
 
-    pythonWorker.onmessage = (
+    worker.onmessage = (
       event
     ) => {
       const {
@@ -170,12 +274,14 @@ export default function ExerciseArea({
       } = event.data;
 
       /*
-       * Pyodide is ready.
+       * Runtime loaded successfully.
        */
       if (type === "ready") {
         setRuntimeStatus(
           "ready"
         );
+
+        setHasExecutionError(false);
 
         return;
       }
@@ -189,23 +295,33 @@ export default function ExerciseArea({
         const finalOutput =
           workerOutput ?? "";
 
+        setHasExecutionError(false);
+
         setOutput(finalOutput);
+
         setIsRunning(false);
 
         return;
       }
 
       /*
-       * Pyodide failed to load.
+       * Runtime failed to initialise.
        */
       if (
         type === "runtime-error"
       ) {
         clearExecutionTimeout();
 
+        console.error(
+          `${runtime.getName()} runtime initialisation error:`,
+          error
+        );
+
+        setHasExecutionError(true);
+
         setOutput(
           error ||
-            "Unable to load Python runtime."
+            "Unable to load runtime."
         );
 
         setResultStatus(null);
@@ -220,7 +336,7 @@ export default function ExerciseArea({
       }
 
       /*
-       * Python execution error.
+       * Student code produced an error.
        */
       if (
         type ===
@@ -228,9 +344,16 @@ export default function ExerciseArea({
       ) {
         clearExecutionTimeout();
 
+        console.error(
+          `${runtime.getName()} execution error:`,
+          error
+        );
+
+        setHasExecutionError(true);
+
         setOutput(
           error ||
-            "Python execution failed."
+            "Code execution failed."
         );
 
         setResultStatus(null);
@@ -245,22 +368,38 @@ export default function ExerciseArea({
 
     /*
     |--------------------------------------------------------------------------
-    | Worker JavaScript Error
+    | Worker Error
     |--------------------------------------------------------------------------
     */
 
-    pythonWorker.onerror = (
-      error
-    ) => {
+    worker.onerror = (error) => {
       console.error(
-        "Python worker error:",
+        `${runtime.getName()} worker error:`,
         error
       );
 
       clearExecutionTimeout();
 
+      const workerErrorDetails = [
+        error?.message,
+        error?.filename
+          ? `File: ${error.filename}`
+          : "",
+        error?.lineno
+          ? `Line: ${error.lineno}`
+          : "",
+        error?.colno
+          ? `Column: ${error.colno}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      setHasExecutionError(true);
+
       setOutput(
-        "Python worker encountered an error."
+        workerErrorDetails ||
+          `${runtime.getName()} runtime encountered an error. Check the browser console for the underlying worker error.`
       );
 
       setResultStatus(null);
@@ -273,9 +412,12 @@ export default function ExerciseArea({
     };
 
     /*
-     * Initialise Pyodide.
-     */
-    pythonWorker.postMessage({
+    |--------------------------------------------------------------------------
+    | Initialise Runtime
+    |--------------------------------------------------------------------------
+    */
+
+    worker.postMessage({
       type: "init",
     });
 
@@ -288,19 +430,27 @@ export default function ExerciseArea({
     return () => {
       clearExecutionTimeout();
 
-      pythonWorker.terminate();
+      worker.terminate();
 
       if (
         workerRef.current ===
-        pythonWorker
+        worker
       ) {
         workerRef.current =
+          null;
+      }
+
+      if (
+        runtimeRef.current ===
+        runtime
+      ) {
+        runtimeRef.current =
           null;
       }
     };
   }, [
     exercise?.id,
-    exercise?.language,
+    runtimeKey,
     workerVersion,
   ]);
 
@@ -308,10 +458,22 @@ export default function ExerciseArea({
   |--------------------------------------------------------------------------
   | Grade Exercise
   |--------------------------------------------------------------------------
+  |
+  | Grading is completely independent
+  | of the programming language/runtime.
+  |
+  | Python, JavaScript, PHP, C#, etc.
+  | all return text output and this
+  | component compares it with the
+  | expected output.
+  |
   */
 
   useEffect(() => {
-    if (output === "") {
+    if (
+      output === "" ||
+      hasExecutionError
+    ) {
       setResultStatus(null);
 
       return;
@@ -320,10 +482,6 @@ export default function ExerciseArea({
     const expectedOutput =
       exercise?.expected_output;
 
-    /*
-     * No expected output means
-     * automatic grading is disabled.
-     */
     if (
       expectedOutput === null ||
       expectedOutput === undefined ||
@@ -344,19 +502,7 @@ export default function ExerciseArea({
         expectedOutput
       );
 
-    /*
-     * Temporary debugging.
-     * We can remove this later.
-     */
-    console.log(
-      "Exercise grading:",
-      {
-        actual,
-        expected,
-        matched:
-          actual === expected,
-      }
-    );
+    
 
     if (actual === expected) {
       setResultStatus(
@@ -370,75 +516,35 @@ export default function ExerciseArea({
   }, [
     output,
     exercise?.expected_output,
+    runtimeKey,
+    hasExecutionError,
   ]);
 
   /*
   |--------------------------------------------------------------------------
-  | Run Code
+  | Execute Runtime Request
   |--------------------------------------------------------------------------
+  |
+  | Used by both the Run Code button and PHP preview form submissions.
+  |
   */
 
-  const handleRun = () => {
-    if (
-      exercise?.language !== "python"
-    ) {
-      setOutput(
-        `Runtime for "${
-          exercise?.language ||
-          "unknown"
-        }" is not supported yet.`
-      );
-
-      setResultStatus(null);
-
-      return;
-    }
-
-    /*
-     * Runtime must be ready.
-     */
+  const executeRuntimeRequest = (
+    request = undefined
+  ) => {
     if (
       runtimeStatus !== "ready" ||
-      !workerRef.current
+      !workerRef.current ||
+      !runtimeRef.current
     ) {
-      setOutput(
-        "Python runtime is still loading. Please wait..."
-      );
-
-      setResultStatus(null);
-
-      return;
-    }
-
-    /*
-     * Prevent empty execution.
-     */
-    if (!code.trim()) {
-      setOutput(
-        "Please write some Python code first."
-      );
-
-      setResultStatus(null);
-
       return;
     }
 
     clearExecutionTimeout();
 
     setIsRunning(true);
-
-    /*
-     * Remove previous result while
-     * new code is running.
-     */
-    setOutput("");
+    setHasExecutionError(false);
     setResultStatus(null);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Timeout
-    |--------------------------------------------------------------------------
-    */
 
     const configuredTimeout =
       Number(
@@ -456,22 +562,21 @@ export default function ExerciseArea({
     const activeWorker =
       workerRef.current;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Execute Python
-    |--------------------------------------------------------------------------
-    */
+    const runMessage =
+      runtimeRef.current
+        .createRunMessage(
+          code,
+          exercise
+        );
 
-    activeWorker.postMessage({
-      type: "run",
-      code,
-    });
+    if (request) {
+      runMessage.request =
+        request;
+    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Stop Infinite / Long-running Code
-    |--------------------------------------------------------------------------
-    */
+    activeWorker.postMessage(
+      runMessage
+    );
 
     timeoutRef.current =
       window.setTimeout(() => {
@@ -490,6 +595,7 @@ export default function ExerciseArea({
 
         setIsRunning(false);
         setResultStatus(null);
+        setHasExecutionError(true);
 
         setOutput(
           `Execution timed out after ${
@@ -497,9 +603,6 @@ export default function ExerciseArea({
           } seconds.`
         );
 
-        /*
-         * Create fresh Python worker.
-         */
         setRuntimeStatus(
           "loading"
         );
@@ -509,6 +612,183 @@ export default function ExerciseArea({
             previous + 1
         );
       }, timeout);
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Preview Loaded
+  |--------------------------------------------------------------------------
+  |
+  | Attach a submit handler inside the same-origin srcDoc iframe.
+  | The form is prevented from navigating and is sent back to PHP-WASM.
+  |
+  */
+
+  const handlePreviewLoad = () => {
+    if (
+      !isPreviewMode ||
+      runtimeKey !== "php-wasm"
+    ) {
+      return;
+    }
+
+    const iframe =
+      previewIframeRef.current;
+
+    const document =
+      iframe?.contentDocument;
+
+    if (!document) {
+      return;
+    }
+
+    const forms =
+      Array.from(
+        document.querySelectorAll(
+          "form"
+        )
+      );
+
+    forms.forEach((form) => {
+      form.addEventListener(
+        "submit",
+        (event) => {
+          event.preventDefault();
+
+          const formData =
+            new FormData(form);
+
+          const data = {};
+
+          for (
+            const [
+              key,
+              value,
+            ] of formData.entries()
+          ) {
+            const stringValue =
+              value instanceof File
+                ? value.name
+                : String(value);
+
+            if (
+              Object.prototype.hasOwnProperty.call(
+                data,
+                key
+              )
+            ) {
+              if (
+                Array.isArray(
+                  data[key]
+                )
+              ) {
+                data[key].push(
+                  stringValue
+                );
+              } else {
+                data[key] = [
+                  data[key],
+                  stringValue,
+                ];
+              }
+            } else {
+              data[key] =
+                stringValue;
+            }
+          }
+
+          const method =
+            (
+              form.getAttribute(
+                "method"
+              ) || "GET"
+            ).toUpperCase();
+
+          executeRuntimeRequest({
+            method:
+              method === "POST"
+                ? "POST"
+                : "GET",
+            data,
+          });
+        },
+        { once: true }
+      );
+    });
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Run Code
+  |--------------------------------------------------------------------------
+  */
+
+  
+
+  const handleRun = () => {
+    setHasExecutionError(false);
+
+    /*
+     * Runtime must exist.
+     */
+    if (!runtimeKey) {
+      setOutput(
+        "No runtime has been configured for this exercise."
+      );
+
+      setResultStatus(null);
+
+      return;
+    }
+
+    /*
+     * Runtime must be registered.
+     */
+    if (
+      runtimeStatus ===
+      "unsupported"
+    ) {
+      setOutput(
+        `Runtime "${runtimeKey}" is not supported yet.`
+      );
+
+      setResultStatus(null);
+
+      return;
+    }
+
+    /*
+     * Runtime must be ready.
+     */
+    if (
+      runtimeStatus !== "ready" ||
+      !workerRef.current
+    ) {
+      setOutput(
+        `${runtimeName || "Runtime"} is still loading. Please wait...`
+      );
+
+      setResultStatus(null);
+
+      return;
+    }
+
+    /*
+     * Prevent empty execution.
+     */
+    if (!code.trim()) {
+      setOutput(
+        "Please write some code first."
+      );
+
+      setResultStatus(null);
+
+      return;
+    }
+
+    setOutput("");
+
+    executeRuntimeRequest();
   };
 
   /*
@@ -523,7 +803,10 @@ export default function ExerciseArea({
     );
 
     setOutput("");
+
     setResultStatus(null);
+
+    setHasExecutionError(false);
   };
 
   /*
@@ -556,12 +839,6 @@ export default function ExerciseArea({
         (position / rect.width) *
         100;
 
-      /*
-       * Keep both panels usable.
-       *
-       * Min instructions width: 25%
-       * Max instructions width: 65%
-       */
       const width = Math.min(
         65,
         Math.max(
@@ -743,8 +1020,8 @@ export default function ExerciseArea({
                     </span>
 
                     <span className="text-sm font-semibold text-slate-700">
-                      {exercise.settings
-                        ?.runtime ||
+                      {runtimeName ||
+                        runtimeKey ||
                         "Not specified"}
                     </span>
                   </div>
@@ -794,10 +1071,6 @@ export default function ExerciseArea({
               : "bg-slate-100 hover:bg-blue-50"
           }`}
         >
-          {/*
-           * Wider invisible hit area
-           * makes divider easier to grab.
-           */}
           <div className="absolute inset-y-0 -left-1 -right-1 z-10" />
 
           <div
@@ -896,7 +1169,10 @@ export default function ExerciseArea({
                     className="animate-spin"
                   />
 
-                  Loading Python...
+                  Loading{" "}
+                  {runtimeName ||
+                    "Runtime"}
+                  ...
                 </span>
               )}
 
@@ -905,7 +1181,9 @@ export default function ExerciseArea({
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                   <span className="h-2 w-2 rounded-full bg-emerald-400" />
 
-                  Python Ready
+                  {runtimeName ||
+                    "Runtime"}{" "}
+                  Ready
                 </span>
               )}
 
@@ -921,7 +1199,8 @@ export default function ExerciseArea({
               {runtimeStatus ===
                 "unsupported" && (
                 <span className="text-xs font-semibold text-amber-400">
-                  Runtime not supported
+                  Runtime not
+                  supported
                 </span>
               )}
             </div>
@@ -961,14 +1240,6 @@ export default function ExerciseArea({
           |--------------------------------------------------------------------------
           | FEEDBACK
           |--------------------------------------------------------------------------
-          |
-          | Feedback now appears BEFORE
-          | the Output section.
-          |
-          | It uses shrink-0 so it cannot
-          | disappear inside the output
-          | scrolling area.
-          |
           */}
 
           {resultStatus ===
@@ -1028,36 +1299,43 @@ export default function ExerciseArea({
 
           {/*
           |--------------------------------------------------------------------------
-          | OUTPUT
+          | OUTPUT / PREVIEW
           |--------------------------------------------------------------------------
           */}
 
-          <div className="flex h-[165px] shrink-0 flex-col border-t border-slate-700 bg-[#0B1220]">
-            {/*
-            |--------------------------------------------------------------------------
-            | Output Header
-            |--------------------------------------------------------------------------
-            */}
-
+          <div className="flex h-[220px] shrink-0 flex-col border-t border-slate-700 bg-[#0B1220]">
             <div className="flex h-10 shrink-0 items-center gap-2 border-b border-slate-700 px-4 text-xs font-bold uppercase tracking-wide text-slate-400">
               <Terminal
                 size={14}
               />
 
-              Output
+              {isPreviewMode
+                ? "Preview"
+                : "Output"}
             </div>
 
-            {/*
-            |--------------------------------------------------------------------------
-            | Scrollable Output
-            |--------------------------------------------------------------------------
-            */}
-
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <pre className="min-h-full whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6 text-slate-300">
-                {output ||
-                  "Run your code to see the output here."}
-              </pre>
+            <div className="min-h-0 flex-1 overflow-auto">
+              {isPreviewMode ? (
+                output ? (
+                  <iframe
+                    ref={previewIframeRef}
+                    title="PHP Preview"
+                    srcDoc={output}
+                    sandbox="allow-forms allow-same-origin"
+                    onLoad={handlePreviewLoad}
+                    className="h-full w-full border-0 bg-white"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-white px-4 text-sm text-slate-400">
+                    Run your code to see the preview.
+                  </div>
+                )
+              ) : (
+                <pre className="min-h-full whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6 text-slate-300">
+                  {output ||
+                    "Run your code to see the output here."}
+                </pre>
+              )}
             </div>
           </div>
         </section>

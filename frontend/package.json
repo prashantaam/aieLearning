@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@php-wasm/web": "^3.1.54",
+    "@sqlite.org/sqlite-wasm": "^3.53.4-build1",
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "lucide-react": "^0.554.0",
