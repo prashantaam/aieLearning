@@ -80,6 +80,16 @@ export default function ExerciseArea({
     setIsResizing,
   ] = useState(false);
 
+  const [
+    editorWidth,
+    setEditorWidth,
+  ] = useState(50);
+
+  const [
+    isPreviewResizing,
+    setIsPreviewResizing,
+  ] = useState(false);
+
   /*
   |--------------------------------------------------------------------------
   | Refs
@@ -93,6 +103,9 @@ export default function ExerciseArea({
   const timeoutRef = useRef(null);
 
   const workspaceRef = useRef(null);
+
+  const codingWorkspaceRef =
+    useRef(null);
 
   const previewIframeRef = useRef(null);
 
@@ -891,6 +904,88 @@ export default function ExerciseArea({
 
   /*
   |--------------------------------------------------------------------------
+  | Resize Editor / Preview
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (!isPreviewResizing) {
+      return undefined;
+    }
+
+    const handleMouseMove = (
+      event
+    ) => {
+      if (
+        !codingWorkspaceRef.current
+      ) {
+        return;
+      }
+
+      const rect =
+        codingWorkspaceRef.current
+          .getBoundingClientRect();
+
+      const position =
+        event.clientX -
+        rect.left;
+
+      const percentage =
+        (position / rect.width) *
+        100;
+
+      const width = Math.min(
+        75,
+        Math.max(
+          25,
+          percentage
+        )
+      );
+
+      setEditorWidth(width);
+    };
+
+    const handleMouseUp = () => {
+      setIsPreviewResizing(false);
+    };
+
+    window.addEventListener(
+      "mousemove",
+      handleMouseMove
+    );
+
+    window.addEventListener(
+      "mouseup",
+      handleMouseUp
+    );
+
+    document.body.style.cursor =
+      "col-resize";
+
+    document.body.style.userSelect =
+      "none";
+
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove
+      );
+
+      window.removeEventListener(
+        "mouseup",
+        handleMouseUp
+      );
+
+      document.body.style.cursor =
+        "";
+
+      document.body.style.userSelect =
+        "";
+    };
+  }, [isPreviewResizing]);
+
+  /*
+  |--------------------------------------------------------------------------
   | Missing Exercise
   |--------------------------------------------------------------------------
   */
@@ -1096,215 +1191,253 @@ export default function ExerciseArea({
         |--------------------------------------------------------------------------
         */}
 
-        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#0F172A]">
+        <section
+          ref={codingWorkspaceRef}
+          className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-[#0F172A]"
+        >
           {/*
           |--------------------------------------------------------------------------
-          | Editor Header
+          | EDITOR SIDE
           |--------------------------------------------------------------------------
           */}
 
-          <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-700 bg-[#111827] px-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-              <Code2
-                size={16}
-                className="text-[#F4C95D]"
-              />
+          <div
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#0F172A]"
+            style={{
+              flexBasis:
+                `${editorWidth}%`,
+              flexGrow: 0,
+              flexShrink: 0,
+            }}
+          >
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-700 bg-[#111827] px-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                <Code2
+                  size={16}
+                  className="text-[#F4C95D]"
+                />
 
-              Code Editor
+                Code Editor
+              </div>
+
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={isRunning}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RotateCcw
+                  size={14}
+                />
+
+                Reset
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={isRunning}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RotateCcw
-                size={14}
+            <div className="relative min-h-[160px] flex-1">
+              <textarea
+                value={code}
+                onChange={(event) =>
+                  setCode(
+                    event.target.value
+                  )
+                }
+                disabled={isRunning}
+                spellCheck="false"
+                className="absolute inset-0 h-full w-full resize-none overflow-auto bg-[#0F172A] p-5 font-mono text-sm leading-7 text-slate-100 outline-none disabled:opacity-70"
+                placeholder="Write your code here..."
               />
+            </div>
 
-              Reset
-            </button>
-          </div>
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-[#111827] px-4 py-2.5">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                  {exercise.language ||
+                    "code"}
+                </span>
 
-          {/*
-          |--------------------------------------------------------------------------
-          | Code Editor
-          |--------------------------------------------------------------------------
-          */}
+                {runtimeStatus ===
+                  "loading" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+                    <LoaderCircle
+                      size={13}
+                      className="animate-spin"
+                    />
 
-          <div className="relative min-h-[160px] flex-1">
-            <textarea
-              value={code}
-              onChange={(event) =>
-                setCode(
-                  event.target.value
-                )
-              }
-              disabled={isRunning}
-              spellCheck="false"
-              className="absolute inset-0 h-full w-full resize-none overflow-auto bg-[#0F172A] p-5 font-mono text-sm leading-7 text-slate-100 outline-none disabled:opacity-70"
-              placeholder="Write your code here..."
-            />
-          </div>
+                    Loading{" "}
+                    {runtimeName ||
+                      "Runtime"}
+                    ...
+                  </span>
+                )}
 
-          {/*
-          |--------------------------------------------------------------------------
-          | Run Toolbar
-          |--------------------------------------------------------------------------
-          */}
+                {runtimeStatus ===
+                  "ready" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
 
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-[#111827] px-4 py-2.5">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                {exercise.language ||
-                  "code"}
-              </span>
+                    {runtimeName ||
+                      "Runtime"}{" "}
+                    Ready
+                  </span>
+                )}
 
-              {runtimeStatus ===
-                "loading" && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+                {runtimeStatus ===
+                  "error" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-400">
+                    <span className="h-2 w-2 rounded-full bg-red-400" />
+
+                    Runtime Error
+                  </span>
+                )}
+
+                {runtimeStatus ===
+                  "unsupported" && (
+                  <span className="text-xs font-semibold text-amber-400">
+                    Runtime not supported
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRun}
+                disabled={
+                  isRunning ||
+                  runtimeStatus !==
+                    "ready"
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-[#F4C95D] px-5 py-2 text-sm font-bold text-[#0B1F3A] transition hover:bg-[#e8bc4f] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isRunning ? (
                   <LoaderCircle
-                    size={13}
+                    size={16}
                     className="animate-spin"
                   />
+                ) : (
+                  <Play
+                    size={16}
+                    fill="currentColor"
+                  />
+                )}
 
-                  Loading{" "}
-                  {runtimeName ||
-                    "Runtime"}
-                  ...
-                </span>
-              )}
-
-              {runtimeStatus ===
-                "ready" && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-
-                  {runtimeName ||
-                    "Runtime"}{" "}
-                  Ready
-                </span>
-              )}
-
-              {runtimeStatus ===
-                "error" && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-400">
-                  <span className="h-2 w-2 rounded-full bg-red-400" />
-
-                  Runtime Error
-                </span>
-              )}
-
-              {runtimeStatus ===
-                "unsupported" && (
-                <span className="text-xs font-semibold text-amber-400">
-                  Runtime not
-                  supported
-                </span>
-              )}
+                {isRunning
+                  ? "Running..."
+                  : runtimeStatus ===
+                      "loading"
+                    ? "Loading..."
+                    : "Run Code"}
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleRun}
-              disabled={
-                isRunning ||
-                runtimeStatus !==
-                  "ready"
-              }
-              className="inline-flex items-center gap-2 rounded-lg bg-[#F4C95D] px-5 py-2 text-sm font-bold text-[#0B1F3A] transition hover:bg-[#e8bc4f] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isRunning ? (
-                <LoaderCircle
-                  size={16}
-                  className="animate-spin"
-                />
-              ) : (
-                <Play
-                  size={16}
-                  fill="currentColor"
-                />
+            {resultStatus ===
+              "passed" && (
+                <div className="shrink-0 border-y border-emerald-700/60 bg-emerald-950 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-900">
+                      <CheckCircle2
+                        size={21}
+                        className="text-emerald-400"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-emerald-300">
+                        Correct!
+                      </p>
+
+                      <p className="mt-0.5 text-xs leading-5 text-emerald-200/80">
+                        Your output matches
+                        the expected result.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
 
-              {isRunning
-                ? "Running..."
-                : runtimeStatus ===
-                    "loading"
-                  ? "Loading..."
-                  : "Run Code"}
-            </button>
+            {resultStatus ===
+              "failed" && (
+                <div className="shrink-0 border-y border-amber-700/60 bg-amber-950 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-900">
+                      <XCircle
+                        size={21}
+                        className="text-amber-400"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-amber-300">
+                        Not quite. Try again.
+                      </p>
+
+                      <p className="mt-0.5 text-xs leading-5 text-amber-200/80">
+                        Compare your output
+                        with the expected
+                        result and update your
+                        code.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
           </div>
 
           {/*
           |--------------------------------------------------------------------------
-          | FEEDBACK
+          | RESULT DIVIDER
           |--------------------------------------------------------------------------
           */}
 
-          {resultStatus ===
-            "passed" && (
-              <div className="shrink-0 border-y border-emerald-700/60 bg-emerald-950 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-900">
-                    <CheckCircle2
-                      size={21}
-                      className="text-emerald-400"
-                    />
-                  </div>
+          <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize code editor and result panel"
+              onMouseDown={(event) => {
+                event.preventDefault();
 
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-emerald-300">
-                      Correct!
-                    </p>
+                setIsPreviewResizing(
+                  true
+                );
+              }}
+              className={`group relative hidden w-2 shrink-0 cursor-col-resize md:block ${
+                isPreviewResizing
+                  ? "bg-blue-900/50"
+                  : "bg-[#111827] hover:bg-blue-900/30"
+              }`}
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1 z-10" />
 
-                    <p className="mt-0.5 text-xs leading-5 text-emerald-200/80">
-                      Your output
-                      matches the
-                      expected result.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+              <div
+                className={`absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 transition ${
+                  isPreviewResizing
+                    ? "bg-blue-400"
+                    : "bg-slate-600 group-hover:bg-blue-400"
+                }`}
+              />
 
-          {resultStatus ===
-            "failed" && (
-              <div className="shrink-0 border-y border-amber-700/60 bg-amber-950 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-900">
-                    <XCircle
-                      size={21}
-                      className="text-amber-400"
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-amber-300">
-                      Not quite. Try
-                      again.
-                    </p>
-
-                    <p className="mt-0.5 text-xs leading-5 text-amber-200/80">
-                      Compare your
-                      output with the
-                      expected result
-                      and update your
-                      code.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+              <div
+                className={`absolute left-1/2 top-1/2 h-14 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition ${
+                  isPreviewResizing
+                    ? "bg-blue-400"
+                    : "bg-slate-500 group-hover:bg-blue-400"
+                }`}
+              />
+            </div>
 
           {/*
           |--------------------------------------------------------------------------
-          | OUTPUT / PREVIEW
+          | RESULT SIDE - OUTPUT / PREVIEW
           |--------------------------------------------------------------------------
           */}
 
-          <div className="flex h-[220px] shrink-0 flex-col border-t border-slate-700 bg-[#0B1220]">
-            <div className="flex h-10 shrink-0 items-center gap-2 border-b border-slate-700 px-4 text-xs font-bold uppercase tracking-wide text-slate-400">
+          <div className={`flex min-h-0 min-w-0 flex-1 flex-col ${
+            isPreviewMode
+              ? "bg-white"
+              : "bg-[#0B1220]"
+          }`}>
+            <div className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-700 bg-[#111827] px-4 text-xs font-bold uppercase tracking-wide text-slate-400">
               <Terminal
                 size={14}
               />
@@ -1314,7 +1447,13 @@ export default function ExerciseArea({
                 : "Output"}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-auto">
+            <div
+              className={`min-h-0 flex-1 overflow-auto ${
+                isPreviewMode
+                  ? "bg-white"
+                  : "bg-[#0B1220]"
+              }`}
+            >
               {isPreviewMode ? (
                 output ? (
                   <iframe
@@ -1327,7 +1466,8 @@ export default function ExerciseArea({
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-white px-4 text-sm text-slate-400">
-                    Run your code to see the preview.
+                    Run your code to see
+                    the preview.
                   </div>
                 )
               ) : (
