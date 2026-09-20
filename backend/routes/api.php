@@ -217,7 +217,15 @@ Route::prefix('teacher')->group(function () {
             ]
         );
 
+        Route::patch(
+            '/lessons/{lesson}/publish',
+            [LessonController::class, 'publish']
+        );
 
+        Route::patch(
+            '/lessons/{lesson}/unpublish',
+            [LessonController::class, 'unpublish']
+        );
         /*
         |--------------------------------------------------------------------------
         | Sublesson Management

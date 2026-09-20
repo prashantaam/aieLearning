@@ -225,4 +225,78 @@ class LessonController extends Controller
             'message' => 'Lesson deleted successfully.',
         ]);
     }
+
+    /**
+ * Publish a lesson.
+ */
+    public function publish(Request $request, Lesson $lesson)
+    {
+        $teacher = $request->user();
+
+        if (! $teacher instanceof Teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher access required.',
+            ], 403);
+        }
+
+        $lesson->load('course');
+
+        if (
+            ! $lesson->course ||
+            (int) $lesson->course->teacher_id !== (int) $teacher->id
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to publish this lesson.',
+            ], 403);
+        }
+
+        $lesson->update([
+            'status' => 'published',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lesson published successfully.',
+            'data' => $lesson->fresh(),
+        ]);
+    }
+
+    /**
+     * Move a lesson back to draft.
+     */
+    public function unpublish(Request $request, Lesson $lesson)
+    {
+        $teacher = $request->user();
+
+        if (! $teacher instanceof Teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher access required.',
+            ], 403);
+        }
+
+        $lesson->load('course');
+
+        if (
+            ! $lesson->course ||
+            (int) $lesson->course->teacher_id !== (int) $teacher->id
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to unpublish this lesson.',
+            ], 403);
+        }
+
+        $lesson->update([
+            'status' => 'draft',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lesson moved back to draft.',
+            'data' => $lesson->fresh(),
+        ]);
+    }
 }

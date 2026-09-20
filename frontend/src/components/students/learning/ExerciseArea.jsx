@@ -18,6 +18,11 @@ import {
   createRuntime,
 } from "../../../runtimes/runtimeRegistry";
 
+import {
+  didAllTestsPass,
+  runExerciseTests,
+} from "../../../testing/testRunner";
+
 export default function ExerciseArea({
   exercise,
 }) {
@@ -53,6 +58,11 @@ export default function ExerciseArea({
     resultStatus,
     setResultStatus,
   ] = useState(null);
+
+  const [
+    testResults,
+    setTestResults,
+  ] = useState([]);
 
   const [
     hasExecutionError,
@@ -108,6 +118,64 @@ export default function ExerciseArea({
     useRef(null);
 
   const previewIframeRef = useRef(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Database Test Refs
+  |--------------------------------------------------------------------------
+  */
+
+  const databaseTestsRef =
+    useRef([]);
+
+  const databaseTestResultsRef =
+    useRef({});
+
+  const normalTestResultsRef =
+    useRef([]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Completed Test Progress
+  |--------------------------------------------------------------------------
+  |
+  | Once a test passes during the current exercise session, keep it passed
+  | even if the database later moves to another CRUD state.
+  |
+  */
+
+  const completedTestsRef =
+    useRef({});
+
+  const preserveCompletedTests = (
+    results = []
+  ) => {
+    return results.map((result) => {
+      const testId = result.id;
+
+      if (result.passed) {
+        completedTestsRef.current[
+          testId
+        ] = true;
+
+        return result;
+      }
+
+      if (
+        completedTestsRef.current[
+          testId
+        ]
+      ) {
+        return {
+          ...result,
+          passed: true,
+          error: null,
+        };
+      }
+
+      return result;
+    });
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -178,6 +246,10 @@ export default function ExerciseArea({
     setOutput("");
 
     setResultStatus(null);
+
+    setTestResults([]);
+
+    completedTestsRef.current = {};
 
     setHasExecutionError(false);
 
@@ -284,6 +356,8 @@ export default function ExerciseArea({
         type,
         output: workerOutput,
         error,
+        testId,
+        rows,
       } = event.data;
 
       /*
@@ -313,6 +387,154 @@ export default function ExerciseArea({
         setOutput(finalOutput);
 
         setIsRunning(false);
+
+        return;
+      }
+
+      /*
+       * Database test completed.
+       */
+      if (
+        type ===
+        "database-test-result"
+      ) {
+        const databaseTest =
+          databaseTestsRef.current.find(
+            (test) =>
+              String(test.id) ===
+              String(testId)
+          );
+
+        if (!databaseTest) {
+          console.warn(
+            "Unable to find database test:",
+            testId
+          );
+
+          return;
+        }
+
+        const databaseResult =
+          preserveCompletedTests(
+            runExerciseTests(
+              [databaseTest],
+              {
+                output: "",
+                code,
+                exercise,
+                runtimeKey,
+                databaseRows:
+                  rows || [],
+              }
+            )
+          )[0];
+
+        databaseTestResultsRef.current = {
+          ...databaseTestResultsRef.current,
+          [testId]: databaseResult,
+        };
+
+        const allDatabaseTestsFinished =
+          databaseTestsRef.current.every(
+            (test) =>
+              databaseTestResultsRef
+                .current[test.id]
+          );
+
+        if (allDatabaseTestsFinished) {
+          const databaseResults =
+            databaseTestsRef.current.map(
+              (test) =>
+                databaseTestResultsRef
+                  .current[test.id]
+            );
+
+          const combinedResults = [
+            ...normalTestResultsRef.current,
+            ...databaseResults,
+          ];
+
+          setTestResults(
+            combinedResults
+          );
+
+          setResultStatus(
+            didAllTestsPass(
+              combinedResults
+            )
+              ? "passed"
+              : "failed"
+          );
+        }
+
+        return;
+      }
+
+      /*
+       * Database test failed.
+       */
+      if (
+        type ===
+        "database-test-error"
+      ) {
+        const databaseTest =
+          databaseTestsRef.current.find(
+            (test) =>
+              String(test.id) ===
+              String(testId)
+          );
+
+        if (!databaseTest) {
+          return;
+        }
+
+        databaseTestResultsRef.current = {
+          ...databaseTestResultsRef.current,
+          [testId]: {
+            id: testId,
+            name:
+              databaseTest.name ||
+              "Database test",
+            type: "database",
+            passed: false,
+            error:
+              error ||
+              "Database test failed.",
+          },
+        };
+
+        const allDatabaseTestsFinished =
+          databaseTestsRef.current.every(
+            (test) =>
+              databaseTestResultsRef
+                .current[test.id]
+          );
+
+        if (allDatabaseTestsFinished) {
+          const databaseResults =
+            databaseTestsRef.current.map(
+              (test) =>
+                databaseTestResultsRef
+                  .current[test.id]
+            );
+
+          const combinedResults = [
+            ...normalTestResultsRef.current,
+            ...databaseResults,
+          ];
+
+          setTestResults(
+            combinedResults
+          );
+
+          setResultStatus(
+            didAllTestsPass(
+              combinedResults
+            )
+              ? "passed"
+              : "failed"
+          );
+        }
 
         return;
       }
@@ -472,13 +694,8 @@ export default function ExerciseArea({
   | Grade Exercise
   |--------------------------------------------------------------------------
   |
-  | Grading is completely independent
-  | of the programming language/runtime.
-  |
-  | Python, JavaScript, PHP, C#, etc.
-  | all return text output and this
-  | component compares it with the
-  | expected output.
+  | Normal tests run immediately. Database tests are asynchronous because
+  | they must execute inside PHP-WASM where the SQLite database exists.
   |
   */
 
@@ -488,9 +705,140 @@ export default function ExerciseArea({
       hasExecutionError
     ) {
       setResultStatus(null);
+      setTestResults([]);
+      normalTestResultsRef.current = [];
+      databaseTestsRef.current = [];
+      databaseTestResultsRef.current = {};
+      return;
+    }
+
+    const tests =
+      Array.isArray(
+        exercise?.settings?.tests
+      )
+        ? exercise.settings.tests
+        : [];
+
+    if (tests.length > 0) {
+      const normalTests =
+        tests.filter(
+          (test) =>
+            test.type !== "database"
+        );
+
+      const databaseTests =
+        tests
+          .filter(
+            (test) =>
+              test.type === "database"
+          )
+          .map(
+            (test, index) => ({
+              ...test,
+              id:
+                test.id ??
+                `database-test-${index}`,
+            })
+          );
+
+      const normalResults =
+        preserveCompletedTests(
+          runExerciseTests(
+            normalTests,
+            {
+              output,
+              code,
+              exercise,
+              runtimeKey,
+            }
+          )
+        );
+
+      normalTestResultsRef.current =
+        normalResults;
+      databaseTestsRef.current =
+        databaseTests;
+      databaseTestResultsRef.current = {};
+
+      if (databaseTests.length === 0) {
+        setTestResults(normalResults);
+        setResultStatus(
+          didAllTestsPass(normalResults)
+            ? "passed"
+            : "failed"
+        );
+        return;
+      }
+
+      const pendingDatabaseResults =
+        databaseTests.map(
+          (test) => ({
+            id: test.id,
+            name:
+              test.name ??
+              "Database test",
+            type: "database",
+            passed: false,
+            error:
+              "Checking database...",
+          })
+        );
+
+      setTestResults([
+        ...normalResults,
+        ...pendingDatabaseResults,
+      ]);
+      setResultStatus(null);
+
+      if (runtimeKey !== "php-wasm") {
+        const unsupportedResults =
+          databaseTests.map(
+            (test) => ({
+              id: test.id,
+              name:
+                test.name ??
+                "Database test",
+              type: "database",
+              passed: false,
+              error:
+                "Database tests currently require the PHP runtime.",
+            })
+          );
+
+        const combinedResults = [
+          ...normalResults,
+          ...unsupportedResults,
+        ];
+
+        setTestResults(combinedResults);
+        setResultStatus("failed");
+        return;
+      }
+
+      if (!workerRef.current) {
+        return;
+      }
+
+      databaseTests.forEach(
+        (test) => {
+          workerRef.current?.postMessage({
+            type: "database-test",
+            testId: test.id,
+            query: test.query,
+            databasePath:
+              test.database_path ||
+              "/tmp/todo.db",
+          });
+        }
+      );
 
       return;
     }
+
+    setTestResults([]);
+    normalTestResultsRef.current = [];
+    databaseTestsRef.current = [];
+    databaseTestResultsRef.current = {};
 
     const expectedOutput =
       exercise?.expected_output;
@@ -498,37 +846,26 @@ export default function ExerciseArea({
     if (
       expectedOutput === null ||
       expectedOutput === undefined ||
-      String(
-        expectedOutput
-      ).trim() === ""
+      String(expectedOutput).trim() === ""
     ) {
       setResultStatus(null);
-
       return;
     }
 
     const actual =
       normalizeOutput(output);
-
     const expected =
-      normalizeOutput(
-        expectedOutput
-      );
+      normalizeOutput(expectedOutput);
 
-    
-
-    if (actual === expected) {
-      setResultStatus(
-        "passed"
-      );
-    } else {
-      setResultStatus(
-        "failed"
-      );
-    }
+    setResultStatus(
+      actual === expected
+        ? "passed"
+        : "failed"
+    );
   }, [
     output,
-    exercise?.expected_output,
+    code,
+    exercise,
     runtimeKey,
     hasExecutionError,
   ]);
@@ -558,6 +895,7 @@ export default function ExerciseArea({
     setIsRunning(true);
     setHasExecutionError(false);
     setResultStatus(null);
+    setTestResults([]);
 
     const configuredTimeout =
       Number(
@@ -608,6 +946,7 @@ export default function ExerciseArea({
 
         setIsRunning(false);
         setResultStatus(null);
+        setTestResults([]);
         setHasExecutionError(true);
 
         setOutput(
@@ -818,6 +1157,8 @@ export default function ExerciseArea({
     setOutput("");
 
     setResultStatus(null);
+
+    setTestResults([]);
 
     setHasExecutionError(false);
   };
@@ -1381,6 +1722,69 @@ export default function ExerciseArea({
                   </div>
                 </div>
               )}
+
+            {testResults.length > 0 && (
+              <div className="max-h-52 shrink-0 overflow-y-auto border-t border-slate-700 bg-[#111827] px-4 py-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                    Tests
+                  </p>
+
+                  <span className="text-xs font-semibold text-slate-400">
+                    {testResults.filter(
+                      (result) =>
+                        result.passed
+                    ).length}
+                    {" / "}
+                    {testResults.length}
+                    {" passed"}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {testResults.map(
+                    (result) => (
+                      <div
+                        key={result.id}
+                        className={`flex items-start gap-2 rounded-lg border px-3 py-2 ${
+                          result.passed
+                            ? "border-emerald-800 bg-emerald-950/50"
+                            : "border-amber-800 bg-amber-950/50"
+                        }`}
+                      >
+                        {result.passed ? (
+                          <CheckCircle2
+                            size={16}
+                            className="mt-0.5 shrink-0 text-emerald-400"
+                          />
+                        ) : (
+                          <XCircle
+                            size={16}
+                            className="mt-0.5 shrink-0 text-amber-400"
+                          />
+                        )}
+
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold ${
+                            result.passed
+                              ? "text-emerald-300"
+                              : "text-amber-300"
+                          }`}>
+                            {result.name}
+                          </p>
+
+                          {result.error && (
+                            <p className="mt-1 break-words text-xs text-red-300">
+                              {result.error}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
 
           </div>
 

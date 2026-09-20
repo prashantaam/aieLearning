@@ -1,0 +1,15 @@
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\bin\Debug\net10.0\code-runner-test.exe
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\bin\Debug\net10.0\code-runner-test.deps.json
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\bin\Debug\net10.0\code-runner-test.runtimeconfig.json
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\bin\Debug\net10.0\code-runner-test.dll
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\bin\Debug\net10.0\code-runner-test.pdb
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.GeneratedMSBuildEditorConfig.editorconfig
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.AssemblyInfoInputs.cache
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.AssemblyInfo.cs
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.csproj.CoreCompileInputs.cache
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.sourcelink.json
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.dll
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\refint\code-runner-test.dll
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.pdb
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\code-runner-test.genruntimeconfig.cache
+M:\ai-learning-laravel\backend\storage\app\code-runner-test\obj\Debug\net10.0\ref\code-runner-test.dll

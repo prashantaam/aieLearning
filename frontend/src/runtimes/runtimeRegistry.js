@@ -34,6 +34,7 @@ const runtimeRegistry = {
     new LinuxRuntime(),
 
    "php-wasm": () => new PHPRuntime(),
+   
 };
 
 /*

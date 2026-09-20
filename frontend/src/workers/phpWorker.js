@@ -16,11 +16,14 @@ const initialisePHP = async () => {
 
   console.log("Loading PHP WASM...");
 
-  const runtime = await loadWebRuntime("8.5");
+  const runtime =
+    await loadWebRuntime("8.5");
 
   php = new PHP(runtime);
 
-  console.log("PHP WASM loaded successfully.");
+  console.log(
+    "PHP WASM loaded successfully."
+  );
 
   return php;
 };
@@ -73,7 +76,6 @@ const buildRunOptions = (
 
     return {
       scriptPath: "/exercise.php",
-
       method: "GET",
 
       relativeUri: queryString
@@ -82,7 +84,10 @@ const buildRunOptions = (
 
       $_SERVER: {
         REQUEST_METHOD: "GET",
-        QUERY_STRING: queryString,
+
+        QUERY_STRING:
+          queryString,
+
         REQUEST_URI: queryString
           ? `/exercise.php?${queryString}`
           : "/exercise.php",
@@ -101,7 +106,8 @@ const buildRunOptions = (
 
     method: "POST",
 
-    relativeUri: "/exercise.php",
+    relativeUri:
+      "/exercise.php",
 
     body,
 
@@ -112,13 +118,17 @@ const buildRunOptions = (
 
     $_SERVER: {
       REQUEST_METHOD: "POST",
+
       REQUEST_URI:
         "/exercise.php",
+
       CONTENT_TYPE:
         "application/x-www-form-urlencoded",
+
       CONTENT_LENGTH:
         String(
-          new TextEncoder().encode(body)
+          new TextEncoder()
+            .encode(body)
             .length
         ),
     },
@@ -127,15 +137,139 @@ const buildRunOptions = (
 
 /*
 |--------------------------------------------------------------------------
+| Run Database Query
+|--------------------------------------------------------------------------
+|
+| This is used by the automatic testing system.
+|
+| Important:
+| The database query does NOT come from the student's PHP code.
+| It is supplied by the exercise/test configuration.
+|
+| The internal PHP script connects to the same SQLite database used
+| by the exercise and returns the query result as JSON.
+|
+*/
+
+const runDatabaseQuery = async (
+  query,
+  databasePath = "/tmp/todo.db"
+) => {
+  const runtime =
+    await initialisePHP();
+
+  /*
+   * JSON encoding gives us a safe way to
+   * place the strings inside generated PHP.
+   */
+  const encodedDatabasePath =
+    JSON.stringify(
+      databasePath
+    );
+
+  const encodedQuery =
+    JSON.stringify(
+      query
+    );
+
+  const testScript = `<?php
+
+try {
+    $databasePath = ${encodedDatabasePath};
+    $query = ${encodedQuery};
+
+    $pdo = new PDO(
+        "sqlite:" . $databasePath
+    );
+
+    $pdo->setAttribute(
+        PDO::ATTR_ERRMODE,
+        PDO::ERRMODE_EXCEPTION
+    );
+
+    $statement =
+        $pdo->query($query);
+
+    $rows =
+        $statement->fetchAll(
+            PDO::FETCH_ASSOC
+        );
+
+    echo json_encode([
+        "success" => true,
+        "rows" => $rows
+    ]);
+} catch (Throwable $error) {
+    echo json_encode([
+        "success" => false,
+        "error" => $error->getMessage()
+    ]);
+}
+`;
+
+  runtime.writeFile(
+    "/database-test.php",
+    testScript
+  );
+
+  const response =
+    await runtime.run({
+      scriptPath:
+        "/database-test.php",
+
+      method: "GET",
+
+      relativeUri:
+        "/database-test.php",
+
+      $_SERVER: {
+        REQUEST_METHOD: "GET",
+
+        REQUEST_URI:
+          "/database-test.php",
+      },
+    });
+
+  const rawOutput =
+    response.text ?? "";
+
+  let result;
+
+  try {
+    result =
+      JSON.parse(rawOutput);
+  } catch {
+    throw new Error(
+      `Unable to parse database test result: ${rawOutput}`
+    );
+  }
+
+  if (!result.success) {
+    throw new Error(
+      result.error ||
+        "Database query failed."
+    );
+  }
+
+  return result.rows || [];
+};
+
+/*
+|--------------------------------------------------------------------------
 | Worker Messages
 |--------------------------------------------------------------------------
 */
 
-self.onmessage = async (event) => {
+self.onmessage = async (
+  event
+) => {
   const {
     type,
     code,
     request,
+    query,
+    databasePath,
+    testId,
   } = event.data;
 
   /*
@@ -158,7 +292,8 @@ self.onmessage = async (event) => {
       );
 
       self.postMessage({
-        type: "runtime-error",
+        type:
+          "runtime-error",
 
         error:
           error?.stack ||
@@ -193,15 +328,16 @@ self.onmessage = async (event) => {
       /*
        * Build request.
        *
-       * Existing Stage 1 / Stage 2
-       * exercises don't send request,
-       * therefore they default to GET.
+       * Existing exercises that do not
+       * provide a request default to GET.
        */
       const runOptions =
-        buildRunOptions(request);
+        buildRunOptions(
+          request
+        );
 
       /*
-       * Execute PHP.
+       * Execute student's PHP.
        */
       const response =
         await runtime.run(
@@ -222,7 +358,84 @@ self.onmessage = async (event) => {
       );
 
       self.postMessage({
-        type: "execution-error",
+        type:
+          "execution-error",
+
+        error:
+          error?.stack ||
+          error?.message ||
+          String(error),
+      });
+    }
+
+    return;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Database Test
+  |--------------------------------------------------------------------------
+  |
+  | Runs a teacher-configured SELECT query against the exercise database.
+  |
+  */
+
+  if (
+    type === "database-test"
+  ) {
+    try {
+      if (
+        !query ||
+        typeof query !== "string"
+      ) {
+        throw new Error(
+          "Database test query is required."
+        );
+      }
+
+      /*
+       * For now database tests are
+       * deliberately read-only.
+       */
+      const trimmedQuery =
+        query.trim();
+
+      if (
+        !/^select\b/i.test(
+          trimmedQuery
+        )
+      ) {
+        throw new Error(
+          "Database tests currently support SELECT queries only."
+        );
+      }
+
+      const rows =
+        await runDatabaseQuery(
+          trimmedQuery,
+          databasePath ||
+            "/tmp/todo.db"
+        );
+
+      self.postMessage({
+        type:
+          "database-test-result",
+
+        testId,
+
+        rows,
+      });
+    } catch (error) {
+      console.error(
+        "DATABASE TEST ERROR:",
+        error
+      );
+
+      self.postMessage({
+        type:
+          "database-test-error",
+
+        testId,
 
         error:
           error?.stack ||

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Concepts for Kids 🚀</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+    :root {
+      --primary: #7c3aed;
+      --primary-light: #a78bfa;
+      --secondary: #ec4899;
+      --accent: #22d3ee;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --bg: #fdf4ff;
+      --card: #ffffff;
+      --text: #1e1b4b;
+      --muted: #6b7280;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #fdf4ff 0%, #f0f9ff 50%, #ecfdf5 100%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(90deg, #7c3aed, #ec4899);
+      color: white;
+      padding: 1.2rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    .logo span {
+      font-size: 2rem;
+    }
+
+    /* Layout */
+    .container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 80px);
+    }
+
+    /* Sidebar */
+    nav {
+      width: 280px;
+      background: white;
+      padding: 1.5rem 1rem;
+      border-right: 1px solid #e9d5ff;
+      overflow-y: auto;
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 80px);
+    }
+
+    nav h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      padding-left: 0.8rem;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.4rem;
+      border: none;
+      background: transparent;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .nav-btn:hover {
+      background: #f3e8ff;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      color: white;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .nav-btn .emoji {
+      font-size: 1.3rem;
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    .section {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.08);
+      border: 2px solid #f3e8ff;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, #7c3aed, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+
+    .simple-text {
+      font-size: 1.15rem;
+      margin-bottom: 1.5rem;
+      color: #374151;
+    }
+
+    .highlight {
+      background: #fef3c7;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    /* Interactive Demo Box */
+    .demo-box {
+      background: linear-gradient(135deg, #faf5ff, #f0f9ff);
+      border: 3px dashed #c4b5fd;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+
+    .demo-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0.3rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      color: white;
+      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-secondary {
+      background: #fce7f3;
+      color: #be185d;
+    }
+
+    .btn-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .btn-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* Code Block */
+    .code-block {
+      background: #1e1b4b;
+      color: #e0e7ff;
+      padding: 1.2rem;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.5;
+    }
+
+    .code-block .comment { color: #94a3b8; }
+    .code-block .keyword { color: #c084fc; }
+    .code-block .string { color: #86efac; }
+    .code-block .tag { color: #67e8f9; }
+
+    /* Special elements */
+    .big-number {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 0.5rem 0;
+    }
+
+    .input-fun {
+      padding: 0.8rem 1.2rem;
+      border: 3px solid #c4b5fd;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      width: 100%;
+      max-width: 300px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-fun:focus {
+      border-color: var(--primary);
+    }
+
+    .toy {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0.5rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      min-width: 100px;
+    }
+
+    .toy .emoji {
+      font-size: 2.5rem;
+    }
+
+    .key-tag {
+      background: #ede9fe;
+      color: #5b21b6;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      margin-top: 0.4rem;
+    }
+
+    .weather-box {
+      font-size: 4rem;
+      margin: 1rem 0;
+      transition: all 0.4s;
+    }
+
+    .mirror-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--secondary);
+      min-height: 2.5rem;
+      margin-top: 1rem;
+    }
+
+    .timer-display {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #0891b2;
+    }
+
+    /* Footer tip */
+    .tip {
+      background: #ecfdf5;
+      border-left: 5px solid #34d399;
+      padding: 1rem 1.2rem;
+      border-radius: 0 12px 12px 0;
+      margin-top: 1.5rem;
+      font-size: 1rem;
+    }
+
+    /* Mobile */
+    @media (max-width: 800px) {
+      .container {
+        flex-direction: column;
+      }
+      nav {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        padding: 1rem;
+      }
+      nav h3 { display: none; }
+      .nav-btn {
+        flex: 1 1 45%;
+        justify-content: center;
+        font-size: 0.9rem;
+        padding: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <span>🤖</span>
+      React for Kids
+    </div>
+    <div style="font-size: 0.95rem; opacity: 0.9;">Learn by playing! 🎮</div>
+  </header>
+
+  <div class="container">
+    <nav id="nav">
+      <h3>Concepts</h3>
+      <button class="nav-btn active" data-section="intro">
+        <span class="emoji">🏠</span> What is React?
+      </button>
+      <button class="nav-btn" data-section="jsx">
+        <span class="emoji">✨</span> JSX
+      </button>
+      <button class="nav-btn" data-section="components">
+        <span class="emoji">🧩</span> Components
+      </button>
+      <button class="nav-btn" data-section="props">
+        <span class="emoji">🎁</span> Props
+      </button>
+      <button class="nav-btn" data-section="state">
+        <span class="emoji">🔢</span> State
+      </button>
+      <button class="nav-btn" data-section="events">
+        <span class="emoji">👆</span> Events
+      </button>
+      <button class="nav-btn" data-section="conditional">
+        <span class="emoji">🌤️</span> Conditional
+      </button>
+      <button class="nav-btn" data-section="lists">
+        <span class="emoji">📋</span> Lists & Keys
+      </button>
+      <button class="nav-btn" data-section="useeffect">
+        <span class="emoji">⏱️</span> useEffect
+      </button>
+      <button class="nav-btn" data-section="forms">
+        <span class="emoji">📝</span> Forms
+      </button>
+    </nav>
+
+    <main>
+      <!-- 1. INTRO -->
+      <section id="intro" class="section active">
+        <div class="card">
+          <h1>🏠 What is React?</h1>
+          <p class="simple-text">
+            React is like a giant box of <span class="highlight">magical LEGO blocks</span> for making websites.<br>
+            You snap colorful pieces together to build buttons, text, pictures and whole pages!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🎮 Try it! Build a tiny page</div>
+            <div id="lego-preview" style="font-size: 1.4rem; margin: 1rem 0; min-height: 80px;">
+              <div style="background:#ede9fe;padding:1rem;border-radius:12px;display:inline-block;">
+                👋 Hello, friend!
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="addLego('button')">➕ Add Button</button>
+            <button class="btn btn-secondary" onclick="addLego('text')">➕ Add Text</button>
+            <button class="btn btn-success" onclick="addLego('image')">➕ Add Image</button>
+            <button class="btn btn-warning" onclick="clearLego()">🗑️ Clear</button>
+          </div>
+
+          <div class="code-block">
+<span class="comment">// In React we write components like this:</span><br>
+<span class="keyword">function</span> App() {<br>
+&nbsp;&nbsp;<span class="keyword">return</span> &lt;<span class="tag">h1</span>&gt;Hello, I am made with React!&lt;/<span class="tag">h1</span>&gt;;<br>
+}
+          </div>
+
+          <div class="tip">
+            💡 <strong>Remember:</strong> React helps us build websites by snapping reusable pieces together — just like LEGO!
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. JSX -->
+      <section id="jsx" class="section">
+        <div class="card">
+          <h1>✨ JSX</h1>
+          <p class="simple-text">
+            JSX looks like HTML but is actually JavaScript with superpowers!<br>
+            It lets us write beautiful UI code that is easy to read.
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">👀 See the magic of JSX</div>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center;">
+              <div style="background:#fef2f2; padding:1rem; border-radius:12px; flex:1; min-width:200px;">
+                <strong>Normal HTML</strong><br>
+                <code style="font-size:0.9rem;">&lt;h1&gt;Hello&lt;/h1&gt;</code>
+              </div>
+              <div style="font-size:2rem; align-self:center;">➡️</div>
+              <div style="background:#ecfdf5; padding:1rem; border-radius:12px; flex:1; min-width:200px;">
+                <strong>JSX (React)</strong><br>
+                <code style="font-size:0.9rem;">&lt;h1&gt;Hello {name}!&lt;/h1&gt;</code>
+              </div>
+            </div>
+            <p style="margin-top:1rem;">Try changing the name:</p>
+            <input class="input-fun" id="jsx-name" value="Alex" oninput="updateJSX()">
+            <div id="jsx-result" style="font-size:1.8rem; margin-top:1rem; font-weight:700; color:#7c3aed;">
+              Hello, Alex! 🎉
+            </div>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">function</span> Greeting() {<br>
+&nbsp;&nbsp;<span class="keyword">const</span> name = <span class="string">"Alex"</span>;<br>
+&nbsp;&nbsp;<span class="keyword">return</span> &lt;<span class="tag">h1</span>&gt;Hello, {name}!&lt;/<span class="tag">h1</span>&gt;;<br>
+}
+          </div>
+
+          <div class="tip">
+            💡 Curly braces <code>{}</code> let you put JavaScript inside JSX!
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. COMPONENTS -->
+      <section id="components" class="section">
+        <div class="card">
+          <h1>🧩 Components</h1>
+          <p class="simple-text">
+            A Component is a finished LEGO creation you can reuse again and again.<br>
+            Make it once → use it many times!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🧱 Click to create more button components</div>
+            <div id="component-area" style="min-height:80px; margin:1rem 0;"></div>
+            <button class="btn btn-primary" onclick="addComponent()">➕ Create New Button Component</button>
+            <button class="btn btn-warning" onclick="clearComponents()">🗑️ Clear All</button>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">function</span> HappyButton() {<br>
+&nbsp;&nbsp;<span class="keyword">return</span> &lt;<span class="tag">button</span>&gt;Click me! 😊&lt;/<span class="tag">button</span>&gt;;<br>
+}<br><br>
+<span class="comment">// Use it many times:</span><br>
+&lt;HappyButton /&gt;<br>
+&lt;HappyButton /&gt;<br>
+&lt;HappyButton /&gt;
+          </div>
+
+          <div class="tip">
+            💡 Components are the building blocks of every React app!
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. PROPS -->
+      <section id="props" class="section">
+        <div class="card">
+          <h1>🎁 Props</h1>
+          <p class="simple-text">
+            Props are like <span class="highlight">gifts</span> you give to a component.<br>
+            The component opens the gift and uses what’s inside!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🎁 Give a gift (prop) to the robot</div>
+            <input class="input-fun" id="prop-name" placeholder="Type a name..." value="Emma" oninput="updateProp()">
+            <div style="margin:1.5rem 0;">
+              <div style="font-size:4rem;">🤖</div>
+              <div id="prop-result" style="font-size:1.8rem; font-weight:700; color:#ec4899;">
+                Hello, Emma! 💖
+              </div>
+            </div>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">function</span> Hello(props) {<br>
+&nbsp;&nbsp;<span class="keyword">return</span> &lt;<span class="tag">h1</span>&gt;Hello, {props.name}!&lt;/<span class="tag">h1</span>&gt;;<br>
+}<br><br>
+&lt;Hello name=<span class="string">"Emma"</span> /&gt;
+          </div>
+
+          <div class="tip">
+            💡 Props are read-only. The child component cannot change them — only the parent can!
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. STATE -->
+      <section id="state" class="section">
+        <div class="card">
+          <h1>🔢 State & useState</h1>
+          <p class="simple-text">
+            State is like a <span class="highlight">scoreboard</span> that can change.<br>
+            When the number changes, React automatically updates the screen!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🎮 Live Counter (this is State!)</div>
+            <div class="big-number" id="counter">0</div>
+            <button class="btn btn-primary" onclick="changeCount(1)">➕ Add 1</button>
+            <button class="btn btn-secondary" onclick="changeCount(-1)">➖ Minus 1</button>
+            <button class="btn btn-warning" onclick="changeCount(0)">🔄 Reset</button>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">import</span> { useState } <span class="keyword">from</span> <span class="string">"react"</span>;<br><br>
+<span class="keyword">function</span> Counter() {<br>
+&nbsp;&nbsp;<span class="keyword">const</span> [count, setCount] = useState(0);<br><br>
+&nbsp;&nbsp;<span class="keyword">return</span> (<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="tag">div</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="tag">h2</span>&gt;Count: {count}&lt;/<span class="tag">h2</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="tag">button</span> onClick={() => setCount(count + 1)}&gt;Add&lt;/<span class="tag">button</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span class="tag">div</span>&gt;<br>
+&nbsp;&nbsp;);<br>
+}
+          </div>
+
+          <div class="tip">
+            💡 Normal variables don’t update the screen. State does!
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. EVENTS -->
+      <section id="events" class="section">
+        <div class="card">
+          <h1>👆 Handling Events</h1>
+          <p class="simple-text">
+            An Event is when something happens — click, type, hover...<br>
+            You tell React: “When this happens → do that!”
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🎯 Click the buttons and see what happens!</div>
+            <button class="btn btn-primary" onclick="showMessage('You clicked the blue button! 💙')">Blue Button</button>
+            <button class="btn btn-secondary" onclick="showMessage('Pink button says hi! 💖')">Pink Button</button>
+            <button class="btn btn-success" onclick="showMessage('Green is happy! 🌱')">Green Button</button>
+            <div id="event-msg" style="font-size:1.4rem; margin-top:1.5rem; min-height:2rem; font-weight:700; color:#7c3aed;"></div>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">function</span> ClickMe() {<br>
+&nbsp;&nbsp;<span class="keyword">const</span> sayHi = () => alert(<span class="string">"Hi there! 👋"</span>);<br>
+&nbsp;&nbsp;<span class="keyword">return</span> &lt;<span class="tag">button</span> onClick={sayHi}&gt;Click Me&lt;/<span class="tag">button</span>&gt;;<br>
+}
+          </div>
+
+          <div class="tip">
+            💡 In React we write <code>onClick</code> (camelCase) instead of <code>onclick</code>.
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. CONDITIONAL -->
+      <section id="conditional" class="section">
+        <div class="card">
+          <h1>🌤️ Conditional Rendering</h1>
+          <p class="simple-text">
+            Show something only if a condition is true.<br>
+            Like: “If sunny → show sun. If rainy → show umbrella.”
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🌦️ Toggle the weather!</div>
+            <div class="weather-box" id="weather">☀️</div>
+            <div id="weather-text" style="font-size:1.4rem; font-weight:700; margin-bottom:1rem;">It's sunny outside!</div>
+            <button class="btn btn-primary" onclick="toggleWeather()">🔄 Change Weather</button>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">function</span> Weather({ isSunny }) {<br>
+&nbsp;&nbsp;<span class="keyword">return</span> isSunny <br>
+&nbsp;&nbsp;&nbsp;&nbsp;? &lt;<span class="tag">h2</span>&gt;☀️ Sunny day!&lt;/<span class="tag">h2</span>&gt; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;: &lt;<span class="tag">h2</span>&gt;🌧️ Rainy day!&lt;/<span class="tag">h2</span>&gt;;<br>
+}
+          </div>
+
+          <div class="tip">
+            💡 We use the ternary operator <code>? :</code> or <code>&&</code> for this.
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. LISTS & KEYS -->
+      <section id="lists" class="section">
+        <div class="card">
+          <h1>📋 Lists & Keys</h1>
+          <p class="simple-text">
+            When showing many items, each one needs a special <span class="highlight">name tag (key)</span><br>
+            so React doesn’t get confused!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">🧸 My Toy Collection (each has a Key)</div>
+            <div id="toy-list" style="display:flex; flex-wrap:wrap; justify-content:center; gap:0.5rem;"></div>
+            <div style="margin-top:1.5rem;">
+              <button class="btn btn-primary" onclick="addToy()">➕ Add Random Toy</button>
+              <button class="btn btn-warning" onclick="clearToys()">🗑️ Clear</button>
+            </div>
+          </div>
+
+          <div class="code-block">
+{toys.map(toy => (<br>
+&nbsp;&nbsp;&lt;<span class="tag">div</span> key={toy.id}&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{toy.emoji} {toy.name}<br>
+&nbsp;&nbsp;&lt;/<span class="tag">div</span>&gt;<br>
+))}
+          </div>
+
+          <div class="tip">
+            💡 Always give a unique and stable <code>key</code> (usually an id). Never use the array index if the list can change order!
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. USEEFFECT -->
+      <section id="useeffect" class="section">
+        <div class="card">
+          <h1>⏱️ useEffect</h1>
+          <p class="simple-text">
+            useEffect is a helper that runs <span class="highlight">after</span> the picture is drawn.<br>
+            Perfect for timers, loading data, or cleaning up!
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">⏰ Live Timer (runs with useEffect idea)</div>
+            <div class="timer-display" id="timer">0</div>
+            <p>seconds</p>
+            <button class="btn btn-primary" onclick="startTimer()">▶️ Start</button>
+            <button class="btn btn-secondary" onclick="stopTimer()">⏹️ Stop</button>
+            <button class="btn btn-warning" onclick="resetTimer()">🔄 Reset</button>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">useEffect</span>(() => {<br>
+&nbsp;&nbsp;<span class="keyword">const</span> id = setInterval(() => {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;setSeconds(s => s + 1);<br>
+&nbsp;&nbsp;}, 1000);<br><br>
+&nbsp;&nbsp;<span class="keyword">return</span> () => clearInterval(id); <span class="comment">// cleanup</span><br>
+}, []);
+          </div>
+
+          <div class="tip">
+            💡 The empty array <code>[]</code> means “run only once when the component appears”.
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. FORMS -->
+      <section id="forms" class="section">
+        <div class="card">
+          <h1>📝 Controlled Forms</h1>
+          <p class="simple-text">
+            In a controlled form, React is the <span class="highlight">boss</span> of the input box.<br>
+            Whatever you type is stored in state so React always knows the value.
+          </p>
+
+          <div class="demo-box">
+            <div class="demo-title">✍️ Type something — React mirrors it instantly!</div>
+            <input class="input-fun" id="form-input" placeholder="Type your name or a message..." oninput="updateForm()">
+            <div class="mirror-text" id="form-mirror">✨ Your text will appear here ✨</div>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> [name, setName] = useState(<span class="string">""</span>);<br><br>
+&lt;<span class="tag">input</span><br>
+&nbsp;&nbsp;value={name}<br>
+&nbsp;&nbsp;onChange={(e) => setName(e.target.value)}<br>
+/&gt;<br>
+&lt;<span class="tag">p</span>&gt;You typed: {name}&lt;/<span class="tag">p</span>&gt;
+          </div>
+
+          <div class="tip">
+            💡 This is called a “controlled component” because React controls the value.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // ========== NAVIGATION ==========
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const sections = document.querySelectorAll('.section');
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navBtns.forEach(b => b.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+      });
+    });
+
+    // ========== 1. INTRO - LEGO ==========
+    function addLego(type) {
+      const preview = document.getElementById('lego-preview');
+      let html = '';
+      if (type === 'button') {
+        html = `<button style="background:#7c3aed;color:white;border:none;padding:0.6rem 1.2rem;border-radius:50px;margin:0.3rem;font-weight:700;">Click Me!</button>`;
+      } else if (type === 'text') {
+        html = `<span style="background:#fce7f3;padding:0.5rem 1rem;border-radius:10px;margin:0.3rem;display:inline-block;">Hello friend! 💖</span>`;
+      } else {
+        html = `<span style="font-size:2.5rem;margin:0.3rem;">🌈</span>`;
+      }
+      preview.innerHTML += html;
+    }
+    function clearLego() {
+      document.getElementById('lego-preview').innerHTML = '<div style="background:#ede9fe;padding:1rem;border-radius:12px;display:inline-block;">👋 Hello, friend!</div>';
+    }
+
+    // ========== 2. JSX ==========
+    function updateJSX() {
+      const name = document.getElementById('jsx-name').value || 'Friend';
+      document.getElementById('jsx-result').textContent = `Hello, ${name}! 🎉`;
+    }
+
+    // ========== 3. COMPONENTS ==========
+    let componentCount = 0;
+    function addComponent() {
+      componentCount++;
+      const area = document.getElementById('component-area');
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary';
+      btn.style.margin = '0.3rem';
+      btn.textContent = `Button #${componentCount} 😊`;
+      btn.onclick = () => alert(`You clicked Button #${componentCount}!`);
+      area.appendChild(btn);
+    }
+    function clearComponents() {
+      document.getElementById('component-area').innerHTML = '';
+      componentCount = 0;
+    }
+
+    // ========== 4. PROPS ==========
+    function updateProp() {
+      const name = document.getElementById('prop-name').value || 'Friend';
+      document.getElementById('prop-result').textContent = `Hello, ${name}! 💖`;
+    }
+
+    // ========== 5. STATE ==========
+    let count = 0;
+    function changeCount(n) {
+      if (n === 0) count = 0;
+      else count += n;
+      document.getElementById('counter').textContent = count;
+    }
+
+    // ========== 6. EVENTS ==========
+    function showMessage(msg) {
+      document.getElementById('event-msg').textContent = msg;
+    }
+
+    // ========== 7. CONDITIONAL ==========
+    let isSunny = true;
+    function toggleWeather() {
+      isSunny = !isSunny;
+      document.getElementById('weather').textContent = isSunny ? '☀️' : '🌧️';
+      document.getElementById('weather-text').textContent = isSunny 
+        ? "It's sunny outside!" 
+        : "It's raining... take an umbrella!";
+    }
+
+    // ========== 8. LISTS & KEYS ==========
+    const toys = [
+      { id: 1, emoji: '⚽', name: 'Ball' },
+      { id: 2, emoji: '🚗', name: 'Car' },
+      { id: 3, emoji: '🧸', name: 'Teddy' }
+    ];
+    let nextId = 4;
+    const toyEmojis = ['⚽', '🚗', '🧸', '🚀', '🎮', '🎨', '📚', '🎸'];
+
+    function renderToys() {
+      const list = document.getElementById('toy-list');
+      list.innerHTML = toys.map(toy => `
+        <div class="toy">
+          <div class="emoji">${toy.emoji}</div>
+          <div>${toy.name}</div>
+          <div class="key-tag">key: ${toy.id}</div>
+        </div>
+      `).join('');
+    }
+    function addToy() {
+      const emoji = toyEmojis[Math.floor(Math.random() * toyEmojis.length)];
+      toys.push({ id: nextId++, emoji, name: 'New Toy' });
+      renderToys();
+    }
+    function clearToys() {
+      toys.length = 0;
+      renderToys();
+    }
+    renderToys();
+
+    // ========== 9. USEEFFECT (Timer) ==========
+    let seconds = 0;
+    let timerId = null;
+    function startTimer() {
+      if (timerId) return;
+      timerId = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').textContent = seconds;
+      }, 1000);
+    }
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    function resetTimer() {
+      stopTimer();
+      seconds = 0;
+      document.getElementById('timer').textContent = 0;
+    }
+
+    // ========== 10. FORMS ==========
+    function updateForm() {
+      const val = document.getElementById('form-input').value;
+      document.getElementById('form-mirror').textContent = val || '✨ Your text will appear here ✨';
+    }
+  </script>
+</body>
+</html>
