@@ -13,6 +13,7 @@ import {
   FileText,
   HelpCircle,
   Loader2,
+  MonitorPlay,
   Rocket,
 } from "lucide-react";
 
@@ -184,6 +185,30 @@ const SublessonDetailPage = () => {
 
   /*
   |--------------------------------------------------------------------------
+  | Manage Interactive Demo
+  |--------------------------------------------------------------------------
+  */
+
+  const handleManageDemo = () => {
+    navigate(
+      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/demos`
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Manage Exercises
+  |--------------------------------------------------------------------------
+  */
+
+  const handleManageExercises = () => {
+    navigate(
+      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/exercises`
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
   | Manage Quiz
   |--------------------------------------------------------------------------
   */
@@ -203,18 +228,6 @@ const SublessonDetailPage = () => {
   const handleManageFlashcards = () => {
     navigate(
       `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/flashcards`
-    );
-  };
-
-  /*
-  |--------------------------------------------------------------------------
-  | Manage Exercises
-  |--------------------------------------------------------------------------
-  */
-
-  const handleManageExercises = () => {
-    navigate(
-      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/exercises`
     );
   };
 
@@ -444,7 +457,7 @@ const SublessonDetailPage = () => {
           {/* Management Cards */}
           {/* ===================================================== */}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 
             {/* ================================================= */}
             {/* Content */}
@@ -468,6 +481,56 @@ const SublessonDetailPage = () => {
                   Add text, Markdown, code,
                   images and other learning
                   material.
+                </p>
+              </div>
+            </button>
+
+            {/* ================================================= */}
+            {/* Interactive Demo */}
+            {/* ================================================= */}
+
+            <button
+              type="button"
+              onClick={handleManageDemo}
+              className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50"
+            >
+              <div className="rounded-xl bg-cyan-50 p-3 text-cyan-600">
+                <MonitorPlay className="h-5 w-5" />
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Interactive Demo
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Create browser-based interactive
+                  demonstrations for this concept.
+                </p>
+              </div>
+            </button>
+
+            {/* ================================================= */}
+            {/* Exercises */}
+            {/* ================================================= */}
+
+            <button
+              type="button"
+              onClick={handleManageExercises}
+              className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:bg-orange-50"
+            >
+              <div className="rounded-xl bg-orange-50 p-3 text-orange-600">
+                <Code2 className="h-5 w-5" />
+              </div>
+
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Manage Exercises
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Create, edit and publish practical
+                  coding exercises for this sublesson.
                 </p>
               </div>
             </button>
@@ -520,31 +583,6 @@ const SublessonDetailPage = () => {
                   Generate, edit and publish
                   revision cards for this
                   sublesson.
-                </p>
-              </div>
-            </button>
-
-            {/* ================================================= */}
-            {/* Exercises */}
-            {/* ================================================= */}
-
-            <button
-              type="button"
-              onClick={handleManageExercises}
-              className="flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:bg-orange-50"
-            >
-              <div className="rounded-xl bg-orange-50 p-3 text-orange-600">
-                <Code2 className="h-5 w-5" />
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Manage Exercises
-                </p>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Create, edit and publish practical
-                  coding exercises for this sublesson.
                 </p>
               </div>
             </button>

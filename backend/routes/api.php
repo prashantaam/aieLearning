@@ -17,6 +17,8 @@ use App\Http\Controllers\Teacher\SublessonContentController;
 use App\Http\Controllers\Teacher\QuizController;
 use App\Http\Controllers\Teacher\FlashcardController;
 use App\Http\Controllers\Teacher\ExerciseController;
+use App\Http\Controllers\Teacher\InteractiveDemoController;
+
 /*
 |--------------------------------------------------------------------------
 | Student Controllers
@@ -219,13 +221,21 @@ Route::prefix('teacher')->group(function () {
 
         Route::patch(
             '/lessons/{lesson}/publish',
-            [LessonController::class, 'publish']
+            [
+                LessonController::class,
+                'publish',
+            ]
         );
 
         Route::patch(
             '/lessons/{lesson}/unpublish',
-            [LessonController::class, 'unpublish']
+            [
+                LessonController::class,
+                'unpublish',
+            ]
         );
+
+
         /*
         |--------------------------------------------------------------------------
         | Sublesson Management
@@ -344,6 +354,80 @@ Route::prefix('teacher')->group(function () {
             [
                 SublessonContentController::class,
                 'destroy',
+            ]
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Interactive Demo Management
+        |--------------------------------------------------------------------------
+        |
+        | Sublesson
+        |     └── Interactive Demos
+        |
+        */
+
+        // List Interactive Demos belonging to a Sublesson
+        Route::get(
+            '/sublessons/{sublesson}/demos',
+            [
+                InteractiveDemoController::class,
+                'index',
+            ]
+        );
+
+        // Create Interactive Demo under a Sublesson
+        Route::post(
+            '/sublessons/{sublesson}/demos',
+            [
+                InteractiveDemoController::class,
+                'store',
+            ]
+        );
+
+        // View a single Interactive Demo
+        Route::get(
+            '/sublessons/{sublesson}/demos/{demo}',
+            [
+                InteractiveDemoController::class,
+                'show',
+            ]
+        );
+
+        // Update Interactive Demo
+        Route::put(
+            '/sublessons/{sublesson}/demos/{demo}',
+            [
+                InteractiveDemoController::class,
+                'update',
+            ]
+        );
+
+        // Delete Interactive Demo
+        Route::delete(
+            '/sublessons/{sublesson}/demos/{demo}',
+            [
+                InteractiveDemoController::class,
+                'destroy',
+            ]
+        );
+
+        // Publish Interactive Demo
+        Route::patch(
+            '/sublessons/{sublesson}/demos/{demo}/publish',
+            [
+                InteractiveDemoController::class,
+                'publish',
+            ]
+        );
+
+        // Move Interactive Demo back to draft
+        Route::patch(
+            '/sublessons/{sublesson}/demos/{demo}/unpublish',
+            [
+                InteractiveDemoController::class,
+                'unpublish',
             ]
         );
 
@@ -495,78 +579,81 @@ Route::prefix('teacher')->group(function () {
             ]
         );
 
+
         /*
-|--------------------------------------------------------------------------
-| Sublesson Exercise Management
-|--------------------------------------------------------------------------
-|
-| Sublesson
-|     └── Exercises
-|
-*/
+        |--------------------------------------------------------------------------
+        | Sublesson Exercise Management
+        |--------------------------------------------------------------------------
+        |
+        | Sublesson
+        |     └── Exercises
+        |
+        */
 
-// List Exercises belonging to a Sublesson
-Route::get(
-    '/sublessons/{sublesson}/exercises',
-    [
-        ExerciseController::class,
-        'index',
-    ]
-);
+        // List Exercises belonging to a Sublesson
+        Route::get(
+            '/sublessons/{sublesson}/exercises',
+            [
+                ExerciseController::class,
+                'index',
+            ]
+        );
 
-// Create Exercise under a Sublesson
-Route::post(
-    '/sublessons/{sublesson}/exercises',
-    [
-        ExerciseController::class,
-        'store',
-    ]
-);
+        // Create Exercise under a Sublesson
+        Route::post(
+            '/sublessons/{sublesson}/exercises',
+            [
+                ExerciseController::class,
+                'store',
+            ]
+        );
 
-// View a single Exercise
-Route::get(
-    '/sublessons/{sublesson}/exercises/{exercise}',
-    [
-        ExerciseController::class,
-        'show',
-    ]
-);
+        // View a single Exercise
+        Route::get(
+            '/sublessons/{sublesson}/exercises/{exercise}',
+            [
+                ExerciseController::class,
+                'show',
+            ]
+        );
 
-// Update Exercise
-Route::put(
-    '/sublessons/{sublesson}/exercises/{exercise}',
-    [
-        ExerciseController::class,
-        'update',
-    ]
-);
+        // Update Exercise
+        Route::put(
+            '/sublessons/{sublesson}/exercises/{exercise}',
+            [
+                ExerciseController::class,
+                'update',
+            ]
+        );
 
-// Delete Exercise
-Route::delete(
-    '/sublessons/{sublesson}/exercises/{exercise}',
-    [
-        ExerciseController::class,
-        'destroy',
-    ]
-);
+        // Delete Exercise
+        Route::delete(
+            '/sublessons/{sublesson}/exercises/{exercise}',
+            [
+                ExerciseController::class,
+                'destroy',
+            ]
+        );
 
-// Publish Exercise
-Route::patch(
-    '/sublessons/{sublesson}/exercises/{exercise}/publish',
-    [
-        ExerciseController::class,
-        'publish',
-    ]
-);
+        // Publish Exercise
+        Route::patch(
+            '/sublessons/{sublesson}/exercises/{exercise}/publish',
+            [
+                ExerciseController::class,
+                'publish',
+            ]
+        );
 
-// Move Exercise back to draft
-Route::patch(
-    '/sublessons/{sublesson}/exercises/{exercise}/unpublish',
-    [
-        ExerciseController::class,
-        'unpublish',
-    ]
-);
+        // Move Exercise back to draft
+        Route::patch(
+            '/sublessons/{sublesson}/exercises/{exercise}/unpublish',
+            [
+                ExerciseController::class,
+                'unpublish',
+            ]
+        );
+
+
         /*
         |--------------------------------------------------------------------------
         | AI Course Authoring

@@ -35,7 +35,6 @@ class CourseController extends Controller
         ]);
     }
 
-
     /*
     |--------------------------------------------------------------------------
     | Show Published Course
@@ -83,6 +82,22 @@ class CourseController extends Controller
                                                 );
                                         },
 
+                                        /*
+                                        |--------------------------------------------------------------------------
+                                        | Published Interactive Demos
+                                        |--------------------------------------------------------------------------
+                                        */
+
+                                        'interactiveDemos' => function ($query) {
+                                            $query
+                                                ->where(
+                                                    'status',
+                                                    'published'
+                                                )
+                                                ->orderBy(
+                                                    'sort_order'
+                                                );
+                                        },
 
                                         /*
                                         |--------------------------------------------------------------------------
@@ -101,11 +116,12 @@ class CourseController extends Controller
                                                 );
                                         },
 
-                                         /*
+                                        /*
                                         |--------------------------------------------------------------------------
                                         | Published Exercises
                                         |--------------------------------------------------------------------------
                                         */
+
                                         'exercises' => function ($query) {
                                             $query
                                                 ->where(

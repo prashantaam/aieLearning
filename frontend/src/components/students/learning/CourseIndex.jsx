@@ -3,6 +3,7 @@ import {
   ChevronRight,
   CircleHelp,
   Code2,
+  MonitorPlay,
 } from "lucide-react";
 
 export default function CourseIndex({
@@ -13,12 +14,14 @@ export default function CourseIndex({
   expandedLessons,
   toggleLesson,
   goToSublesson,
+  goToDemo,
   goToQuiz,
   goToExercise,
 }) {
   return (
     <div className="p-4">
       {/* Course Title */}
+
       <div className="mb-5 border-b border-slate-200 pb-4">
         <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
           Course
@@ -30,6 +33,7 @@ export default function CourseIndex({
       </div>
 
       {/* Lessons */}
+
       <div className="space-y-2">
         {lessons.map((lesson, lessonIndex) => {
           const isExpanded =
@@ -44,6 +48,7 @@ export default function CourseIndex({
           return (
             <div key={lesson.id}>
               {/* Lesson */}
+
               <button
                 type="button"
                 onClick={() =>
@@ -75,6 +80,7 @@ export default function CourseIndex({
               </button>
 
               {/* Sublessons */}
+
               {isExpanded && (
                 <div className="ml-[26px] border-l border-slate-200 pl-4">
                   {sublessons.map(
@@ -82,6 +88,12 @@ export default function CourseIndex({
                       sublesson,
                       sublessonIndex
                     ) => {
+                      /*
+                      |--------------------------------------------------------------------------
+                      | Current State
+                      |--------------------------------------------------------------------------
+                      */
+
                       const isCurrentSublesson =
                         String(
                           currentSublessonId
@@ -93,13 +105,46 @@ export default function CourseIndex({
                         currentMode ===
                           "content";
 
+                      const isDemoActive =
+                        isCurrentSublesson &&
+                        currentMode ===
+                          "demo";
+
                       const isQuizActive =
                         isCurrentSublesson &&
                         currentMode === "quiz";
 
                       const isExerciseActive =
                         isCurrentSublesson &&
-                        currentMode === "exercise";
+                        currentMode ===
+                          "exercise";
+
+                      /*
+                      |--------------------------------------------------------------------------
+                      | Interactive Demos
+                      |--------------------------------------------------------------------------
+                      */
+
+                      const demos =
+                        Array.isArray(
+                          sublesson.interactive_demos
+                        )
+                          ? sublesson.interactive_demos
+                          : [];
+
+                      const hasDemo =
+                        demos.length > 0;
+
+                      const firstDemo =
+                        hasDemo
+                          ? demos[0]
+                          : null;
+
+                      /*
+                      |--------------------------------------------------------------------------
+                      | Quiz
+                      |--------------------------------------------------------------------------
+                      */
 
                       const hasQuiz =
                         Array.isArray(
@@ -108,27 +153,36 @@ export default function CourseIndex({
                         sublesson.quizzes
                           .length > 0;
 
+                      /*
+                      |--------------------------------------------------------------------------
+                      | Exercises
+                      |--------------------------------------------------------------------------
+                      */
+
                       const exercises =
                         Array.isArray(
-                            sublesson.exercises
+                          sublesson.exercises
                         )
-                            ? sublesson.exercises
-                            : [];
+                          ? sublesson.exercises
+                          : [];
 
-                        const hasExercise =
+                      const hasExercise =
                         exercises.length > 0;
 
-                        const firstExercise =
+                      const firstExercise =
                         hasExercise
-                            ? exercises[0]
-                            : null;
+                          ? exercises[0]
+                          : null;
 
                       return (
                         <div
                           key={sublesson.id}
                           className="py-1"
                         >
-                          {/* Sublesson Content */}
+                          {/* ==================================================
+                              SUBLESSON CONTENT
+                          ================================================== */}
+
                           <button
                             type="button"
                             onClick={() =>
@@ -150,18 +204,53 @@ export default function CourseIndex({
                               }`}
                             >
                               {lessonIndex + 1}.
-                              {sublessonIndex +
-                                1}
+                              {sublessonIndex + 1}
                             </span>
 
                             <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                              {
-                                sublesson.title
-                              }
+                              {sublesson.title}
                             </span>
                           </button>
 
-                          {/* Quiz */}
+                          {/* ==================================================
+                              INTERACTIVE DEMO
+                          ================================================== */}
+
+                          {hasDemo &&
+                            firstDemo && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  goToDemo(
+                                    sublesson.id,
+                                    firstDemo.id
+                                  )
+                                }
+                                className={`ml-8 mt-1 flex w-[calc(100%-2rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                                  isDemoActive
+                                    ? "bg-cyan-50 text-[#0B1F3A]"
+                                    : "text-slate-500 hover:bg-slate-50 hover:text-[#0B1F3A]"
+                                }`}
+                              >
+                                <MonitorPlay
+                                  size={15}
+                                  className={
+                                    isDemoActive
+                                      ? "text-cyan-600"
+                                      : "text-slate-400"
+                                  }
+                                />
+
+                                <span>
+                                  {firstDemo.title}
+                                </span>
+                              </button>
+                            )}
+
+                          {/* ==================================================
+                              QUIZ
+                          ================================================== */}
+
                           {hasQuiz && (
                             <button
                               type="button"
@@ -191,36 +280,40 @@ export default function CourseIndex({
                             </button>
                           )}
 
-                          {/* Exercise */}
-{hasExercise && firstExercise && (
-  <button
-    type="button"
-    onClick={() =>
-      goToExercise(
-        sublesson.id,
-        firstExercise.id
-      )
-    }
-    className={`ml-8 mt-1 flex w-[calc(100%-2rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
-      isExerciseActive
-        ? "bg-blue-50 text-[#0B1F3A]"
-        : "text-slate-500 hover:bg-slate-50 hover:text-[#0B1F3A]"
-    }`}
-  >
-    <Code2
-      size={15}
-      className={
-        isExerciseActive
-          ? "text-blue-600"
-          : "text-slate-400"
-      }
-    />
+                          {/* ==================================================
+                              EXERCISE
+                          ================================================== */}
 
-    <span>
-      Code Exercise
-    </span>
-  </button>
-)}
+                          {hasExercise &&
+                            firstExercise && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  goToExercise(
+                                    sublesson.id,
+                                    firstExercise.id
+                                  )
+                                }
+                                className={`ml-8 mt-1 flex w-[calc(100%-2rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                                  isExerciseActive
+                                    ? "bg-blue-50 text-[#0B1F3A]"
+                                    : "text-slate-500 hover:bg-slate-50 hover:text-[#0B1F3A]"
+                                }`}
+                              >
+                                <Code2
+                                  size={15}
+                                  className={
+                                    isExerciseActive
+                                      ? "text-blue-600"
+                                      : "text-slate-400"
+                                  }
+                                />
+
+                                <span>
+                                  Code Exercise
+                                </span>
+                              </button>
+                            )}
                         </div>
                       );
                     }

@@ -58,4 +58,11 @@ class Sublesson extends Model
             Flashcard::class
         )->orderBy('sort_order');
     }
+
+    public function interactiveDemos()
+    {
+        return $this->hasMany(
+            InteractiveDemo::class
+        )->orderBy('sort_order');
+    }
 }

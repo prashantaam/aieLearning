@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Concepts — Interactive Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --accent: #0ea5e9;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --code-bg: #1e293b;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.875rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .header-meta {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Layout */
+    .layout {
+      display: flex;
+      max-width: 1280px;
+      margin: 0 auto;
+      min-height: calc(100vh - 57px);
+    }
+
+    /* Sidebar */
+    aside {
+      width: 240px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0.75rem;
+      position: sticky;
+      top: 57px;
+      height: calc(100vh - 57px);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .nav-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 0 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 2px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .nav-item:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-item .num {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 18px;
+    }
+
+    .nav-item.active .num {
+      color: var(--primary);
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      padding: 2rem 2.5rem;
+      overflow-y: auto;
+    }
+
+    .section {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .lead {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.75rem;
+      max-width: 640px;
+    }
+
+    h2 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Demo area */
+    .demo {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .demo-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin: 0.25rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg);
+      border-color: #cbd5e1;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Inputs */
+    .input {
+      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    /* Code */
+    .code-block {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1.15rem 1.25rem;
+      border-radius: var(--radius);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.825rem;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    .code-block .c { color: #64748b; }   /* comment */
+    .code-block .k { color: #c084fc; }   /* keyword */
+    .code-block .s { color: #86efac; }   /* string */
+    .code-block .t { color: #67e8f9; }   /* tag */
+    .code-block .n { color: #fbbf24; }   /* number/name */
+
+    /* Specific demo styles */
+    .counter {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--primary);
+      margin: 0.5rem 0 1rem;
+    }
+
+    .preview-area {
+      min-height: 64px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .list-item .key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    .mirror {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--primary);
+      min-height: 1.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .timer {
+      font-size: 2.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .weather-icon {
+      font-size: 3rem;
+      margin: 0.5rem 0;
+    }
+
+    .note {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      color: #0c4a6e;
+      margin-top: 1.25rem;
+    }
+
+    .note strong {
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .layout {
+        flex-direction: column;
+      }
+      aside {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      .nav-label { display: none; }
+      .nav-item {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.8rem;
+      }
+      main {
+        padding: 1.25rem 1rem;
+      }
+      h1 { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">R</div>
+      React Concepts
+    </div>
+    <div class="header-meta">Interactive Reference</div>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="nav-label">Core Concepts</div>
+      <button class="nav-item active" data-section="intro">
+        <span class="num">01</span> Introduction
+      </button>
+      <button class="nav-item" data-section="jsx">
+        <span class="num">02</span> JSX
+      </button>
+      <button class="nav-item" data-section="components">
+        <span class="num">03</span> Components
+      </button>
+      <button class="nav-item" data-section="props">
+        <span class="num">04</span> Props
+      </button>
+      <button class="nav-item" data-section="state">
+        <span class="num">05</span> State
+      </button>
+      <button class="nav-item" data-section="events">
+        <span class="num">06</span> Events
+      </button>
+      <button class="nav-item" data-section="conditional">
+        <span class="num">07</span> Conditional Rendering
+      </button>
+      <button class="nav-item" data-section="lists">
+        <span class="num">08</span> Lists & Keys
+      </button>
+      <button class="nav-item" data-section="useeffect">
+        <span class="num">09</span> useEffect
+      </button>
+      <button class="nav-item" data-section="forms">
+        <span class="num">10</span> Controlled Forms
+      </button>
+    </aside>
+
+    <main>
+      <!-- 01 Introduction -->
+      <section id="intro" class="section active">
+        <h1>Introduction to React</h1>
+        <p class="lead">
+          React is a JavaScript library for building user interfaces through reusable components. 
+          It uses a virtual DOM to efficiently update only what changes.
+        </p>
+
+        <div class="card">
+          <h2>Interactive Preview</h2>
+          <div class="demo">
+            <div class="demo-label">Compose UI elements</div>
+            <div class="preview-area" id="intro-preview">
+              <span class="chip">Hello, React</span>
+            </div>
+            <button class="btn btn-primary" onclick="addElement('button')">Add Button</button>
+            <button class="btn btn-secondary" onclick="addElement('text')">Add Text</button>
+            <button class="btn btn-ghost" onclick="clearPreview()">Reset</button>
+          </div>
+
+          <div class="code-block">
+<span class="c">// Basic component</span><br>
+<span class="k">function</span> App() {<br>
+&nbsp;&nbsp;<span class="k">return</span> &lt;<span class="t">h1</span>&gt;Hello, React&lt;/<span class="t">h1</span>&gt;;<br>
+}
+          </div>
+
+          <div class="note">
+            <strong>Note:</strong> React focuses on the view layer. You choose the rest of the stack (routing, state management, styling).
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 JSX -->
+      <section id="jsx" class="section">
+        <h1>JSX</h1>
+        <p class="lead">
+          JSX is a syntax extension that lets you write HTML-like code inside JavaScript. 
+          It compiles to <code>React.createElement()</code> calls.
+        </p>
+
+        <div class="card">
+          <h2>Live Example</h2>
+          <div class="demo">
+            <div class="demo-label">Dynamic content with expressions</div>
+            <input class="input" id="jsx-input" value="Developer" oninput="updateJSX()" placeholder="Enter a name">
+            <div class="mirror" id="jsx-output" style="margin-top:1rem;">Hello, Developer</div>
+          </div>
+
+          <div class="code-block">
+<span class="k">function</span> Greeting() {<br>
+&nbsp;&nbsp;<span class="k">const</span> name = <span class="s">"Developer"</span>;<br>
+&nbsp;&nbsp;<span class="k">return</span> &lt;<span class="t">h1</span>&gt;Hello, {name}&lt;/<span class="t">h1</span>&gt;;<br>
+}
+          </div>
+
+          <div class="note">
+            <strong>Tip:</strong> Use curly braces <code>{}</code> to embed any valid JavaScript expression inside JSX.
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 Components -->
+      <section id="components" class="section">
+        <h1>Components</h1>
+        <p class="lead">
+          Components are independent, reusable pieces of UI. 
+          Modern React primarily uses function components.
+        </p>
+
+        <div class="card">
+          <h2>Reusable Components</h2>
+          <div class="demo">
+            <div class="demo-label">Instantiate multiple instances</div>
+            <div class="preview-area" id="comp-area"></div>
+            <button class="btn btn-primary" onclick="addComponent()">Create Component</button>
+            <button class="btn btn-ghost" onclick="clearComponents()">Clear</button>
+          </div>
+
+          <div class="code-block">
+<span class="k">function</span> Button() {<br>
+&nbsp;&nbsp;<span class="k">return</span> &lt;<span class="t">button</span>&gt;Click me&lt;/<span class="t">button</span>&gt;;<br>
+}<br><br>
+<span class="c">// Reuse as needed</span><br>
+&lt;Button /&gt;<br>
+&lt;Button /&gt;
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 Props -->
+      <section id="props" class="section">
+        <h1>Props</h1>
+        <p class="lead">
+          Props (short for properties) allow parent components to pass data down to children. 
+          Props are read-only.
+        </p>
+
+        <div class="card">
+          <h2>Passing Data</h2>
+          <div class="demo">
+            <div class="demo-label">Update the prop value</div>
+            <input class="input" id="prop-input" value="Alex" oninput="updateProp()" placeholder="Name">
+            <div class="mirror" id="prop-output" style="margin-top:1rem;">Hello, Alex</div>
+          </div>
+
+          <div class="code-block">
+<span class="k">function</span> Greeting(props) {<br>
+&nbsp;&nbsp;<span class="k">return</span> &lt;<span class="t">h1</span>&gt;Hello, {props.name}&lt;/<span class="t">h1</span>&gt;;<br>
+}<br><br>
+&lt;Greeting name=<span class="s">"Alex"</span> /&gt;
+          </div>
+
+          <div class="note">
+            <strong>Important:</strong> Never mutate props inside a child component. Data flows one way — down.
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 State -->
+      <section id="state" class="section">
+        <h1>State & useState</h1>
+        <p class="lead">
+          State holds data that can change over time. When state updates, React re-renders the component.
+        </p>
+
+        <div class="card">
+          <h2>Counter Demo</h2>
+          <div class="demo" style="text-align:center;">
+            <div class="demo-label">Local component state</div>
+            <div class="counter" id="counter">0</div>
+            <button class="btn btn-primary" onclick="changeCount(1)">Increment</button>
+            <button class="btn btn-secondary" onclick="changeCount(-1)">Decrement</button>
+            <button class="btn btn-ghost" onclick="changeCount(0)">Reset</button>
+          </div>
+
+          <div class="code-block">
+<span class="k">import</span> { useState } <span class="k">from</span> <span class="s">"react"</span>;<br><br>
+<span class="k">function</span> Counter() {<br>
+&nbsp;&nbsp;<span class="k">const</span> [count, setCount] = useState(0);<br><br>
+&nbsp;&nbsp;<span class="k">return</span> (<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="t">div</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="t">p</span>&gt;{count}&lt;/<span class="t">p</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<span class="t">button</span> onClick={() => setCount(count + 1)}&gt;+&lt;/<span class="t">button</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;/<span class="t">div</span>&gt;<br>
+&nbsp;&nbsp;);<br>
+}
+          </div>
+
+          <div class="note">
+            <strong>Key point:</strong> Updating a regular variable does not trigger a re-render. Only state does.
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 Events -->
+      <section id="events" class="section">
+        <h1>Handling Events</h1>
+        <p class="lead">
+          React events use camelCase naming (<code>onClick</code>, <code>onChange</code>) and receive a synthetic event object.
+        </p>
+
+        <div class="card">
+          <h2>Event Handlers</h2>
+          <div class="demo">
+            <div class="demo-label">Click to trigger handlers</div>
+            <button class="btn btn-primary" onclick="showEvent('Primary action triggered')">Primary</button>
+            <button class="btn btn-secondary" onclick="showEvent('Secondary action triggered')">Secondary</button>
+            <button class="btn btn-ghost" onclick="showEvent('Ghost action triggered')">Ghost</button>
+            <div class="mirror" id="event-msg" style="margin-top:1.25rem; min-height:1.5rem;"></div>
+          </div>
+
+          <div class="code-block">
+<span class="k">function</span> Example() {<br>
+&nbsp;&nbsp;<span class="k">const</span> handleClick = () => {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;console.log(<span class="s">"Clicked"</span>);<br>
+&nbsp;&nbsp;};<br><br>
+&nbsp;&nbsp;<span class="k">return</span> &lt;<span class="t">button</span> onClick={handleClick}&gt;Click&lt;/<span class="t">button</span>&gt;;<br>
+}
+          </div>
+        </div>
+      </section>
+
+      <!-- 07 Conditional -->
+      <section id="conditional" class="section">
+        <h1>Conditional Rendering</h1>
+        <p class="lead">
+          Render different UI based on conditions using JavaScript operators 
+          (<code>&&</code>, ternary <code>? :</code>, or early returns).
+        </p>
+
+        <div class="card">
+          <h2>Toggle Visibility</h2>
+          <div class="demo" style="text-align:center;">
+            <div class="demo-label">Current condition</div>
+            <div class="weather-icon" id="status-icon">✓</div>
+            <div id="status-text" style="font-weight:500; margin-bottom:1rem;">Status: Active</div>
+            <button class="btn btn-primary" onclick="toggleStatus()">Toggle Status</button>
+          </div>
+
+          <div class="code-block">
+<span class="k">function</span> Status({ isActive }) {<br>
+&nbsp;&nbsp;<span class="k">return</span> isActive<br>
+&nbsp;&nbsp;&nbsp;&nbsp;? &lt;<span class="t">p</span>&gt;Active&lt;/<span class="t">p</span>&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;: &lt;<span class="t">p</span>&gt;Inactive&lt;/<span class="t">p</span>&gt;;<br>
+}
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 Lists -->
+      <section id="lists" class="section">
+        <h1>Lists & Keys</h1>
+        <p class="lead">
+          When rendering lists, provide a stable and unique <code>key</code> prop so React can efficiently track items.
+        </p>
+
+        <div class="card">
+          <h2>Dynamic List</h2>
+          <div class="demo">
+            <div class="demo-label">Items with keys</div>
+            <div id="list-container"></div>
+            <div style="margin-top:1rem;">
+              <button class="btn btn-primary" onclick="addItem()">Add Item</button>
+              <button class="btn btn-ghost" onclick="clearItems()">Clear</button>
+            </div>
+          </div>
+
+          <div class="code-block">
+{items.map(item => (<br>
+&nbsp;&nbsp;&lt;<span class="t">div</span> key={item.id}&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{item.text}<br>
+&nbsp;&nbsp;&lt;/<span class="t">div</span>&gt;<br>
+))}
+          </div>
+
+          <div class="note">
+            <strong>Best practice:</strong> Prefer unique IDs over array indexes when the list can be reordered or filtered.
+          </div>
+        </div>
+      </section>
+
+      <!-- 09 useEffect -->
+      <section id="useeffect" class="section">
+        <h1>useEffect</h1>
+        <p class="lead">
+          <code>useEffect</code> lets you perform side effects after render — data fetching, subscriptions, timers, and cleanup.
+        </p>
+
+        <div class="card">
+          <h2>Timer Example</h2>
+          <div class="demo" style="text-align:center;">
+            <div class="demo-label">Side effect simulation</div>
+            <div class="timer" id="timer">0</div>
+            <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1rem;">seconds elapsed</p>
+            <button class="btn btn-primary" onclick="startTimer()">Start</button>
+            <button class="btn btn-secondary" onclick="stopTimer()">Stop</button>
+            <button class="btn btn-ghost" onclick="resetTimer()">Reset</button>
+          </div>
+
+          <div class="code-block">
+<span class="k">useEffect</span>(() => {<br>
+&nbsp;&nbsp;<span class="k">const</span> id = setInterval(() => {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;setSeconds(s => s + 1);<br>
+&nbsp;&nbsp;}, 1000);<br><br>
+&nbsp;&nbsp;<span class="k">return</span> () => clearInterval(id); <span class="c">// cleanup</span><br>
+}, []);
+          </div>
+
+          <div class="note">
+            <strong>Dependency array:</strong> <code>[]</code> runs once on mount. Omit it to run after every render. Include values to re-run when they change.
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 Forms -->
+      <section id="forms" class="section">
+        <h1>Controlled Forms</h1>
+        <p class="lead">
+          In controlled components, form state lives in React. The input’s value is driven by state and updated via <code>onChange</code>.
+        </p>
+
+        <div class="card">
+          <h2>Controlled Input</h2>
+          <div class="demo">
+            <div class="demo-label">React as single source of truth</div>
+            <input class="input" id="form-input" placeholder="Type something..." oninput="updateForm()">
+            <div class="mirror" id="form-mirror">—</div>
+          </div>
+
+          <div class="code-block">
+<span class="k">const</span> [value, setValue] = useState(<span class="s">""</span>);<br><br>
+&lt;<span class="t">input</span><br>
+&nbsp;&nbsp;value={value}<br>
+&nbsp;&nbsp;onChange={e => setValue(e.target.value)}<br>
+/&gt;<br>
+&lt;<span class="t">p</span>&gt;{value}&lt;/<span class="t">p</span>&gt;
+          </div>
+
+          <div class="note">
+            <strong>Advantage:</strong> Easy validation, formatting, and conditional disabling because React always knows the current value.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.section).classList.add('active');
+      });
+    });
+
+    // 01 Intro
+    function addElement(type) {
+      const area = document.getElementById('intro-preview');
+      const el = document.createElement('span');
+      el.className = 'chip';
+      el.textContent = type === 'button' ? 'Button' : 'Text block';
+      area.appendChild(el);
+    }
+    function clearPreview() {
+      document.getElementById('intro-preview').innerHTML = '<span class="chip">Hello, React</span>';
+    }
+
+    // 02 JSX
+    function updateJSX() {
+      const val = document.getElementById('jsx-input').value || 'there';
+      document.getElementById('jsx-output').textContent = `Hello, ${val}`;
+    }
+
+    // 03 Components
+    let compCount = 0;
+    function addComponent() {
+      compCount++;
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.textContent = `Component ${compCount}`;
+      btn.onclick = () => alert(`Instance #${compCount}`);
+      document.getElementById('comp-area').appendChild(btn);
+    }
+    function clearComponents() {
+      document.getElementById('comp-area').innerHTML = '';
+      compCount = 0;
+    }
+
+    // 04 Props
+    function updateProp() {
+      const val = document.getElementById('prop-input').value || 'Guest';
+      document.getElementById('prop-output').textContent = `Hello, ${val}`;
+    }
+
+    // 05 State
+    let count = 0;
+    function changeCount(n) {
+      count = n === 0 ? 0 : count + n;
+      document.getElementById('counter').textContent = count;
+    }
+
+    // 06 Events
+    function showEvent(msg) {
+      document.getElementById('event-msg').textContent = msg;
+    }
+
+    // 07 Conditional
+    let isActive = true;
+    function toggleStatus() {
+      isActive = !isActive;
+      document.getElementById('status-icon').textContent = isActive ? '✓' : '✕';
+      document.getElementById('status-text').textContent = isActive ? 'Status: Active' : 'Status: Inactive';
+    }
+
+    // 08 Lists
+    const items = [
+      { id: 1, text: 'First item' },
+      { id: 2, text: 'Second item' },
+      { id: 3, text: 'Third item' }
+    ];
+    let nextId = 4;
+
+    function renderList() {
+      const container = document.getElementById('list-container');
+      container.innerHTML = items.map(item => `
+        <div class="list-item">
+          <span>${item.text}</span>
+          <span class="key">key: ${item.id}</span>
+        </div>
+      `).join('');
+    }
+    function addItem() {
+      items.push({ id: nextId++, text: `Item ${nextId - 1}` });
+      renderList();
+    }
+    function clearItems() {
+      items.length = 0;
+      renderList();
+    }
+    renderList();
+
+    // 09 useEffect / Timer
+    let seconds = 0;
+    let timerId = null;
+    function startTimer() {
+      if (timerId) return;
+      timerId = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').textContent = seconds;
+      }, 1000);
+    }
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    function resetTimer() {
+      stopTimer();
+      seconds = 0;
+      document.getElementById('timer').textContent = '0';
+    }
+
+    // 10 Forms
+    function updateForm() {
+      const val = document.getElementById('form-input').value;
+      document.getElementById('form-mirror').textContent = val || '—';
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-
 import React from "react";
 
 import {
@@ -112,6 +111,15 @@ import CreateSublessonContentPage from "./pages/Teachers/SublessonContents/Creat
 
 /*
 |--------------------------------------------------------------------------
+| Teacher Interactive Demos
+|--------------------------------------------------------------------------
+*/
+
+import InteractiveDemoListPage from "./pages/Teachers/InteractiveDemos/InteractiveDemoListPage";
+import InteractiveDemoCreatePage from "./pages/Teachers/InteractiveDemos/InteractiveDemoCreatePage";
+
+/*
+|--------------------------------------------------------------------------
 | Teacher Quizzes
 |--------------------------------------------------------------------------
 */
@@ -130,6 +138,12 @@ import FlashcardListPage from "./pages/Teachers/Flashcards/FlashcardListPage";
 import FlashcardCreatePage from "./pages/Teachers/Flashcards/FlashcardCreatePage";
 import FlashcardDetailPage from "./pages/Teachers/Flashcards/FlashcardDetailPage";
 import FlashcardPage from "./pages/Teachers/Flashcards/FlashcardPage";
+
+/*
+|--------------------------------------------------------------------------
+| Teacher Exercises
+|--------------------------------------------------------------------------
+*/
 
 import ExerciseListPage from "./pages/Teachers/Exercises/ExerciseListPage";
 import ExerciseCreatePage from "./pages/Teachers/Exercises/ExerciseCreatePage";
@@ -171,6 +185,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
+
         {/*
         |--------------------------------------------------------------------------
         | Public
@@ -221,6 +236,7 @@ const App = () => {
         */}
 
         <Route element={<ProtectedRoute />}>
+
           {/*
           |--------------------------------------------------------------------------
           | Student Application
@@ -236,6 +252,7 @@ const App = () => {
           */}
 
           <Route element={<AppLayout />}>
+
             <Route
               path="/dashboard"
               element={<DashboardPage />}
@@ -263,6 +280,8 @@ const App = () => {
             |
             */}
 
+            {/* Sublesson Content */}
+
             <Route
               path="/courses/:slug/learn/:sublessonId"
               element={
@@ -270,12 +289,25 @@ const App = () => {
               }
             />
 
+            {/* Interactive Demo */}
+
+            <Route
+              path="/courses/:slug/learn/:sublessonId/demo/:demoId"
+              element={
+                <CourseLearningPage />
+              }
+            />
+
+            {/* Quiz */}
+
             <Route
               path="/courses/:slug/learn/:sublessonId/quiz"
               element={
                 <CourseLearningPage />
               }
             />
+
+            {/* Exercise */}
 
             <Route
               path="/courses/:slug/learn/:sublessonId/exercise/:exerciseId"
@@ -297,6 +329,7 @@ const App = () => {
                 <StudentQuizPage />
               }
             />
+
           </Route>
 
           {/*
@@ -408,6 +441,26 @@ const App = () => {
             path="/teacher/lessons/:lessonId/sublessons/:sublessonId/contents/:contentId/edit"
             element={
               <CreateSublessonContentPage />
+            }
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Teacher Interactive Demos
+          |--------------------------------------------------------------------------
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/demos"
+            element={
+              <InteractiveDemoListPage />
+            }
+          />
+
+          <Route
+            path="/teacher/lessons/:lessonId/sublessons/:sublessonId/demos/create"
+            element={
+              <InteractiveDemoCreatePage />
             }
           />
 
@@ -569,6 +622,7 @@ const App = () => {
             path="/profile"
             element={<ProfilePage />}
           />
+
         </Route>
 
         {/*
@@ -581,10 +635,10 @@ const App = () => {
           path="*"
           element={<NotFoundPage />}
         />
+
       </Routes>
     </Router>
   );
 };
 
 export default App;
-
