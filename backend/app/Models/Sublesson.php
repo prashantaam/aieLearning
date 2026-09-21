@@ -15,6 +15,7 @@ class Sublesson extends Model
         'description',
         'sort_order',
         'status',
+        'sublesson_type',
     ];
 
     protected function casts(): array

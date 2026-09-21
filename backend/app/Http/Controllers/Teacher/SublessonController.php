@@ -83,6 +83,11 @@ class SublessonController extends Controller
                 'nullable',
                 'string',
             ],
+            'sublesson_type' => [
+                'nullable',
+                'string',
+                'in:content,interactive_demo,exercise,quiz,flashcard',
+            ],
         ]);
 
         $maxSortOrder = $lesson->sublessons()
@@ -91,11 +96,19 @@ class SublessonController extends Controller
         $nextSortOrder = ($maxSortOrder ?? 0) + 1;
 
         $sublesson = $lesson->sublessons()->create([
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'sort_order' => $nextSortOrder,
-            'status' => 'draft',
-        ]);
+                'title' => $validated['title'],
+
+                'description' =>
+                    $validated['description'] ?? null,
+
+                'sublesson_type' =>
+                    $validated['sublesson_type'] ?? 'content',
+
+                'sort_order' =>
+                    $nextSortOrder,
+
+                'status' => 'draft',
+            ]);
 
         return response()->json([
             'success' => true,
@@ -182,6 +195,11 @@ class SublessonController extends Controller
                 'nullable',
                 'string',
             ],
+             'sublesson_type' => [
+                'required',
+                'string',
+                'in:content,interactive_demo,exercise,quiz,flashcard',
+            ],
             'sort_order' => [
                 'nullable',
                 'integer',
@@ -196,6 +214,7 @@ class SublessonController extends Controller
         $sublesson->update([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
+            'sublesson_type' => $validated['sublesson_type'],
             'sort_order' => $validated['sort_order']
                 ?? $sublesson->sort_order,
             'status' => $validated['status']

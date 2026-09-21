@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   useNavigate,
   useParams,
@@ -7,75 +8,126 @@ import {
 import {
   ArrowLeft,
   BookOpen,
-  CreditCard,
+  Brain,
+  Code2,
   Edit3,
-  FilePlus2,
-  HelpCircle,
+  Layers3,
   Loader2,
-  Save,
-  Trash2,
-  X,
+  MonitorPlay,
+  Plus,
 } from "lucide-react";
-
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-import {
-  Prism as SyntaxHighlighter,
-} from "react-syntax-highlighter";
-
-import {
-  vscDarkPlus,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
 
 import axiosInstance from "../../../utils/axiosInstance";
 import TeacherLayout from "../../../components/teachers/TeacherLayout";
 
+/*
+|--------------------------------------------------------------------------
+| Sublesson Type Configuration
+|--------------------------------------------------------------------------
+*/
+
+const SUBLESSON_TYPE_CONFIG = {
+  content: {
+    label: "Content",
+    icon: BookOpen,
+    className:
+      "border-blue-200 bg-blue-50 text-blue-700",
+  },
+
+  interactive_demo: {
+    label: "Interactive Demo",
+    icon: MonitorPlay,
+    className:
+      "border-purple-200 bg-purple-50 text-purple-700",
+  },
+
+  exercise: {
+    label: "Exercise",
+    icon: Code2,
+    className:
+      "border-cyan-200 bg-cyan-50 text-cyan-700",
+  },
+
+  quiz: {
+    label: "Quiz",
+    icon: Brain,
+    className:
+      "border-orange-200 bg-orange-50 text-orange-700",
+  },
+
+  flashcard: {
+    label: "Flashcard",
+    icon: Layers3,
+    className:
+      "border-pink-200 bg-pink-50 text-pink-700",
+  },
+};
+
 const LessonDetailPage = () => {
   const { lessonId } = useParams();
+
   const navigate = useNavigate();
 
-  const [lesson, setLesson] = useState(null);
+  const [lesson, setLesson] =
+    useState(null);
+
+  const [sublessons, setSublessons] =
+    useState([]);
 
   const [loading, setLoading] =
     useState(true);
 
-  const [error, setError] =
-    useState("");
-
   const [editingId, setEditingId] =
     useState(null);
 
-  const [editContent, setEditContent] =
+  const [error, setError] =
     useState("");
 
-  const [savingEdit, setSavingEdit] =
-    useState(false);
+  /*
+  |--------------------------------------------------------------------------
+  | Load Lesson + Sublessons
+  |--------------------------------------------------------------------------
+  */
 
-  const [deletingId, setDeletingId] =
-    useState(null);
-
-  useEffect(() => {
-    fetchLesson();
-  }, [lessonId]);
-
-  const fetchLesson = async () => {
+  const fetchPageData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response =
-        await axiosInstance.get(
+      const [
+        lessonResponse,
+        sublessonResponse,
+      ] = await Promise.all([
+        axiosInstance.get(
           `/api/teacher/lessons/${lessonId}`
-        );
+        ),
+
+        axiosInstance.get(
+          `/api/teacher/lessons/${lessonId}/sublessons`
+        ),
+      ]);
 
       setLesson(
-        response.data?.data || null
+        lessonResponse.data?.data ||
+          null
+      );
+
+      setSublessons(
+        Array.isArray(
+          sublessonResponse.data?.data
+        )
+          ? sublessonResponse.data.data
+          : []
       );
     } catch (err) {
       console.error(
         "Failed to load lesson:",
         err
+      );
+
+      console.error(
+        "Laravel response:",
+        err.response?.data
       );
 
       setError(
@@ -87,98 +139,215 @@ const LessonDetailPage = () => {
     }
   };
 
-const handleManageSublessons = () => {
-  navigate(
-    `/teacher/lessons/${lessonId}/sublessons`
-  );
-};
+  useEffect(() => {
+    fetchPageData();
+  }, [lessonId]);
 
-  const handleEdit = (content) => {
-    setEditingId(content.id);
-    setEditContent(content.content || "");
-  };
+  /*
+  |--------------------------------------------------------------------------
+  | Sublesson Type
+  |--------------------------------------------------------------------------
+  */
 
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditContent("");
-  };
-
-  const handleSaveEdit = async (
-    lessonContentId
+  const getTypeConfig = (
+    sublessonType
   ) => {
-    if (!editContent.trim()) {
-      setError(
-        "Lesson content cannot be empty."
-      );
-      return;
-    }
-
-    try {
-      setSavingEdit(true);
-      setError("");
-
-      await axiosInstance.put(
-        `/api/teacher/lesson-contents/${lessonContentId}`,
-        {
-          content: editContent.trim(),
-        }
-      );
-
-      setEditingId(null);
-      setEditContent("");
-
-      await fetchLesson();
-    } catch (err) {
-      console.error(
-        "Failed to update content:",
-        err
-      );
-
-      setError(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to update lesson content."
-      );
-    } finally {
-      setSavingEdit(false);
-    }
-  };
-
-  const handleDelete = async (
-    lessonContentId
-  ) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this lesson content?"
+    return (
+      SUBLESSON_TYPE_CONFIG[
+        sublessonType
+      ] ||
+      SUBLESSON_TYPE_CONFIG.content
     );
+  };
 
-    if (!confirmed) {
-      return;
+  /*
+  |--------------------------------------------------------------------------
+  | Create Activity
+  |--------------------------------------------------------------------------
+  */
+
+  const handleCreateActivity = (
+    activityType
+  ) => {
+    switch (activityType) {
+      /*
+       * Content is now using the
+       * new direct creation flow.
+       */
+      case "content":
+        navigate(
+          `/teacher/lessons/${lessonId}/content/create`
+        );
+        break;
+
+      /*
+       * We will connect these next as
+       * their direct create flows are converted.
+       */
+      case "interactive_demo":
+      case "exercise":
+      case "quiz":
+      case "flashcard":
+      default:
+        break;
     }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Edit Existing Activity
+  |--------------------------------------------------------------------------
+  */
+
+  const handleEditSublesson = async (
+    sublesson
+  ) => {
+    const sublessonId =
+      sublesson.id;
 
     try {
-      setDeletingId(lessonContentId);
+      setEditingId(sublessonId);
       setError("");
 
-      await axiosInstance.delete(
-        `/api/teacher/lesson-contents/${lessonContentId}`
-      );
+      switch (
+        sublesson.sublesson_type
+      ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Content
+        |--------------------------------------------------------------------------
+        |
+        | A Content Sublesson contains its actual
+        | learning material in sublesson_contents.
+        |
+        | We therefore load the Content record first,
+        | obtain content.id and navigate directly to
+        | CreateSublessonContentPage in edit mode.
+        |
+        */
 
-      await fetchLesson();
+        case "content": {
+          const response =
+            await axiosInstance.get(
+              `/api/teacher/sublessons/${sublessonId}/contents`
+            );
+
+          const contents =
+            Array.isArray(
+              response.data?.data
+            )
+              ? response.data.data
+              : [];
+
+          if (contents.length === 0) {
+            setError(
+              `No content was found for "${sublesson.title}".`
+            );
+
+            return;
+          }
+
+          const content =
+            contents[0];
+
+          navigate(
+            `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/contents/${content.id}/edit`
+          );
+
+          break;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Interactive Demo
+        |--------------------------------------------------------------------------
+        */
+
+        case "interactive_demo":
+          navigate(
+            `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/demos`
+          );
+          break;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Exercise
+        |--------------------------------------------------------------------------
+        */
+
+        case "exercise":
+          navigate(
+            `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/exercises`
+          );
+          break;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Quiz
+        |--------------------------------------------------------------------------
+        */
+
+        case "quiz":
+          navigate(
+            `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/quizzes`
+          );
+          break;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flashcard
+        |--------------------------------------------------------------------------
+        */
+
+        case "flashcard":
+          navigate(
+            `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/flashcards`
+          );
+          break;
+
+        default:
+          setError(
+            "Unknown learning activity type."
+          );
+          break;
+      }
     } catch (err) {
       console.error(
-        "Failed to delete content:",
+        "Failed to open learning activity:",
         err
+      );
+
+      console.error(
+        "Laravel response:",
+        err.response?.data
       );
 
       setError(
         err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to delete lesson content."
+          "Failed to open learning activity."
       );
     } finally {
-      setDeletingId(null);
+      setEditingId(null);
     }
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Back
+  |--------------------------------------------------------------------------
+  */
+
+  const handleBack = () => {
+    navigate(
+      `/teacher/courses/${lesson.course_id}`
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Loading
+  |--------------------------------------------------------------------------
+  */
 
   if (loading) {
     return (
@@ -190,100 +359,46 @@ const handleManageSublessons = () => {
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Lesson Not Found
+  |--------------------------------------------------------------------------
+  */
+
   if (!lesson) {
     return (
       <TeacherLayout>
         <div className="p-8">
-          <p className="text-red-600">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
             Lesson not found.
-          </p>
+          </div>
         </div>
       </TeacherLayout>
     );
   }
 
-  const lessonContents =
-    Array.isArray(
-      lesson.lesson_contents
-    )
-      ? lesson.lesson_contents
-      : [];
+  /*
+  |--------------------------------------------------------------------------
+  | Page
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <TeacherLayout>
       <div className="p-6 lg:p-8">
+
         <div className="mx-auto max-w-6xl">
 
           {/* Back */}
           <button
             type="button"
-            onClick={() =>
-              navigate(
-                `/teacher/courses/${lesson.course_id}`
-              )
-            }
-            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+            onClick={handleBack}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
+
             Back to Course
           </button>
-
-          {/* Header */}
-          <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-
-              <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
-                <BookOpen className="h-6 w-6" />
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center gap-3">
-
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {lesson.title}
-                  </h1>
-
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold capitalize text-gray-600">
-                    {lesson.status}
-                  </span>
-
-                </div>
-
-                {lesson.description && (
-                  <p className="max-w-3xl text-gray-600">
-                    {lesson.description}
-                  </p>
-                )}
-
-                <p className="mt-3 text-xs text-gray-400">
-                  Lesson ID: {lesson.id}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="mb-8 grid gap-4 md:grid-cols-3">
-
-            <button
-              type="button"
-              onClick={handleManageSublessons}
-              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
-            >
-              <FilePlus2 className="h-5 w-5 text-blue-600" />
-
-              <div>
-                <p className="font-semibold text-gray-900">
-                  Manage Sublessons
-                </p>
-
-                <p className="text-xs text-gray-500">
-                  View and manage lesson sections
-                </p>
-              </div>
-            </button>
-
-          </div>
 
           {/* Error */}
           {error && (
@@ -292,257 +407,315 @@ const handleManageSublessons = () => {
             </div>
           )}
 
-          {/* Lesson Content */}
-          <div>
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Lesson Content
-              </h2>
+          {/* Lesson Header */}
+          <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
-              <p className="mt-1 text-sm text-gray-500">
-                {lessonContents.length} content item
-                {lessonContents.length === 1
-                  ? ""
-                  : "s"}
-              </p>
+            <div className="flex items-start gap-4">
+
+              <div className="shrink-0 rounded-xl bg-blue-50 p-3 text-blue-600">
+                <BookOpen className="h-6 w-6" />
+              </div>
+
+              <div className="min-w-0">
+
+                <div className="flex flex-wrap items-center gap-3">
+
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {lesson.title}
+                  </h1>
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                      lesson.status ===
+                      "published"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {lesson.status}
+                  </span>
+
+                </div>
+
+                {lesson.description && (
+                  <p className="mt-3 max-w-3xl leading-6 text-gray-600">
+                    {lesson.description}
+                  </p>
+                )}
+
+                <p className="mt-3 text-xs text-gray-400">
+                  Lesson ID: {lesson.id}
+                </p>
+
+              </div>
+
             </div>
 
-            {lessonContents.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
+          </div>
 
-                <FilePlus2 className="mx-auto h-8 w-8 text-gray-400" />
+          {/*
+          |--------------------------------------------------------------------------
+          | Add Learning Activity
+          |--------------------------------------------------------------------------
+          */}
 
-                <p className="mt-3 font-medium text-gray-700">
-                  No lesson content yet.
-                </p>
+          <div className="mb-8">
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Create your first lesson content.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">
+              Add Learning Activity
+            </h2>
 
-                {lessonContents.map(
-                  (contentItem, index) => (
+            <div className="flex flex-wrap gap-3">
+
+              {/* Content */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleCreateActivity(
+                    "content"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4" />
+
+                Content
+              </button>
+
+              {/* Interactive Demo */}
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+              >
+                <Plus className="h-4 w-4" />
+
+                Interactive Demo
+              </button>
+
+              {/* Exercise */}
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+              >
+                <Plus className="h-4 w-4" />
+
+                Exercise
+              </button>
+
+              {/* Quiz */}
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+              >
+                <Plus className="h-4 w-4" />
+
+                Quiz
+              </button>
+
+              {/* Flashcard */}
+              <button
+                type="button"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+              >
+                <Plus className="h-4 w-4" />
+
+                Flashcard
+              </button>
+
+            </div>
+
+          </div>
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Learning Activities Header
+          |--------------------------------------------------------------------------
+          */}
+
+          <div className="mb-5">
+
+            <h2 className="text-2xl font-bold text-gray-900">
+              Learning Activities
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              {sublessons.length}{" "}
+              {sublessons.length === 1
+                ? "activity"
+                : "activities"}{" "}
+              in this lesson
+            </p>
+
+          </div>
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Empty State
+          |--------------------------------------------------------------------------
+          */}
+
+          {sublessons.length === 0 ? (
+
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
+
+              <BookOpen className="mx-auto h-8 w-8 text-gray-400" />
+
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                No learning activities yet
+              </h3>
+
+              <p className="mt-2 text-sm text-gray-500">
+                Use one of the buttons above to
+                create the first activity.
+              </p>
+
+            </div>
+
+          ) : (
+
+            /*
+            |--------------------------------------------------------------------------
+            | Activity List
+            |--------------------------------------------------------------------------
+            */
+
+            <div className="space-y-4">
+
+              {sublessons.map(
+                (
+                  sublesson,
+                  index
+                ) => {
+                  const typeConfig =
+                    getTypeConfig(
+                      sublesson.sublesson_type
+                    );
+
+                  const TypeIcon =
+                    typeConfig.icon;
+
+                  const isPublished =
+                    sublesson.status ===
+                    "published";
+
+                  const isOpening =
+                    editingId ===
+                    sublesson.id;
+
+                  return (
                     <div
-                      key={contentItem.id}
-                      className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                      key={sublesson.id}
+                      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
                     >
 
-                      {/* Content header */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-gray-50 px-6 py-4">
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            Content {index + 1}
-                          </p>
+                        {/* Activity Information */}
+                        <div className="flex min-w-0 items-start gap-4">
 
-                          <div className="mt-1 flex gap-3 text-xs text-gray-500">
+                          {/* Number */}
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-100 font-bold text-gray-600">
+                            {String(
+                              index + 1
+                            ).padStart(
+                              2,
+                              "0"
+                            )}
+                          </div>
 
-                            {contentItem.source_type && (
-                              <span>
-                                Source:{" "}
-                                {contentItem.source_type}
+                          <div className="min-w-0">
+
+                            {/* Title */}
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {sublesson.title}
+                            </h3>
+
+                            {/* Badges */}
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+
+                              {/* Type */}
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${typeConfig.className}`}
+                              >
+                                <TypeIcon className="h-3.5 w-3.5" />
+
+                                {typeConfig.label}
                               </span>
+
+                              {/* Status */}
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                  isPublished
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {isPublished
+                                  ? "Published"
+                                  : "Draft"}
+                              </span>
+
+                            </div>
+
+                            {/* Description */}
+                            {sublesson.description && (
+                              <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-500">
+                                {sublesson.description}
+                              </p>
                             )}
 
-                            {contentItem.status && (
-                              <span className="capitalize">
-                                Status:{" "}
-                                {contentItem.status}
-                              </span>
-                            )}
+                            <p className="mt-2 text-xs text-gray-400">
+                              Order:{" "}
+                              {sublesson.sort_order}
+                            </p>
 
                           </div>
+
                         </div>
 
-                        {/* Edit / Delete */}
-                        <div className="flex items-center gap-2">
+                        {/* Edit */}
+                        <button
+                          type="button"
+                          disabled={isOpening}
+                          onClick={() =>
+                            handleEditSublesson(
+                              sublesson
+                            )
+                          }
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
 
-                          {editingId !==
-                          contentItem.id ? (
+                          {isOpening ? (
                             <>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleEdit(
-                                    contentItem
-                                  )
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                              >
-                                <Edit3 className="h-4 w-4" />
-                                Edit
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleDelete(
-                                    contentItem.id
-                                  )
-                                }
-                                disabled={
-                                  deletingId ===
-                                  contentItem.id
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                              >
-                                {deletingId ===
-                                contentItem.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-
-                                Delete
-                              </button>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Opening...
                             </>
                           ) : (
                             <>
-                              <button
-                                type="button"
-                                onClick={
-                                  handleCancelEdit
-                                }
-                                disabled={
-                                  savingEdit
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                              >
-                                <X className="h-4 w-4" />
-                                Cancel
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleSaveEdit(
-                                    contentItem.id
-                                  )
-                                }
-                                disabled={
-                                  savingEdit
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                              >
-                                {savingEdit ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Save className="h-4 w-4" />
-                                )}
-
-                                Save
-                              </button>
+                              <Edit3 className="h-4 w-4" />
+                              Edit
                             </>
                           )}
 
-                        </div>
+                        </button>
+
                       </div>
 
-                      {/* Edit mode */}
-                      {editingId ===
-                      contentItem.id ? (
-                        <div className="p-6">
-
-                          <textarea
-                            value={editContent}
-                            onChange={(event) =>
-                              setEditContent(
-                                event.target.value
-                              )
-                            }
-                            rows={20}
-                            className="w-full resize-y rounded-xl border border-gray-300 px-4 py-3 font-mono text-sm leading-7 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          />
-
-                          <p className="mt-2 text-xs text-gray-400">
-                            Markdown formatting is supported.
-                          </p>
-
-                        </div>
-                      ) : (
-                        /* Markdown rendered view */
-                        <div className="p-6">
-
-                          <div className="prose prose-slate max-w-none">
-
-                            <ReactMarkdown
-                              remarkPlugins={[
-                                remarkGfm,
-                              ]}
-                              components={{
-                                code({
-                                  className,
-                                  children,
-                                  ...props
-                                }) {
-                                  const match =
-                                    /language-([\w-]+)/.exec(
-                                      className ||
-                                        ""
-                                    );
-
-                                  if (match) {
-                                    return (
-                                      <SyntaxHighlighter
-                                        style={
-                                          vscDarkPlus
-                                        }
-                                        language={
-                                          match[1]
-                                        }
-                                        PreTag="div"
-                                        customStyle={{
-                                          margin:
-                                            "1.25rem 0",
-                                          borderRadius:
-                                            "0.75rem",
-                                          fontSize:
-                                            "0.875rem",
-                                        }}
-                                      >
-                                        {String(
-                                          children
-                                        ).replace(
-                                          /\n$/,
-                                          ""
-                                        )}
-                                      </SyntaxHighlighter>
-                                    );
-                                  }
-
-                                  return (
-                                    <code
-                                      className="rounded bg-gray-100 px-1.5 py-0.5 text-sm font-medium text-pink-600"
-                                      {...props}
-                                    >
-                                      {children}
-                                    </code>
-                                  );
-                                },
-                              }}
-                            >
-                              {
-                                contentItem.content
-                              }
-                            </ReactMarkdown>
-
-                          </div>
-
-                        </div>
-                      )}
-
                     </div>
-                  )
-                )}
+                  );
+                }
+              )}
 
-              </div>
-            )}
-          </div>
+            </div>
+
+          )}
 
         </div>
+
       </div>
     </TeacherLayout>
   );

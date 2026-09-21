@@ -241,14 +241,6 @@ const App = () => {
           |--------------------------------------------------------------------------
           | Student Application
           |--------------------------------------------------------------------------
-          |
-          | These pages use the shared student AppLayout:
-          |
-          | AppLayout
-          | ├── Sidebar
-          | ├── Header
-          | └── Outlet
-          |
           */}
 
           <Route element={<AppLayout />}>
@@ -274,10 +266,6 @@ const App = () => {
             |--------------------------------------------------------------------------
             | Course Learning
             |--------------------------------------------------------------------------
-            |
-            | These routes must stay inside AppLayout because CourseLearningPage
-            | receives the Course Index state through useOutletContext().
-            |
             */}
 
             {/* Sublesson Content */}
@@ -394,6 +382,10 @@ const App = () => {
           |--------------------------------------------------------------------------
           | Teacher Sublessons
           |--------------------------------------------------------------------------
+          |
+          | These routes are temporarily retained while
+          | the new activity-based authoring flow is introduced.
+          |
           */}
 
           <Route
@@ -419,8 +411,37 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Sublesson Content
+          | Teacher Content Activities
           |--------------------------------------------------------------------------
+          |
+          | NEW CREATE FLOW
+          |
+          | Lesson
+          |   ↓
+          | Create Content
+          |   ↓
+          | Creates:
+          |
+          | sublessons
+          | +
+          | sublesson_contents
+          |
+          */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/content/create"
+            element={
+              <CreateSublessonContentPage />
+            }
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
+          | Existing Sublesson Content Routes
+          |--------------------------------------------------------------------------
+          |
+          | Retained for existing content management and editing.
+          |
           */}
 
           <Route
@@ -469,8 +490,9 @@ const App = () => {
           | Legacy Lesson Content
           |--------------------------------------------------------------------------
           |
-          | Keep temporarily while the old LessonContent functionality still exists.
-          |--------------------------------------------------------------------------
+          | Keep temporarily while the old LessonContent
+          | functionality still exists.
+          |
           */}
 
           <Route

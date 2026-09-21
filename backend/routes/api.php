@@ -308,8 +308,38 @@ Route::prefix('teacher')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
-        | Sublesson Content Management
+        | Content Sublesson Management
         |--------------------------------------------------------------------------
+        |
+        | New authoring flow:
+        |
+        | Lesson
+        |   └── Content Sublesson
+        |         └── Sublesson Content
+        |
+        | The teacher creates the Sublesson and its first Content record
+        | together from the Content creation page.
+        |
+        */
+
+        // Create a Content Sublesson and its Content in one transaction
+        Route::post(
+            '/lessons/{lesson}/content',
+            [
+                SublessonContentController::class,
+                'storeForLesson',
+            ]
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Existing Sublesson Content Management
+        |--------------------------------------------------------------------------
+        |
+        | These routes remain available for reading and managing content
+        | after the Content Sublesson has been created.
+        |
         */
 
         // List Content belonging to a Sublesson
@@ -321,7 +351,7 @@ Route::prefix('teacher')->group(function () {
             ]
         );
 
-        // Create Content under a Sublesson
+        // Create additional Content under an existing Sublesson
         Route::post(
             '/sublessons/{sublesson}/contents',
             [

@@ -15,6 +15,9 @@ import {
   Trash2,
 } from "lucide-react";
 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import axiosInstance from "../../../utils/axiosInstance";
 import TeacherLayout from "../../../components/teachers/TeacherLayout";
 
@@ -29,8 +32,8 @@ const InteractiveDemoListPage = () => {
   const [sublesson, setSublesson] =
     useState(null);
 
-  const [demos, setDemos] =
-    useState([]);
+  const [demo, setDemo] =
+    useState(null);
 
   const [loading, setLoading] =
     useState(true);
@@ -41,16 +44,16 @@ const InteractiveDemoListPage = () => {
   const [success, setSuccess] =
     useState("");
 
-  const [processingId, setProcessingId] =
-    useState(null);
+  const [processing, setProcessing] =
+    useState(false);
 
   /*
   |--------------------------------------------------------------------------
-  | Load Interactive Demos
+  | Load Interactive Demo
   |--------------------------------------------------------------------------
   */
 
-  const fetchDemos = async () => {
+  const fetchDemo = async () => {
     try {
       setLoading(true);
       setError("");
@@ -67,18 +70,30 @@ const InteractiveDemoListPage = () => {
         responseData.sublesson || null
       );
 
-      setDemos(
-        responseData.demos || []
+      const demos =
+        Array.isArray(responseData.demos)
+          ? responseData.demos
+          : [];
+
+      /*
+       * New architecture:
+       * one interactive-demo sublesson
+       * has one primary demo.
+       */
+      setDemo(
+        demos.length > 0
+          ? demos[0]
+          : null
       );
     } catch (err) {
       console.error(
-        "Failed to load interactive demos:",
+        "Failed to load interactive demo:",
         err
       );
 
       setError(
         err.response?.data?.message ||
-          "Failed to load interactive demos."
+          "Failed to load interactive demo."
       );
     } finally {
       setLoading(false);
@@ -86,7 +101,7 @@ const InteractiveDemoListPage = () => {
   };
 
   useEffect(() => {
-    fetchDemos();
+    fetchDemo();
   }, [sublessonId]);
 
   /*
@@ -95,11 +110,11 @@ const InteractiveDemoListPage = () => {
   |--------------------------------------------------------------------------
   */
 
-  const handleBack = () => {
-    navigate(
-      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}`
-    );
-  };
+const handleBack = () => {
+  navigate(
+    `/teacher/lessons/${lessonId}`
+  );
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -119,9 +134,13 @@ const InteractiveDemoListPage = () => {
   |--------------------------------------------------------------------------
   */
 
-  const handleEdit = (demoId) => {
+  const handleEdit = () => {
+    if (!demo?.id) {
+      return;
+    }
+
     navigate(
-      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/demos/${demoId}/edit`
+      `/teacher/lessons/${lessonId}/sublessons/${sublessonId}/demos/${demo.id}/edit`
     );
   };
 
@@ -131,28 +150,28 @@ const InteractiveDemoListPage = () => {
   |--------------------------------------------------------------------------
   */
 
-  const handlePublish = async (demoId) => {
+  const handlePublish = async () => {
+    if (!demo?.id) {
+      return;
+    }
+
     try {
-      setProcessingId(demoId);
+      setProcessing(true);
       setError("");
       setSuccess("");
 
       const response =
         await axiosInstance.patch(
-          `/api/teacher/sublessons/${sublessonId}/demos/${demoId}/publish`
+          `/api/teacher/sublessons/${sublessonId}/demos/${demo.id}/publish`
         );
 
       const updatedDemo =
         response.data?.data?.demo;
 
       if (updatedDemo) {
-        setDemos((currentDemos) =>
-          currentDemos.map((demo) =>
-            demo.id === demoId
-              ? updatedDemo
-              : demo
-          )
-        );
+        setDemo(updatedDemo);
+      } else {
+        await fetchDemo();
       }
 
       setSuccess(
@@ -169,38 +188,38 @@ const InteractiveDemoListPage = () => {
           "Failed to publish interactive demo."
       );
     } finally {
-      setProcessingId(null);
+      setProcessing(false);
     }
   };
 
   /*
   |--------------------------------------------------------------------------
-  | Unpublish Demo
+  | Move Demo Back To Draft
   |--------------------------------------------------------------------------
   */
 
-  const handleUnpublish = async (demoId) => {
+  const handleUnpublish = async () => {
+    if (!demo?.id) {
+      return;
+    }
+
     try {
-      setProcessingId(demoId);
+      setProcessing(true);
       setError("");
       setSuccess("");
 
       const response =
         await axiosInstance.patch(
-          `/api/teacher/sublessons/${sublessonId}/demos/${demoId}/unpublish`
+          `/api/teacher/sublessons/${sublessonId}/demos/${demo.id}/unpublish`
         );
 
       const updatedDemo =
         response.data?.data?.demo;
 
       if (updatedDemo) {
-        setDemos((currentDemos) =>
-          currentDemos.map((demo) =>
-            demo.id === demoId
-              ? updatedDemo
-              : demo
-          )
-        );
+        setDemo(updatedDemo);
+      } else {
+        await fetchDemo();
       }
 
       setSuccess(
@@ -208,7 +227,7 @@ const InteractiveDemoListPage = () => {
       );
     } catch (err) {
       console.error(
-        "Failed to unpublish interactive demo:",
+        "Failed to move interactive demo back to draft:",
         err
       );
 
@@ -217,7 +236,7 @@ const InteractiveDemoListPage = () => {
           "Failed to move interactive demo back to draft."
       );
     } finally {
-      setProcessingId(null);
+      setProcessing(false);
     }
   };
 
@@ -227,17 +246,26 @@ const InteractiveDemoListPage = () => {
   |--------------------------------------------------------------------------
   */
 
-  const handleDelete = async (demo) => {
-    const confirmed = window.confirm(
-      `Delete "${demo.title}"? This action cannot be undone.`
-    );
+  const handleDelete = async () => {
+    if (!demo?.id) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Delete "${
+          sublesson?.title ||
+          demo.title ||
+          "this interactive demo"
+        }"? This action cannot be undone.`
+      );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      setProcessingId(demo.id);
+      setProcessing(true);
       setError("");
       setSuccess("");
 
@@ -245,11 +273,7 @@ const InteractiveDemoListPage = () => {
         `/api/teacher/sublessons/${sublessonId}/demos/${demo.id}`
       );
 
-      setDemos((currentDemos) =>
-        currentDemos.filter(
-          (item) => item.id !== demo.id
-        )
-      );
+      setDemo(null);
 
       setSuccess(
         "Interactive demo deleted successfully."
@@ -265,7 +289,7 @@ const InteractiveDemoListPage = () => {
           "Failed to delete interactive demo."
       );
     } finally {
-      setProcessingId(null);
+      setProcessing(false);
     }
   };
 
@@ -285,6 +309,9 @@ const InteractiveDemoListPage = () => {
     );
   }
 
+  const isPublished =
+    demo?.status === "published";
+
   /*
   |--------------------------------------------------------------------------
   | Page
@@ -294,18 +321,17 @@ const InteractiveDemoListPage = () => {
   return (
     <TeacherLayout>
       <div className="p-6 lg:p-8">
-        <div className="mx-auto max-w-6xl">
-
+        <div className="mx-auto max-w-7xl">
           {/* Back */}
 
           <button
             type="button"
             onClick={handleBack}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-gray-900"
           >
             <ArrowLeft className="h-4 w-4" />
 
-            Back to Sublesson
+            Back to Lesson
           </button>
 
           {/* Error */}
@@ -328,64 +354,115 @@ const InteractiveDemoListPage = () => {
 
           {/* Header */}
 
-          <div className="mb-8 flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-
+          <div className="mb-6 flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-start gap-4">
-
               <div className="shrink-0 rounded-xl bg-cyan-50 p-3 text-cyan-600">
                 <MonitorPlay className="h-6 w-6" />
               </div>
 
               <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">
+                    Interactive Demo
+                  </span>
+
+                  {demo && (
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        isPublished
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {isPublished
+                        ? "Published"
+                        : "Draft"}
+                    </span>
+                  )}
+                </div>
 
                 <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">
-                  Interactive Demos
+                  {sublesson?.title ||
+                    "Interactive Demo"}
                 </h1>
 
-                {sublesson?.title && (
-                  <p className="mt-1 font-medium text-gray-700">
-                    {sublesson.title}
+                {sublesson?.description && (
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+                    {sublesson.description}
                   </p>
                 )}
-
-                <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                  Create browser-based interactive
-                  demonstrations using HTML, CSS and
-                  JavaScript.
-                </p>
-
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700"
-            >
-              <Plus className="h-4 w-4" />
+            {/* Header Actions */}
 
-              Create Demo
-            </button>
+            {demo && (
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  disabled={processing}
+                  className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Edit3 className="h-4 w-4" />
 
+                  Edit Demo
+                </button>
+
+                {isPublished ? (
+                  <button
+                    type="button"
+                    onClick={
+                      handleUnpublish
+                    }
+                    disabled={processing}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {processing && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+
+                    Move to Draft
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={
+                      handlePublish
+                    }
+                    disabled={processing}
+                    className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {processing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Rocket className="h-4 w-4" />
+                    )}
+
+                    Publish
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Empty State */}
+          {/* No Demo */}
 
-          {demos.length === 0 && (
+          {!demo && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
-
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
                 <MonitorPlay className="h-7 w-7" />
               </div>
 
               <h2 className="mt-5 text-lg font-semibold text-gray-900">
-                No interactive demos yet
+                Interactive demo content
+                has not been created yet
               </h2>
 
-              <p className="mx-auto mt-2 max-w-lg text-sm text-gray-500">
-                Create an interactive demonstration
-                that students can use alongside the
-                learning content.
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-gray-500">
+                Add the instructions and
+                interactive experience for
+                this sublesson.
               </p>
 
               <button
@@ -395,167 +472,130 @@ const InteractiveDemoListPage = () => {
               >
                 <Plus className="h-4 w-4" />
 
-                Create First Demo
+                Create Interactive Demo
               </button>
-
             </div>
           )}
 
-          {/* Demo List */}
+          {/* Existing Demo */}
 
-          {demos.length > 0 && (
-            <div className="space-y-4">
+          {demo && (
+            <>
+              <div className="grid overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:grid-cols-[42%_58%]">
+                {/* Instructions */}
 
-              {demos.map((demo) => {
-                const isPublished =
-                  demo.status === "published";
+                <section className="border-b border-gray-200 lg:border-b-0 lg:border-r">
+                  <div className="p-6 lg:p-8">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-400">
+                      Instructions
+                    </p>
 
-                const isProcessing =
-                  processingId === demo.id;
+                    <h2 className="mt-2 text-xl font-bold text-gray-900">
+                      Try it yourself
+                    </h2>
 
-                return (
-                  <div
-                    key={demo.id}
-                    className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
-                      {/* Demo information */}
-
-                      <div className="flex min-w-0 items-start gap-4">
-
-                        <div className="shrink-0 rounded-xl bg-cyan-50 p-3 text-cyan-600">
-                          <MonitorPlay className="h-5 w-5" />
-                        </div>
-
-                        <div className="min-w-0">
-
-                          <div className="flex flex-wrap items-center gap-3">
-
-                            <h2 className="text-lg font-semibold text-gray-900">
-                              {demo.title}
-                            </h2>
-
-                            <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                isPublished
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-yellow-100 text-yellow-700"
-                              }`}
-                            >
-                              {isPublished
-                                ? "Published"
-                                : "Draft"}
-                            </span>
-
-                          </div>
-
-                          {demo.description && (
-                            <p className="mt-2 max-w-2xl text-sm text-gray-500">
-                              {demo.description}
-                            </p>
-                          )}
-
-                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-400">
-
-                            <span>
-                              Demo ID: {demo.id}
-                            </span>
-
-                            <span>
-                              Sort order:{" "}
-                              {demo.sort_order}
-                            </span>
-
-                            <span>
-                              Source:{" "}
-                              {demo.source_type ||
-                                "manual"}
-                            </span>
-
-                          </div>
-
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-
-                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleEdit(demo.id)
-                          }
-                          disabled={isProcessing}
-                          className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Edit3 className="h-4 w-4" />
-
-                          Edit
-                        </button>
-
-                        {isPublished ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleUnpublish(
-                                demo.id
-                              )
-                            }
-                            disabled={isProcessing}
-                            className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    <div className="mt-6 border-t border-gray-100 pt-6">
+                      {demo.instruction ? (
+                        <div className="prose prose-slate max-w-none prose-headings:text-gray-900 prose-a:text-cyan-700 prose-code:text-gray-900">
+                          <ReactMarkdown
+                            remarkPlugins={[
+                              remarkGfm,
+                            ]}
                           >
-                            {isProcessing && (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            )}
-
-                            Move to Draft
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handlePublish(
-                                demo.id
-                              )
+                            {
+                              demo.instruction
                             }
-                            disabled={isProcessing}
-                            className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {isProcessing ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Rocket className="h-4 w-4" />
-                            )}
-
-                            Publish
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDelete(demo)
-                          }
-                          disabled={isProcessing}
-                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-
-                          Delete
-                        </button>
-
-                      </div>
-
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">
+                          No instructions
+                          have been added.
+                        </p>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                </section>
 
-            </div>
+                {/* Preview */}
+
+                <section className="flex min-h-[600px] flex-col bg-gray-50">
+                  <div className="flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4">
+                    <span className="text-sm font-bold text-gray-900">
+                      Playground
+                    </span>
+
+                    <span className="text-xs text-gray-400">
+                      Student Preview
+                    </span>
+                  </div>
+
+                  <div className="min-h-0 flex-1 p-4">
+                    <div className="h-full min-h-[520px] overflow-hidden rounded-xl border border-gray-200 bg-white">
+                      {demo.code ? (
+                        <iframe
+                          title={
+                            sublesson?.title ||
+                            demo.title ||
+                            "Interactive Demo"
+                          }
+                          srcDoc={
+                            demo.code
+                          }
+                          sandbox="allow-scripts"
+                          className="h-full min-h-[520px] w-full border-0 bg-white"
+                        />
+                      ) : (
+                        <div className="flex h-full min-h-[520px] items-center justify-center p-8 text-center">
+                          <div>
+                            <MonitorPlay className="mx-auto h-8 w-8 text-gray-300" />
+
+                            <p className="mt-3 text-sm text-gray-400">
+                              No interactive
+                              demo code has
+                              been added.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Details / Delete */}
+
+              <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-400">
+                  <span>
+                    Demo ID: {demo.id}
+                  </span>
+
+                  <span>
+                    Source:{" "}
+                    {demo.source_type ||
+                      "manual"}
+                  </span>
+
+                  <span>
+                    Sort order:{" "}
+                    {demo.sort_order}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={processing}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+
+                  Delete Demo
+                </button>
+              </div>
+            </>
           )}
-
         </div>
       </div>
     </TeacherLayout>

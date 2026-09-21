@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lesson;
 use App\Models\Sublesson;
 use App\Models\SublessonContent;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SublessonContentController extends Controller
 {
@@ -28,14 +30,19 @@ class SublessonContentController extends Controller
 
         $sublesson->load('lesson.course');
 
-        if (! $this->teacherOwnsSublesson($teacher, $sublesson)) {
+        if (! $this->teacherOwnsSublesson(
+            $teacher,
+            $sublesson
+        )) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to view this content.',
+                'message' =>
+                    'You are not authorized to view this content.',
             ], 403);
         }
 
-        $contents = $sublesson->contents()
+        $contents = $sublesson
+            ->contents()
             ->orderBy('sort_order')
             ->get();
 
@@ -45,9 +52,216 @@ class SublessonContentController extends Controller
         ]);
     }
 
+    /**
+     * Create a new Content sublesson
+     * and its SublessonContent record
+     * in one transaction.
+     *
+     * Used by:
+     *
+     * POST /api/teacher/lessons/{lesson}/content
+     */
+    public function storeForLesson(
+        Request $request,
+        Lesson $lesson
+    ) {
+        $teacher = $request->user();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Teacher Check
+        |--------------------------------------------------------------------------
+        */
+
+        if (! $teacher instanceof Teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher access required.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ownership Check
+        |--------------------------------------------------------------------------
+        */
+
+        $lesson->load('course');
+
+        if (
+            ! $lesson->course ||
+            (int) $lesson->course->teacher_id !==
+                (int) $teacher->id
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'You are not authorized to add content to this lesson.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validate([
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+            ],
+
+            'content' => [
+                'required',
+                'string',
+            ],
+
+            'type' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'settings' => [
+                'nullable',
+                'array',
+            ],
+
+            'source_type' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Sublesson + Content
+        |--------------------------------------------------------------------------
+        */
+
+        $result = DB::transaction(
+            function () use (
+                $validated,
+                $lesson,
+                $teacher
+            ) {
+                /*
+                |--------------------------------------------------------------------------
+                | Determine Next Sublesson Sort Order
+                |--------------------------------------------------------------------------
+                */
+
+                $maxSortOrder = $lesson
+                    ->sublessons()
+                    ->max('sort_order');
+
+                $nextSortOrder =
+                    ($maxSortOrder ?? 0) + 1;
+
+                /*
+                |--------------------------------------------------------------------------
+                | Create Sublesson
+                |--------------------------------------------------------------------------
+                */
+
+                $sublesson = $lesson
+                    ->sublessons()
+                    ->create([
+                        'title' =>
+                            $validated['title'],
+
+                        'description' =>
+                            $validated['description']
+                                ?? null,
+
+                        'sublesson_type' =>
+                            'content',
+
+                        'sort_order' =>
+                            $nextSortOrder,
+
+                        'status' =>
+                            'draft',
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Create Sublesson Content
+                |--------------------------------------------------------------------------
+                */
+
+                $content = $sublesson
+                    ->contents()
+                    ->create([
+                        'created_by' =>
+                            $teacher->id,
+
+                        'type' =>
+                            $validated['type']
+                                ?? 'markdown',
+
+                        'content' =>
+                            $validated['content'],
+
+                        'settings' =>
+                            $validated['settings']
+                                ?? null,
+
+                        'sort_order' =>
+                            1,
+
+                        'source_type' =>
+                            $validated['source_type']
+                                ?? 'manual',
+
+                        'status' =>
+                            'draft',
+                    ]);
+
+                return [
+                    'sublesson' =>
+                        $sublesson,
+
+                    'content' =>
+                        $content,
+                ];
+            }
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
+        return response()->json([
+            'success' => true,
+
+            'message' =>
+                'Content sublesson created successfully.',
+
+            'data' => [
+                'sublesson' =>
+                    $result['sublesson'],
+
+                'content' =>
+                    $result['content'],
+            ],
+        ], 201);
+    }
 
     /**
-     * Create content for a sublesson.
+     * Create content for an existing sublesson.
+     *
+     * Kept for the existing application flow.
      */
     public function store(
         Request $request,
@@ -64,10 +278,14 @@ class SublessonContentController extends Controller
 
         $sublesson->load('lesson.course');
 
-        if (! $this->teacherOwnsSublesson($teacher, $sublesson)) {
+        if (! $this->teacherOwnsSublesson(
+            $teacher,
+            $sublesson
+        )) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to add content to this sublesson.',
+                'message' =>
+                    'You are not authorized to add content to this sublesson.',
             ], 403);
         }
 
@@ -100,84 +318,100 @@ class SublessonContentController extends Controller
             ],
         ]);
 
-        $maxSortOrder = $sublesson->contents()
+        $maxSortOrder = $sublesson
+            ->contents()
             ->max('sort_order');
 
-        $nextSortOrder = ($maxSortOrder ?? 0) + 1;
+        $nextSortOrder =
+            ($maxSortOrder ?? 0) + 1;
 
-        $content = $sublesson->contents()->create([
-            'created_by' => $teacher->id,
+        $content = $sublesson
+            ->contents()
+            ->create([
+                'created_by' =>
+                    $teacher->id,
 
-            'type' => $validated['type']
-                ?? 'text',
+                'type' =>
+                    $validated['type']
+                        ?? 'text',
 
-            'content' => $validated['content'],
+                'content' =>
+                    $validated['content'],
 
-            'settings' => $validated['settings']
-                ?? null,
+                'settings' =>
+                    $validated['settings']
+                        ?? null,
 
-            'sort_order' => $nextSortOrder,
+                'sort_order' =>
+                    $nextSortOrder,
 
-            'source_type' => $validated['source_type']
-                ?? 'manual',
+                'source_type' =>
+                    $validated['source_type']
+                        ?? 'manual',
 
-            'status' => $validated['status']
-                ?? 'draft',
-        ]);
+                'status' =>
+                    $validated['status']
+                        ?? 'draft',
+            ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Sublesson content created successfully.',
+            'message' =>
+                'Sublesson content created successfully.',
             'data' => $content,
         ], 201);
     }
 
+    /**
+     * Show a single sublesson content record.
+     */
     public function show(
-    Request $request,
-    SublessonContent $sublessonContent
-) {
-    $teacher = $request->user();
+        Request $request,
+        SublessonContent $sublessonContent
+    ) {
+        $teacher = $request->user();
 
-    if (! $teacher instanceof Teacher) {
+        if (! $teacher instanceof Teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher access required.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Load Ownership Hierarchy
+        |--------------------------------------------------------------------------
+        |
+        | Content
+        |   → Sublesson
+        |       → Lesson
+        |           → Course
+        |               → Teacher
+        |
+        */
+
+        $sublessonContent->load(
+            'sublesson.lesson.course'
+        );
+
+        if (! $this->teacherOwnsContent(
+            $teacher,
+            $sublessonContent
+        )) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'You are not authorized to view this content.',
+            ], 403);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Teacher access required.',
-        ], 403);
+            'success' => true,
+            'data' => $sublessonContent,
+        ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load ownership hierarchy
-    |--------------------------------------------------------------------------
-    |
-    | Content
-    |   → Sublesson
-    |       → Lesson
-    |           → Course
-    |               → Teacher
-    |
-    */
-
-    $sublessonContent->load(
-        'sublesson.lesson.course'
-    );
-
-    if (! $this->teacherOwnsContent(
-        $teacher,
-        $sublessonContent
-    )) {
-        return response()->json([
-            'success' => false,
-            'message' =>
-                'You are not authorized to view this content.',
-        ], 403);
-    }
-
-    return response()->json([
-        'success' => true,
-        'data' => $sublessonContent,
-    ]);
-}
     /**
      * Update sublesson content.
      */
@@ -204,7 +438,8 @@ class SublessonContentController extends Controller
         )) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to edit this content.',
+                'message' =>
+                    'You are not authorized to edit this content.',
             ], 403);
         }
 
@@ -244,35 +479,42 @@ class SublessonContentController extends Controller
         ]);
 
         $sublessonContent->update([
-            'type' => $validated['type']
-                ?? $sublessonContent->type,
+            'type' =>
+                $validated['type']
+                    ?? $sublessonContent->type,
 
-            'content' => $validated['content'],
+            'content' =>
+                $validated['content'],
 
-            'settings' => array_key_exists(
-                'settings',
-                $validated
-            )
-                ? $validated['settings']
-                : $sublessonContent->settings,
+            'settings' =>
+                array_key_exists(
+                    'settings',
+                    $validated
+                )
+                    ? $validated['settings']
+                    : $sublessonContent->settings,
 
-            'sort_order' => $validated['sort_order']
-                ?? $sublessonContent->sort_order,
+            'sort_order' =>
+                $validated['sort_order']
+                    ?? $sublessonContent->sort_order,
 
-            'source_type' => $validated['source_type']
-                ?? $sublessonContent->source_type,
+            'source_type' =>
+                $validated['source_type']
+                    ?? $sublessonContent->source_type,
 
-            'status' => $validated['status']
-                ?? $sublessonContent->status,
+            'status' =>
+                $validated['status']
+                    ?? $sublessonContent->status,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Sublesson content updated successfully.',
-            'data' => $sublessonContent->fresh(),
+            'message' =>
+                'Sublesson content updated successfully.',
+            'data' =>
+                $sublessonContent->fresh(),
         ]);
     }
-
 
     /**
      * Delete sublesson content.
@@ -300,7 +542,8 @@ class SublessonContentController extends Controller
         )) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to delete this content.',
+                'message' =>
+                    'You are not authorized to delete this content.',
             ], 403);
         }
 
@@ -308,10 +551,10 @@ class SublessonContentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sublesson content deleted successfully.',
+            'message' =>
+                'Sublesson content deleted successfully.',
         ]);
     }
-
 
     /**
      * Check whether the teacher owns the sublesson.
@@ -322,10 +565,12 @@ class SublessonContentController extends Controller
     ): bool {
         return $sublesson->lesson
             && $sublesson->lesson->course
-            && (int) $sublesson->lesson->course->teacher_id
-                === (int) $teacher->id;
+            && (int) $sublesson
+                ->lesson
+                ->course
+                ->teacher_id ===
+                (int) $teacher->id;
     }
-
 
     /**
      * Check whether the teacher owns the content.
@@ -335,12 +580,18 @@ class SublessonContentController extends Controller
         SublessonContent $sublessonContent
     ): bool {
         return $sublessonContent->sublesson
-            && $sublessonContent->sublesson->lesson
-            && $sublessonContent->sublesson->lesson->course
+            && $sublessonContent
+                ->sublesson
+                ->lesson
+            && $sublessonContent
+                ->sublesson
+                ->lesson
+                ->course
             && (int) $sublessonContent
                 ->sublesson
                 ->lesson
                 ->course
-                ->teacher_id === (int) $teacher->id;
+                ->teacher_id ===
+                (int) $teacher->id;
     }
 }
