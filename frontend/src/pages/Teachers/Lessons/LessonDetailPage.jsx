@@ -164,16 +164,30 @@ const LessonDetailPage = () => {
   |--------------------------------------------------------------------------
   | Create Activity
   |--------------------------------------------------------------------------
+  |
+  | Each learning activity now starts directly
+  | from the Lesson Detail page.
+  |
+  | The destination create page will be responsible
+  | for creating:
+  |
+  | 1. The parent Sublesson
+  | 2. The activity-specific child record
+  |
   */
 
   const handleCreateActivity = (
     activityType
   ) => {
+    setError("");
+
     switch (activityType) {
       /*
-       * Content is now using the
-       * new direct creation flow.
-       */
+      |--------------------------------------------------------------------------
+      | Content
+      |--------------------------------------------------------------------------
+      */
+
       case "content":
         navigate(
           `/teacher/lessons/${lessonId}/content/create`
@@ -181,14 +195,57 @@ const LessonDetailPage = () => {
         break;
 
       /*
-       * We will connect these next as
-       * their direct create flows are converted.
-       */
+      |--------------------------------------------------------------------------
+      | Interactive Demo
+      |--------------------------------------------------------------------------
+      */
+
       case "interactive_demo":
+        navigate(
+          `/teacher/lessons/${lessonId}/interactive-demo/create`
+        );
+        break;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Exercise
+      |--------------------------------------------------------------------------
+      */
+
       case "exercise":
+        navigate(
+          `/teacher/lessons/${lessonId}/exercise/create`
+        );
+        break;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Quiz
+      |--------------------------------------------------------------------------
+      */
+
       case "quiz":
+        navigate(
+          `/teacher/lessons/${lessonId}/quiz/create`
+        );
+        break;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Flashcard
+      |--------------------------------------------------------------------------
+      */
+
       case "flashcard":
+        navigate(
+          `/teacher/lessons/${lessonId}/flashcard/create`
+        );
+        break;
+
       default:
+        setError(
+          "Unknown learning activity type."
+        );
         break;
     }
   };
@@ -220,9 +277,9 @@ const LessonDetailPage = () => {
         | A Content Sublesson contains its actual
         | learning material in sublesson_contents.
         |
-        | We therefore load the Content record first,
-        | obtain content.id and navigate directly to
-        | CreateSublessonContentPage in edit mode.
+        | Load the child Content record first so
+        | CreateSublessonContentPage can open directly
+        | in edit mode.
         |
         */
 
@@ -369,9 +426,11 @@ const LessonDetailPage = () => {
     return (
       <TeacherLayout>
         <div className="p-8">
+
           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
             Lesson not found.
           </div>
+
         </div>
       </TeacherLayout>
     );
@@ -407,7 +466,12 @@ const LessonDetailPage = () => {
             </div>
           )}
 
-          {/* Lesson Header */}
+          {/*
+          |--------------------------------------------------------------------------
+          | Lesson Header
+          |--------------------------------------------------------------------------
+          */}
+
           <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
             <div className="flex items-start gap-4">
@@ -485,8 +549,12 @@ const LessonDetailPage = () => {
               {/* Interactive Demo */}
               <button
                 type="button"
-                disabled
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+                onClick={() =>
+                  handleCreateActivity(
+                    "interactive_demo"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm font-semibold text-purple-700 transition hover:bg-purple-100"
               >
                 <Plus className="h-4 w-4" />
 
@@ -496,8 +564,12 @@ const LessonDetailPage = () => {
               {/* Exercise */}
               <button
                 type="button"
-                disabled
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+                onClick={() =>
+                  handleCreateActivity(
+                    "exercise"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition hover:bg-cyan-100"
               >
                 <Plus className="h-4 w-4" />
 
@@ -507,8 +579,12 @@ const LessonDetailPage = () => {
               {/* Quiz */}
               <button
                 type="button"
-                disabled
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+                onClick={() =>
+                  handleCreateActivity(
+                    "quiz"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
               >
                 <Plus className="h-4 w-4" />
 
@@ -518,8 +594,12 @@ const LessonDetailPage = () => {
               {/* Flashcard */}
               <button
                 type="button"
-                disabled
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-400 opacity-60"
+                onClick={() =>
+                  handleCreateActivity(
+                    "flashcard"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border border-pink-200 bg-pink-50 px-4 py-2.5 text-sm font-semibold text-pink-700 transition hover:bg-pink-100"
               >
                 <Plus className="h-4 w-4" />
 
@@ -692,11 +772,13 @@ const LessonDetailPage = () => {
                           {isOpening ? (
                             <>
                               <Loader2 className="h-4 w-4 animate-spin" />
+
                               Opening...
                             </>
                           ) : (
                             <>
                               <Edit3 className="h-4 w-4" />
+
                               Edit
                             </>
                           )}

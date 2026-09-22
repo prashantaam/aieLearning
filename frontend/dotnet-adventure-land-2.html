@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>.NET Adventure Land – learn .NET Core by playing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e5e4df;--surface:#ffffff;--surface2:#eeede6;--text:#141414;--muted:#54554e;
+  --ink:#141414;--shadow-c:#141414;--on-w:#141414;
+  --good:#0b7a55;--good-bg:#cdf5e4;--warn:#7a5200;--warn-bg:#ffefb8;--bad:#a3141b;--bad-bg:#ffd9d6;
+  --w:#8fd9a8;
+  --c-net:#8fd9a8;--c-blocks:#ffd84d;--c-web:#7cd4ff;--c-back:#ff9a8b;--c-pro:#6ee7b7;--c-final:#ffb3e1;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#12140f;--surface:#1c1f18;--surface2:#242821;--text:#eef0ea;--muted:#a7ab9f;
+    --ink:#8fd9a8;--shadow-c:#000000;
+    --good:#7ef0bd;--good-bg:#12382b;--warn:#ffd873;--warn-bg:#3d2f0c;--bad:#ff9b9f;--bad-bg:#45181b;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#12140f;--surface:#1c1f18;--surface2:#242821;--text:#eef0ea;--muted:#a7ab9f;
+  --ink:#8fd9a8;--shadow-c:#000000;
+  --good:#7ef0bd;--good-bg:#12382b;--warn:#ffd873;--warn-bg:#3d2f0c;--bad:#ff9b9f;--bad-bg:#45181b;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px);-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--text);font:17px/1.6 Nunito,"Segoe UI",system-ui,-apple-system,sans-serif;
+  background-image:radial-gradient(var(--ink) 1px,transparent 1.5px);background-size:26px 26px;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;background:var(--paper);opacity:.93;z-index:-1}
+h1,h2,h3,h4{font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif;line-height:1.15;margin:0}
+p{margin:.4em 0 .6em}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--surface2);border:1.5px solid var(--ink);border-radius:6px;padding:0 5px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #ff4fa3;outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;
+  padding:10px 16px;background:var(--surface);border-bottom:3px solid var(--ink)}
+.brand{font-family:Fredoka,sans-serif;font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.brand .logo{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#2f8f5b;color:#fff;border:3px solid var(--ink);
+  box-shadow:3px 3px 0 var(--shadow-c);font-size:.95rem;transform:rotate(-6deg)}
+.prog{flex:1;display:flex;align-items:center;gap:10px;min-width:0;justify-content:flex-end}
+.bar{flex:1;max-width:280px;height:18px;border:3px solid var(--ink);border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,#ffd84d 0 10px,#ffc21a 10px 20px);transition:width .5s}
+.starcount{font-family:Fredoka,sans-serif;font-weight:600;white-space:nowrap}
+.icon-btn{width:42px;height:42px;border-radius:12px;border:3px solid var(--ink);background:var(--surface);cursor:pointer;font-size:1.1rem;
+  box-shadow:3px 3px 0 var(--shadow-c);flex:none}
+.icon-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow-c)}
+#menuBtn{display:none}
+
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:290px minmax(0,1fr);max-width:1240px;margin:0 auto;align-items:start}
+nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 68px);max-height:calc(100vh - 80px);overflow:auto;padding:18px 12px 24px 16px}
+.world{margin-bottom:16px}
+.world h4{display:inline-block;font-size:.98rem;padding:3px 10px;border:2.5px solid var(--ink);border-radius:10px;background:var(--wc);color:var(--on-w);
+  box-shadow:3px 3px 0 var(--shadow-c);margin-bottom:8px}
+.navi{display:flex;width:100%;align-items:center;gap:8px;text-align:left;background:transparent;border:2.5px solid transparent;border-radius:12px;padding:6px 8px;cursor:pointer;font-weight:700}
+.navi:hover{background:var(--surface)}
+.navi.active{background:var(--surface);border-color:var(--ink);box-shadow:3px 3px 0 var(--shadow-c)}
+.navi .ni{font-size:1.15rem;width:1.5rem;text-align:center}
+.navi .nt{flex:1;line-height:1.25}
+.scrim{display:none}
+main{padding:22px 20px 60px;min-width:0}
+.lesson{max-width:880px}
+.crumb{color:var(--muted);font-weight:800;font-size:.92rem;margin-bottom:10px}
+.lesson h1{margin:0 0 16px;font-size:clamp(1.8rem,4.6vw,2.7rem)}
+.lesson h1 .t{display:inline-block;background:var(--w);color:var(--on-w);border:3px solid var(--ink);border-radius:16px;padding:2px 16px 4px;
+  box-shadow:5px 5px 0 var(--shadow-c);transform:rotate(-1deg)}
+.mascot{display:flex;gap:12px;align-items:flex-start;margin:6px 0 4px}
+.mface{font-size:2.5rem;line-height:1;animation:bob 2.6s ease-in-out infinite;flex:none}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.bubble{background:var(--surface);border:3px solid var(--ink);border-radius:6px 20px 20px 20px;padding:10px 16px;box-shadow:4px 4px 0 var(--shadow-c)}
+
+.card{background:var(--surface);border:3px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--shadow-c);padding:18px 20px 20px;margin:26px 0}
+.card > h2{font-size:1.4rem;margin-bottom:6px}
+.card > h2::after{content:"";display:block;height:6px;width:64px;border-radius:9px;background:var(--w);margin-top:6px;border:2px solid var(--ink)}
+.sub{color:var(--muted);font-weight:700}
+.panel{background:var(--surface2);border:2.5px dashed var(--ink);border-radius:14px;padding:12px 14px;margin-top:12px}
+.hint{color:var(--muted);font-size:.93rem}
+.row,.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:10px 0}
+
+.btn{background:var(--w);color:var(--on-w);border:3px solid var(--ink);border-radius:14px;padding:8px 16px;font-weight:800;cursor:pointer;
+  box-shadow:4px 4px 0 var(--shadow-c);transition:transform .08s,box-shadow .08s}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow-c)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--shadow-c)}
+.btn.ghost{background:var(--surface);color:var(--text)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 var(--shadow-c)}
+.btn.sm{padding:3px 10px;font-size:.9rem;box-shadow:3px 3px 0 var(--shadow-c);border-radius:10px}
+.chip{background:var(--surface);border:2.5px solid var(--ink);border-radius:99px;padding:3px 13px;font-weight:800;cursor:pointer}
+.chip:hover{background:var(--surface2)}
+.chip.on{background:var(--w);color:var(--on-w);box-shadow:3px 3px 0 var(--shadow-c)}
+.tile{background:var(--surface2);border:2.5px solid var(--ink);border-radius:16px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;text-align:center}
+.tile:hover{transform:translateY(-2px);box-shadow:0 4px 0 var(--shadow-c)}
+.tile.on{background:var(--w);color:var(--on-w);box-shadow:4px 4px 0 var(--shadow-c)}
+.tile .big{font-size:2rem;line-height:1.1}
+.tile small{font-weight:600;opacity:.85}
+input[type=text],input[type=number],input:not([type]),select{font:inherit;background:var(--surface);color:var(--text);border:2.5px solid var(--ink);border-radius:10px;padding:5px 10px;min-width:0;max-width:100%}
+input[type=range]{accent-color:#2f8f5b;width:min(280px,100%)}
+input[type=checkbox],input[type=radio]{accent-color:#2f8f5b;width:18px;height:18px}
+label{font-weight:800;display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:10px 0}
+.form label{flex-direction:column;align-items:flex-start;gap:2px}
+
+.code{background:#141414;color:#eef0ea;border:3px solid var(--ink);border-radius:14px;padding:12px 14px;margin:10px 0;overflow-x:auto;
+  font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;tab-size:4}
+.code .ln{display:block;min-height:1.65em;padding:0 8px;margin:0 -8px;border-radius:6px}
+.code .ln.hit{background:rgba(255,216,77,.28);box-shadow:inset 3px 0 0 #ffd84d}
+.code i{font-style:normal}
+.code .c{color:#8a8f86}.code .k{color:#ff8fc0}.code .t{color:#7fe0ff}.code .s{color:#ffd580}.code .n{color:#8fd9a8}
+.clickable .ln{cursor:pointer}.clickable .ln:hover{background:rgba(255,255,255,.1)}
+
+.tag{display:inline-block;border:2px solid var(--ink);border-radius:8px;padding:0 8px;font-weight:800;font-size:.85rem}
+.tag.good,.fb.good{background:var(--good-bg);color:var(--good)}
+.tag.warn,.fb.warn{background:var(--warn-bg);color:var(--warn)}
+.tag.bad,.fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb{border-radius:12px;padding:0;margin-top:8px;font-weight:700}
+.fb.good,.fb.warn,.fb.bad{padding:8px 12px;border:2.5px solid var(--ink)}
+
+/* quiz */
+.opts{display:grid;gap:10px;margin-top:8px}
+.opt{text-align:left;background:var(--surface2);border:2.5px solid var(--ink);border-radius:14px;padding:10px 14px;font-weight:700;cursor:pointer}
+.opt:hover:not(:disabled){background:var(--w);color:var(--on-w)}
+.opt.right{background:var(--good-bg);color:var(--good)}
+.opt.wrong{background:var(--bad-bg);color:var(--bad);text-decoration:line-through}
+.opt:disabled{cursor:default}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:34px}
+
+/* terminal */
+.term{background:#0d0d0d;color:#d6ffe6;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:3px solid var(--ink);border-radius:14px;padding:12px;min-height:180px;max-height:280px;overflow:auto}
+.term .pr{color:#ffd84d}.term .dim{color:#8a8f86}.term .ok{color:#7ef0bd}.term .bad{color:#ff9b9f}
+.termin{display:flex;gap:8px;margin-top:8px}
+.termin input{flex:1;font-family:ui-monospace,Menlo,Consolas,monospace}
+.tree{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem}
+.tree button{background:none;border:0;cursor:pointer;font:inherit;padding:1px 6px;border-radius:6px;text-align:left}
+.tree button:hover{background:var(--surface2)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* pipeline */
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;justify-content:center}
+.stage{flex:1 1 120px;background:var(--surface2);border:2.5px solid var(--ink);border-radius:16px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;opacity:.55;transition:.25s}
+.stage span{font-size:2rem}
+.stage.on{opacity:1;background:var(--w);color:var(--on-w);transform:translateY(-4px);box-shadow:4px 4px 0 var(--shadow-c)}
+.stage.past{opacity:1}
+.arrow{align-self:center;font-weight:800}
+.mem{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
+.cell{aspect-ratio:1;border-radius:14px;border:2.5px dashed var(--ink);display:grid;place-items:center;font-size:1.9rem;background:var(--surface2);cursor:pointer;padding:0}
+.cell.full{border-style:solid}
+.cell.trash{opacity:.4;filter:grayscale(1)}
+.cell.empty{cursor:default}
+
+/* misc widgets */
+.big{font-size:2rem}
+.box{display:inline-flex;flex-direction:column;align-items:center;border:3px solid var(--ink);border-radius:14px;background:var(--surface2);padding:8px 14px;min-width:96px;animation:pop .35s}
+.box small{font-weight:800;color:var(--muted)}
+@keyframes pop{from{transform:scale(.5);opacity:0}}
+.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.mini{background:var(--surface2);border:2.5px solid var(--ink);border-radius:14px;padding:10px 12px}
+.mini b{display:block}
+.screen{background:#0d0d0d;color:#7ef0bd;border:3px solid var(--ink);border-radius:14px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:74px}
+.pet{display:flex;flex-wrap:wrap;gap:12px;align-items:center;border:2.5px solid var(--ink);border-radius:16px;background:var(--surface2);padding:10px 12px;margin:8px 0}
+.pet .em{font-size:2.4rem}
+.meter{height:12px;border:2px solid var(--ink);border-radius:9px;background:var(--surface);overflow:hidden;width:140px}
+.meter i{display:block;height:100%;background:var(--w);transition:width .3s}
+.track{height:22px;border:2.5px solid var(--ink);border-radius:99px;overflow:hidden;background:var(--surface)}
+.fill{height:100%;width:0;background:var(--w)}
+.tk{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;margin:6px 0;font-weight:800}
+.clock{font-family:Fredoka,sans-serif;font-weight:600;margin-top:6px}
+.mw{display:flex;align-items:center;gap:10px;border:2.5px solid var(--ink);border-radius:14px;background:var(--surface2);padding:8px 12px;margin:8px 0;transition:.2s}
+.mw.lit{background:var(--w);color:var(--on-w);transform:translateX(8px);box-shadow:4px 4px 0 var(--shadow-c)}
+.mw.off{opacity:.45}
+.mw .mi{font-size:1.7rem}
+.mw .grow{flex:1;line-height:1.3}
+.mw .grow small{display:block;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{border:2px solid var(--ink);padding:5px 8px;text-align:left}
+th{background:var(--surface2)}
+.tblwrap{overflow-x:auto}
+td.win{background:var(--good-bg);color:var(--good);font-weight:800}
+.idchip{display:inline-block;border:2px solid var(--ink);border-radius:9px;padding:0 8px;font-weight:800;color:#141414}
+.toy{background:var(--surface2);border:2.5px solid var(--ink);border-radius:14px;padding:8px;text-align:center;font-weight:800}
+.toy .em{font-size:2rem;display:block}
+.flip{background:var(--surface2);border:2.5px solid var(--ink);border-radius:16px;padding:12px 8px;cursor:pointer;text-align:center;min-height:132px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;font-weight:800}
+.flip .back{display:none;font-weight:600;font-size:.94rem;line-height:1.35}
+.flip.on{background:var(--w);color:var(--on-w);box-shadow:4px 4px 0 var(--shadow-c)}
+.flip.on .front{display:none}.flip.on .back{display:block}
+.flip .em{font-size:2rem}
+.road{position:relative;height:56px;border-bottom:5px dashed var(--ink);margin:10px 0 4px}
+.truck{position:absolute;bottom:2px;font-size:2.2rem;transition:left .7s ease-in-out}
+.cert{border:4px double var(--ink);border-radius:20px;padding:24px;text-align:center;background:var(--warn-bg);color:var(--text);margin-top:16px}
+.cert h3{font-size:1.7rem}
+.cert input{font-size:1.3rem;text-align:center;font-family:Fredoka,sans-serif}
+.fx{position:fixed;z-index:60;pointer-events:none;font-size:1.6rem}
+.toast-line{border-left:6px solid var(--w);padding-left:10px;margin:4px 0}
+
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  #menuBtn{display:block}
+  nav{position:fixed;z-index:40;top:0;left:0;bottom:0;width:min(320px,86vw);max-height:none;background:var(--paper);border-right:3px solid var(--ink);
+    padding-top:calc(env(safe-area-inset-top,0px) + 16px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateX(-105%);transition:transform .25s}
+  nav.open{transform:none}
+  .scrim.open{display:block;position:fixed;inset:0;z-index:35;background:rgba(10,5,30,.55)}
+  .split{grid-template-columns:1fr}
+  .brand span.bt{display:none}
+  main{padding:16px 14px 60px}
+  .card{padding:14px 14px 16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="icon-btn" id="menuBtn" aria-label="Open lesson menu">☰</button>
+  <div class="brand"><div class="logo" aria-hidden="true">.N</div><span class="bt">.NET Adventure Land</span></div>
+  <div class="prog"><div class="bar" role="progressbar" aria-label="Stars collected" aria-valuemin="0" aria-valuemax="100" id="barWrap"><i id="barFill"></i></div><div class="starcount" id="starCount">⭐ 0</div></div>
+  <button class="icon-btn" id="themeBtn" aria-label="Switch light or dark theme">🌗</button>
+</header>
+<div class="shell">
+  <nav id="nav" aria-label="Lessons"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<script>
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const escC=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const KW='abstract|as|async|await|bool|break|case|catch|char|class|const|continue|decimal|default|double|else|enum|false|for|foreach|from|get|if|in|int|interface|internal|is|let|long|namespace|new|null|orderby|out|override|params|private|protected|public|readonly|record|ref|return|sealed|select|set|static|string|struct|switch|this|throw|true|try|using|var|virtual|void|where|while';
+const HL=new RegExp(String.raw`(\/\/.*$)|("(?:[^"\\]|\\.)*")|\b(${KW})\b|\b([A-Z][A-Za-z0-9_]*)\b|(\b\d+(?:\.\d+)?\b)`,'gm');
+function hl(line){return escC(line).replace(HL,(m,c,s,k,t,n)=>c?`<i class="c">${c}</i>`:s?`<i class="s">${s}</i>`:k?`<i class="k">${k}</i>`:t?`<i class="t">${t}</i>`:`<i class="n">${n}</i>`);}
+function code(src,hit){
+  const lines=String(src).replace(/^\n/,'').replace(/\s+$/,'').split('\n'); const set=new Set(hit||[]);
+  return '<pre class="code">'+lines.map((ln,i)=>`<span class="ln${set.has(i)?' hit':''}">${hl(ln)}</span>`).join('')+'</pre>';
+}
+function plain(src){return '<pre class="code">'+escC(String(src).replace(/\s+$/,''))+'</pre>';}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function burst(el){
+  if(reduce||!el||!el.animate)return;
+  const b=el.getBoundingClientRect(),em=['⭐','🎉','✨','🟢','🎈'];
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span');s.className='fx';s.textContent=em[i%em.length];
+    s.style.left=(b.left+b.width/2)+'px';s.style.top=(b.top+b.height/2)+'px';document.body.appendChild(s);
+    const a=Math.random()*Math.PI*2,d=60+Math.random()*90;
+    s.animate([{transform:'translate(0,0) scale(.6)',opacity:1},{transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d-40}px) rotate(${Math.random()*360}deg) scale(1.2)`,opacity:0}],{duration:950,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove();
+  }
+}
+const store={
+  get(){try{return JSON.parse(localStorage.getItem('dotnet-adventure-v1'))||{};}catch(e){return {};}},
+  set(o){try{localStorage.setItem('dotnet-adventure-v1',JSON.stringify(o));}catch(e){}}
+};
+
+/* =====================================================================
+   Lesson engine
+   ===================================================================== */
+const W={net:{n:'🌍 Meet .NET',c:'--c-net'},blocks:{n:'🧱 C# building blocks',c:'--c-blocks'},web:{n:'🌐 Web land (ASP.NET Core)',c:'--c-web'},back:{n:'⚙️ Behind the scenes',c:'--c-back'},pro:{n:'🚀 Pro skills',c:'--c-pro'},fin:{n:'🏆 Final challenge',c:'--c-final'}};
+const L=[]; const add=o=>L.push(o);
+let saved=store.get(); let done=new Set(saved.done||[]); let cur=0; let cleanups=[];
+const later=f=>cleanups.push(f);
+
+function quizHTML(q){
+  const opts=shuffle([{t:q.ok,ok:1}].concat(q.bad.map(t=>({t,ok:0}))));
+  return `<section class="card quizc"><h2>🎯 Quick quiz</h2><p><b>${esc(q.q)}</b></p><div class="opts">${opts.map(o=>`<button class="opt" data-ok="${o.ok}">${esc(o.t)}</button>`).join('')}</div><div class="fb" aria-live="polite"></div></section>`;
+}
+function bindQuiz(root,q,onRight){
+  const fb=$('.fb',root);
+  $$('.opt',root).forEach(b=>b.onclick=()=>{
+    if(b.dataset.ok==='1'){
+      b.classList.add('right');$$('.opt',root).forEach(x=>x.disabled=true);
+      fb.className='fb good';fb.textContent='🎉 Yes! '+q.why;onRight&&onRight(b);
+    }else{
+      b.classList.add('wrong');b.disabled=true;fb.className='fb warn';fb.textContent='Not quite. Pick another answer, you can do it! 💪';
+    }
+  });
+}
+function markDone(id,el){
+  if(!done.has(id)){done.add(id);saved.done=Array.from(done);store.set(saved);burst(el);}
+  updateProgress();buildNav();
+}
+function updateProgress(){
+  const total=L.filter(x=>x.quiz).length,n=L.filter(x=>x.quiz&&done.has(x.id)).length;
+  $('#barFill').style.width=(n/total*100)+'%';$('#starCount').textContent='⭐ '+n+' / '+total;$('#barWrap').setAttribute('aria-valuenow',Math.round(n/total*100));
+}
+function buildNav(){
+  let last=null,h='';
+  L.forEach((l,i)=>{
+    if(l.world!==last){if(last)h+='</div>';h+=`<div class="world" style="--wc:var(${l.world.c})"><h4>${l.world.n}</h4>`;last=l.world;}
+    h+=`<button class="navi${i===cur?' active':''}" data-i="${i}"${i===cur?' aria-current="page"':''}><span class="ni">${l.icon}</span><span class="nt">${esc(l.title)}</span><span>${done.has(l.id)?'⭐':''}</span></button>`;
+  });
+  $('#nav').innerHTML=h+'</div>';
+  $$('.navi',$('#nav')).forEach(b=>b.onclick=()=>go(+b.dataset.i));
+}
+function go(i){
+  cleanups.forEach(f=>{try{f();}catch(e){}});cleanups=[];
+  cur=Math.max(0,Math.min(L.length-1,i));const l=L[cur],m=$('#main');
+  m.innerHTML=`<article class="lesson" style="--w:var(${l.world.c})"><div class="crumb">${l.world.n} · lesson ${cur+1} of ${L.length}</div>
+  <h1><span class="t">${l.icon} ${esc(l.title)}</span></h1>
+  <div class="mascot"><div class="mface" aria-hidden="true">🟢</div><div class="bubble">${l.say}</div></div>
+  ${l.html()}${l.quiz?quizHTML(l.quiz):''}
+  <div class="pager"><button class="btn ghost" id="prevB"${cur===0?' disabled':''}>← Back</button>${cur<L.length-1?'<button class="btn" id="nextB">Next lesson →</button>':'<span></span>'}</div></article>`;
+  if(l.init)l.init(m);
+  if(l.quiz)bindQuiz($('.quizc',m),l.quiz,b=>markDone(l.id,b));
+  $('#prevB').onclick=()=>go(cur-1);const nb=$('#nextB');if(nb)nb.onclick=()=>go(cur+1);
+  saved.last=cur;store.set(saved);buildNav();closeNav();
+  window.scrollTo(0,0);
+}
+function closeNav(){$('#nav').classList.remove('open');$('#scrim').classList.remove('open');}
+$('#menuBtn').onclick=()=>{$('#nav').classList.toggle('open');$('#scrim').classList.toggle('open');};
+$('#scrim').onclick=closeNav;
+$('#themeBtn').onclick=()=>{const d=document.documentElement,now=d.dataset.theme||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');d.dataset.theme=now==='dark'?'light':'dark';};
+
+/* =====================================================================
+   1. What is .NET?
+   ===================================================================== */
+add({id:'what',world:W.net,icon:'🌍',title:'What is .NET?',
+say:`Hi, I'm Dotty! 🟢 Welcome to <b>.NET Adventure Land</b>. Imagine a giant magic toolbox that helps you build websites, games, phone apps and even robots. That toolbox is called <b>.NET</b>!`,
+html:()=>`
+<section class="card"><h2>🧰 The toolbox has 4 drawers</h2><p class="sub">Tap a drawer to peek inside.</p>
+<div class="grid" id="drawers">
+<button class="tile" data-k="lang"><span class="big">🗣️</span>Languages</button>
+<button class="tile" data-k="lib"><span class="big">📚</span>Libraries</button>
+<button class="tile" data-k="rt"><span class="big">🏃</span>Runtime</button>
+<button class="tile" data-k="sdk"><span class="big">🔨</span>SDK</button></div>
+<div class="panel" id="drawerInfo">👆 Pick a drawer!</div></section>
+
+<section class="card"><h2>🌈 Write once, run almost anywhere</h2>
+<p>.NET is <b>cross-platform</b>: the same code can run on lots of different computers. Pick a device and press play!</p>
+${code('Console.WriteLine("Hello, kids!");')}
+<div class="chips" id="devs">
+<button class="chip" data-d="Windows 11 🪟">🪟 Windows</button><button class="chip" data-d="macOS 🍎">🍎 Mac</button>
+<button class="chip" data-d="Ubuntu Linux 🐧">🐧 Linux</button><button class="chip" data-d="a Docker container 🐳">🐳 Docker</button><button class="chip" data-d="the cloud ☁️">☁️ Cloud</button></div>
+<div class="screen" id="devScreen">Choose a device above…</div></section>
+
+<section class="card"><h2>⏳ Where does ".NET Core" fit in?</h2><p class="sub">Tap a year to see the story.</p>
+<div class="chips" id="hist"><button class="chip" data-h="0">2002</button><button class="chip" data-h="1">2016</button><button class="chip" data-h="2">2020 and later</button></div>
+<div class="panel" id="histInfo">👆 Tap a year.</div></section>`,
+init(r){
+  const D={lang:'You talk to .NET with a language. The most popular one is <b>C#</b> (say "C sharp"). There are also F# and Visual Basic.',
+    lib:'Ready-made LEGO bricks! The <b>Base Class Library</b> already knows about text, dates, files and the internet, so you never start from zero.',
+    rt:'The <b>runtime</b> (called the CLR) is the engine that runs your program and tidies up memory for you.',
+    sdk:'The <b>SDK</b> is your workshop: the <code>dotnet</code> command, the compiler and the project templates for creating, building and running apps.'};
+  $$('#drawers .tile',r).forEach(b=>b.onclick=()=>{$$('#drawers .tile',r).forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#drawerInfo',r).innerHTML=D[b.dataset.k];});
+  $$('#devs .chip',r).forEach(b=>b.onclick=()=>{$$('#devs .chip',r).forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    $('#devScreen',r).innerHTML=`&gt; running on ${b.dataset.d}<br>Hello, kids!<br><span style="opacity:.7">Same code, same answer. 🎉</span>`;});
+  const H=['<b>.NET Framework</b> (2002) was the first big version. It only lived on <b>Windows</b> computers. 🪟',
+    '<b>.NET Core</b> (2016) was a brand-new, fast, open-source version that runs on <b>Windows, Mac and Linux</b>. This is what people mean by ".NET Core"! 🎉',
+    'The family joined together starting with <b>.NET 5</b> and dropped the word "Core". Today it is simply <b>.NET</b> (8, 9, 10 …). Everything in this website works in modern .NET!'];
+  $$('#hist .chip',r).forEach(b=>b.onclick=()=>{$$('#hist .chip',r).forEach(x=>x.classList.remove('on'));b.classList.add('on');$('#histInfo',r).innerHTML=H[+b.dataset.h];});
+},
+quiz:{q:'What does "cross-platform" mean?',ok:'The same code can run on Windows, macOS and Linux',bad:['It only works on Windows','It is a game with a cross-shaped robot'],why:'Cross-platform means one program, many kinds of computers.'}});
+
+/* =====================================================================
+   2. How your code runs
+   ===================================================================== */
+add({id:'run',world:W.net,icon:'🏭',title:'How your code runs',
+say:`Computers do not understand C# words directly. Your code travels through a little <b>factory</b> first. Press the button to follow it!`,
+html:()=>`
+<section class="card"><h2>🏭 The code factory</h2>
+<div class="pipe" id="pipe">
+<div class="stage"><span>📝</span><b>You write C#</b><small>Program.cs</small></div><div class="arrow">➜</div>
+<div class="stage"><span>🔧</span><b>Compiler</b><small>C# → IL</small></div><div class="arrow">➜</div>
+<div class="stage"><span>⚡</span><b>JIT</b><small>IL → machine code</small></div><div class="arrow">➜</div>
+<div class="stage"><span>🖥️</span><b>CPU runs it</b><small>Hello!</small></div></div>
+<div class="row"><button class="btn" id="stepBtn">▶ Next step</button><button class="btn ghost" id="resetPipe">↺ Restart</button></div>
+<div class="panel" id="pipeInfo">Press <b>Next step</b> to start.</div></section>
+
+<section class="card"><h2>🧹 The cleanup robot (Garbage Collector)</h2>
+<p>Every toy your program makes lives in <b>memory</b>. When nobody is playing with a toy any more, the <b>Garbage Collector</b> (GC) sweeps it away, so you never have to. Tap a toy to <i>let go</i> of it, then call the robot.</p>
+<div class="mem" id="mem"></div>
+<div class="row"><button class="btn" id="newToy">➕ New toy</button><button class="btn ghost" id="runGC">🧹 Run GC</button></div>
+<div class="fb" id="gcMsg" aria-live="polite"></div></section>`,
+init(r){
+  const info=['You write friendly C# words in a file like <code>Program.cs</code>. Humans can read it, but computers cannot yet!',
+   'The <b>compiler</b> (its name is Roslyn) checks your spelling and turns the code into <b>IL</b>, a universal "robot language", stored in a <code>.dll</code> file.',
+   'When the app starts, the <b>JIT</b> (Just-In-Time compiler) turns IL into the exact language of <i>your</i> computer, just when it is needed. That is why one .dll can run on Windows, Mac or Linux!',
+   'The CPU does the work and prints <b>Hello!</b> 🎉 The runtime keeps an eye on memory while it runs.'];
+  let s=-1;const st=$$('#pipe .stage',r);
+  function draw(){st.forEach((e,i)=>{e.classList.toggle('on',i===s);e.classList.toggle('past',i<s);});$('#pipeInfo',r).innerHTML=s<0?'Press <b>Next step</b> to start.':info[s];$('#stepBtn',r).disabled=s>=3;}
+  $('#stepBtn',r).onclick=()=>{s=Math.min(3,s+1);draw();};$('#resetPipe',r).onclick=()=>{s=-1;draw();};draw();
+  const emo=['🧸','🚗','🎈','🤖','🪁','🚀','🦆','⚽','🎲','🥁','🐳','🦖'];let cells=emo.slice(0,6).map(e=>({e,g:false}));
+  function mem(){const m=$('#mem',r);m.innerHTML='';for(let i=0;i<12;i++){const c=cells[i],b=document.createElement('button');
+    b.className='cell '+(c?'full'+(c.g?' trash':''):'empty');b.textContent=c?c.e:'';b.setAttribute('aria-label',c?(c.g?'toy nobody uses':'toy in use'):'free memory');
+    if(c)b.onclick=()=>{c.g=!c.g;mem();$('#gcMsg',r).className='fb';$('#gcMsg',r).textContent='';};m.appendChild(b);}}
+  $('#newToy',r).onclick=()=>{const f=$('#gcMsg',r);if(cells.length>=12&&!cells.some(c=>!c)){f.className='fb warn';f.textContent='Memory is full! Let go of some toys and run the GC. 🧹';return;}
+    const i=cells.findIndex(c=>!c),k=i<0?cells.length:i;cells[k]={e:emo[Math.floor(Math.random()*emo.length)],g:false};f.className='fb';f.textContent='';mem();};
+  $('#runGC',r).onclick=()=>{const n=cells.filter(c=>c&&c.g).length,f=$('#gcMsg',r);cells=cells.map(c=>c&&c.g?null:c);mem();
+    f.className='fb '+(n?'good':'warn');f.textContent=n?`🧹 The GC swept away ${n} unused toy${n>1?'s':''}. Free space!`:'Nothing to clean: every toy is still in use. Tap a toy to let go of it first.';};
+  mem();
+},
+quiz:{q:'What does the JIT compiler do?',ok:'Turns IL into machine code while the app runs',bad:['Draws the pictures on screen','Deletes toys nobody uses'],why:'JIT means Just-In-Time: it translates IL for your CPU right when it is needed.'}});
+
+/* =====================================================================
+   3. dotnet CLI
+   ===================================================================== */
+add({id:'cli',world:W.net,icon:'⌨️',title:'The dotnet command & projects',
+say:`The <code>dotnet</code> command is your magic wand. Type spells in the terminal (or tap a spell!) to create, build and run apps. Try them in order.`,
+html:()=>`
+<section class="card"><h2>🪄 Practice terminal</h2>
+<div class="term" id="term" role="log" aria-live="polite"></div>
+<form class="termin" id="tf" onsubmit="return false"><input id="cmd" type="text" placeholder="type a command…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="command"><button class="btn sm" id="runB" type="button">Run</button></form>
+<div class="chips" id="spells"></div></section>
+<section class="card"><h2>📁 Your project</h2><div class="split"><div><b>Files (tap one!)</b><div class="tree" id="tree"></div><div class="panel" id="fileInfo">👆 Tap a file to learn what it does.</div></div>
+<div><b>The recipe card (.csproj)</b><div id="csproj"></div></div></div></section>`,
+init(r){
+  const st={created:false,tpl:'',name:'',pkgs:[],built:false};
+  const term=$('#term',r),inp=$('#cmd',r);
+  const out=(h,c)=>{const d=document.createElement('div');if(c)d.className=c;d.innerHTML=h;term.appendChild(d);term.scrollTop=term.scrollHeight;};
+  const web=()=>['web','webapi','mvc','blazor'].includes(st.tpl);
+  const FI={'Program.cs':'The front door! Your app starts here.','csproj':'The recipe card: which .NET version and which packages (NuGet) your project uses.','appsettings.json':'The settings menu of your app (like the text of a greeting, or a database address).','bin/ and obj/':'The workshop floor. <code>dotnet build</code> puts the finished app here.'};
+  function side(){
+    const t=$('#tree',r);
+    if(!st.created){t.innerHTML='<i>(empty folder, so create a project first!)</i>';$('#csproj',r).innerHTML=plain('(no project yet)');return;}
+    const nm=esc(st.name),files=['Program.cs',st.name+'.csproj'];if(web())files.push('appsettings.json');if(st.built)files.push('bin/ and obj/');
+    t.innerHTML='📁 '+nm+'/<br>'+files.map(f=>{const key=f.endsWith('.csproj')?'csproj':f;return `&nbsp;&nbsp;└ <button data-f="${esc(key)}">${key==='bin/ and obj/'?'📁':'📄'} ${esc(f)}</button><br>`;}).join('');
+    $$('#tree button',r).forEach(b=>b.onclick=()=>{$('#fileInfo',r).innerHTML=FI[b.dataset.f];});
+    const pk=st.pkgs.map(p=>`    <PackageReference Include="${p}" Version="x.y.z" />`).join('\n');
+    $('#csproj',r).innerHTML=plain(`<Project Sdk="${web()?'Microsoft.NET.Sdk.Web':'Microsoft.NET.Sdk'}">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <Nullable>enable</Nullable>\n  </PropertyGroup>${pk?'\n  <ItemGroup>\n'+pk+'\n  </ItemGroup>':''}\n</Project>`)+(pk?'<p class="hint">The version numbers depend on the newest package today.</p>':'');
+  }
+  function need(){out('Could not find a project here. Create one first: <b>dotnet new webapi -n ToyShop</b>','bad');}
+  function run(raw){
+    const c=raw.trim().replace(/\s+/g,' ');if(!c)return;out('<span class="pr">$</span> '+esc(c));const p=c.split(' ');
+    if(c==='clear'){term.innerHTML='';return;}
+    if(c==='help'||c==='dotnet --help'){out('Try: dotnet new webapi -n ToyShop · dotnet build · dotnet run · dotnet add package Serilog · dotnet test · dotnet publish -c Release','dim');return;}
+    if(p[0]!=='dotnet'){out('Command "'+esc(p[0])+'" not found. Start with <b>dotnet</b> 😉','bad');return;}
+    const sub=p[1];
+    if(c==='dotnet --version'){out('10.0.100');}
+    else if(sub==='new'){const list=['console','web','webapi','mvc','classlib','xunit','blazor'];if(!list.includes(p[2])){out('No template matches "'+esc(p[2]||'')+'". Try: '+list.join(', '),'bad');return;}
+      const i=p.indexOf('-n');st.name=(i>0&&p[i+1])?p[i+1].replace(/[^A-Za-z0-9_.]/g,''):'MyApp';if(!st.name)st.name='MyApp';st.tpl=p[2];st.created=true;st.built=false;st.pkgs=[];out('The template "'+p[2]+'" was created successfully. 🎉','ok');}
+    else if(sub==='build'){if(!st.created)return need();st.built=true;out('Determining projects to restore…<br>Build succeeded.<br>&nbsp;&nbsp;&nbsp;0 Warning(s) · 0 Error(s)','ok');}
+    else if(sub==='run'){if(!st.created)return need();st.built=true;
+      if(web())out('Building…<br>info: Now listening on: http://localhost:5000<br>info: Application started. Press Ctrl+C to shut down.<br><span class="dim">(your website is alive! 🎉)</span>','ok');else out('Building…<br>Hello, World!','ok');}
+    else if(sub==='add'&&p[2]==='package'&&p[3]){if(!st.created)return need();const n=p[3].replace(/[^A-Za-z0-9_.]/g,'');if(!n){out('Give me a package name.','bad');return;}
+      if(!st.pkgs.includes(n))st.pkgs.push(n);out('info: Adding PackageReference for package "'+esc(n)+'" into your project.<br>info: Restored from NuGet. 📦 Look at the recipe card →','ok');}
+    else if(sub==='test'){if(!st.created)return need();out('Passed! Failed: 0, Passed: 1, Skipped: 0 ✅','ok');}
+    else if(sub==='publish'){if(!st.created)return need();st.built=true;out('Build succeeded.<br>'+esc(st.name)+' -> bin/Release/publish/  📦 Ready to ship!','ok');}
+    else out('Unknown command. Type <b>help</b> for ideas.','bad');
+    side();
+  }
+  const sp=['dotnet --version','dotnet new webapi -n ToyShop','dotnet build','dotnet run','dotnet add package Serilog','dotnet test','dotnet publish -c Release'];
+  $('#spells',r).innerHTML=sp.map(s=>`<button class="chip">${esc(s)}</button>`).join('');
+  $$('#spells .chip',r).forEach((b,i)=>b.onclick=()=>run(sp[i]));
+  $('#runB',r).onclick=()=>{run(inp.value);inp.value='';inp.focus();};
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();run(inp.value);inp.value='';}};
+  out('Welcome! Type a command or tap a spell below. Tip: start with <b>dotnet new webapi -n ToyShop</b> 👇','dim');side();
+},
+quiz:{q:'Which command starts your app?',ok:'dotnet run',bad:['dotnet build','dotnet new'],why:'"dotnet build" only builds it and "dotnet new" creates a project. "dotnet run" builds and starts it.'}});
+
+/* =====================================================================
+   4. Variables & types
+   ===================================================================== */
+add({id:'vars',world:W.blocks,icon:'📦',title:'Variables & types',
+say:`A <b>variable</b> is a labeled box that remembers something. Its <b>type</b> says what may go inside: numbers, words, yes/no… Try to fool the box!`,
+html:()=>`
+<section class="card"><h2>📦 Fill a box</h2><p class="sub">Pick a type, name the box and choose a value.</p>
+<div class="chips" id="types"></div><div id="tdesc" class="hint"></div>
+<div class="form"><label>Box name <input id="vn" type="text" maxlength="20"></label><label>Value <input id="vv" type="text" maxlength="30"></label><button class="btn" id="vgo">Put it in the box</button></div>
+<div id="vcode"></div><div class="fb" id="vres" aria-live="polite"></div><div class="row" id="shelf"></div></section>
+<section class="card"><h2>🧠 Three handy tricks</h2><div class="grid">
+<div class="mini"><b>var</b>Let the computer guess the type.${code('var score = 10;')}</div>
+<div class="mini"><b>const</b>A box glued shut. It never changes.${code('const double Pi = 3.14;')}</div>
+<div class="mini"><b>int?</b>A box that is allowed to be empty (null).${code('int? age = null;')}</div></div></section>`,
+init(r){
+  const T={int:['🔢','whole numbers like 7 or -3','age','8'],double:['🔟','numbers with a decimal point like 3.14','pi','3.14'],string:['🔤','words in "double quotes"','name','Ava'],bool:['💡','only true or false','isHappy','true'],char:['🅰️',"one single letter in 'single quotes'",'grade','A']};
+  let type='int';const shelf=[],reserved=new RegExp('^('+KW+')$');
+  $('#types',r).innerHTML=Object.keys(T).map(k=>`<button class="chip" data-t="${k}">${T[k][0]} ${k}</button>`).join('');
+  function pick(k){type=k;$$('#types .chip',r).forEach(c=>c.classList.toggle('on',c.dataset.t===k));$('#tdesc',r).textContent=k+': '+T[k][1];$('#vn',r).value=T[k][2];$('#vv',r).value=T[k][3];}
+  $$('#types .chip',r).forEach(c=>c.onclick=()=>pick(c.dataset.t));pick('int');
+  function actual(v){if(/^-?\d+$/.test(v))return'int';if(/^-?\d*\.\d+$/.test(v))return'double';if(v==='true'||v==='false')return'bool';return'string';}
+  $('#vgo',r).onclick=()=>{
+    const n=$('#vn',r).value.trim(),v=$('#vv',r).value,res=$('#vres',r);let err='',lit=v;
+    if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(n))err='Names cannot start with a number or contain spaces or symbols.';
+    else if(reserved.test(n))err='"'+n+'" is a special C# word. Pick another name.';
+    else if(shelf.some(s=>s.n===n))err='error CS0128: A variable named "'+n+'" already exists. Every box needs its own name!';
+    else{const a=actual(v);
+      if(type==='int'&&a!=='int')err='error CS0029: Cannot implicitly convert type "'+a+'" to "int". An int box only takes whole numbers.';
+      else if(type==='double'&&a!=='int'&&a!=='double')err='error CS0029: Cannot implicitly convert type "'+a+'" to "double".';
+      else if(type==='bool'&&a!=='bool')err='error CS0029: Cannot implicitly convert type "'+a+'" to "bool". Use true or false.';
+      else if(type==='char'&&v.length!==1)err='error CS1012: A char holds exactly one character.';
+      else if(type==='string')lit='"'+v.replace(/"/g,'\\"')+'"';else if(type==='char')lit="'"+v+"'";}
+    const line=`${type} ${n} = ${lit};`;$('#vcode',r).innerHTML=code(line);
+    if(err){res.className='fb bad';res.textContent='💥 '+err;const b=$('#vgo',r);b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');return;}
+    shelf.push({n,type,v:type==='string'?v:lit});res.className='fb good';res.textContent='✅ Compiled! The box is filled.';
+    $('#shelf',r).innerHTML=shelf.map(s=>`<div class="box"><span class="big">${T[s.type][0]}</span><b>${esc(s.v)}</b><small>${s.type} ${esc(s.n)}</small></div>`).join('');
+  };
+  $('#vgo',r).click();
+},
+quiz:{q:'Which type would you use to store the word "pizza"?',ok:'string',bad:['int','bool'],why:'Words and sentences are stored in a string.'}});
+
+/* =====================================================================
+   5. Decisions & loops
+   ===================================================================== */
+add({id:'flow',world:W.blocks,icon:'🔀',title:'Decisions & loops',
+say:`Programs make choices with <b>if</b> and repeat things with <b>loops</b>. Change the sliders and watch which lines of code light up!`,
+html:()=>`
+<section class="card"><h2>🌦️ If … else: what should I wear?</h2>
+<div class="row"><label>Weather <select id="wx"><option>sunny</option><option>rainy</option><option>snowy</option></select></label>
+<label>Temperature <input type="range" id="tp" min="-5" max="35" value="18"> <b id="tpv">18°C</b></label></div>
+<div id="ifcode"></div><div class="panel" id="ifout"></div></section>
+<section class="card"><h2>🔁 Loops: robots on repeat</h2>
+<div class="chips" id="lt"><button class="chip on" data-l="for">for</button><button class="chip" data-l="while">while</button><button class="chip" data-l="foreach">foreach</button></div>
+<label>How many robots? <input type="range" id="rn" min="1" max="10" value="4"> <b id="rnv">4</b></label>
+<div id="lcode"></div><div class="panel" id="lout"></div></section>`,
+init(r){
+  const lines=['if (weather == "rainy")','    Console.WriteLine("Take an umbrella ☔");','else if (temperature < 10)','    Console.WriteLine("Wear a warm coat 🧥");','else if (temperature > 25)','    Console.WriteLine("Shorts time! 🩳");','else','    Console.WriteLine("A T-shirt is perfect 👕");'];
+  function drawIf(){const w=$('#wx',r).value,t=+$('#tp',r).value;$('#tpv',r).textContent=t+'°C';let hit,msg;
+    if(w==='rainy'){hit=[0,1];msg='Take an umbrella ☔';}else if(t<10){hit=[0,2,3];msg='Wear a warm coat 🧥';}else if(t>25){hit=[0,2,4,5];msg='Shorts time! 🩳';}else{hit=[0,2,4,6,7];msg='A T-shirt is perfect 👕';}
+    $('#ifcode',r).innerHTML=`<div class="hint">C# checks each question from the top and stops at the first "yes".</div>`+code(`string weather = "${w}";\nint temperature = ${t};\n`+lines.join('\n'),hit.map(i=>i+2));$('#ifout',r).innerHTML='<b>Output:</b> '+msg;}
+  ['wx','tp'].forEach(id=>$('#'+id,r).oninput=drawIf);drawIf();
+  let lt='for';
+  function drawLoop(){const n=+$('#rn',r).value;$('#rnv',r).textContent=n;let c;
+    if(lt==='for')c=`for (int i = 1; i <= ${n}; i++)\n{\n    Console.WriteLine($"Robot #{i} says Beep!");\n}`;
+    else if(lt==='while')c=`int i = 1;\nwhile (i <= ${n})\n{\n    Console.WriteLine($"Robot #{i} says Beep!");\n    i++;\n}`;
+    else c=`var robots = Enumerable.Range(1, ${n});\nforeach (var i in robots)\n{\n    Console.WriteLine($"Robot #{i} says Beep!");\n}`;
+    $('#lcode',r).innerHTML=code(c);let o='';for(let i=1;i<=n;i++)o+=`🤖 Robot #${i} says Beep!<br>`;$('#lout',r).innerHTML='<b>Output:</b><br>'+o;}
+  $$('#lt .chip',r).forEach(b=>b.onclick=()=>{lt=b.dataset.l;$$('#lt .chip',r).forEach(x=>x.classList.toggle('on',x===b));drawLoop();});$('#rn',r).oninput=drawLoop;drawLoop();
+},
+quiz:{q:'Which keyword repeats code while counting with a variable like i?',ok:'for',bad:['if','else'],why:'A for loop sets up a counter, a stopping rule and a step, all in one line.'}});
+
+/* =====================================================================
+   6. Methods
+   ===================================================================== */
+add({id:'methods',world:W.blocks,icon:'⚙️',title:'Methods',
+say:`A <b>method</b> is a little machine. Drop something in the top (the <b>parameters</b>), it works, and something comes out (the <b>return value</b>).`,
+html:()=>`
+<section class="card"><h2>🎰 Try the machines</h2>
+<div class="chips" id="mm"></div><div id="mcode"></div>
+<div class="form" id="margs"></div>
+<div class="row"><button class="btn" id="mgo">▶ Call the method</button></div>
+<div class="panel" id="mout">Press the button!</div></section>`,
+init(r){
+  const M={Add:{sig:'int Add(int a, int b)',body:'return a + b;',args:[['a','int',3],['b','int',4]],run:(a,b)=>a+b},
+   Greet:{sig:'string Greet(string name)',body:'return $"Hello, {name}!";',args:[['name','string','Ava']],run:n=>`Hello, ${n}!`},
+   IsEven:{sig:'bool IsEven(int number)',body:'return number % 2 == 0;',args:[['number','int',8]],run:n=>n%2===0},
+   PrintStars:{sig:'void PrintStars(int count)',body:"Console.WriteLine(new string('*', count));",args:[['count','int',5]],run:c=>'⭐'.repeat(Math.max(0,Math.min(20,c))),v:1}};
+  let cur='Add';$('#mm',r).innerHTML=Object.keys(M).map(k=>`<button class="chip" data-m="${k}">${k}</button>`).join('');
+  function pick(k){cur=k;const m=M[k];$$('#mm .chip',r).forEach(c=>c.classList.toggle('on',c.dataset.m===k));
+    $('#margs',r).innerHTML=m.args.map((a,i)=>`<label>${a[0]} (${a[1]}) <input id="ma${i}" type="text" value="${a[2]}" maxlength="14"></label>`).join('');
+    $$('#margs input',r).forEach(i=>i.oninput=call);call();}
+  function call(){const m=M[cur],vals=m.args.map((a,i)=>{const v=$('#ma'+i,r).value;return a[1]==='int'?(parseInt(v,10)||0):v;});
+    const shown=vals.map((v,i)=>m.args[i][1]==='string'?`"${v}"`:v).join(', ');
+    $('#mcode',r).innerHTML=code(`${m.sig}\n{\n    ${m.body}\n}\n\n${m.v?'':'var result = '}${cur}(${shown});`);
+    const res=m.run.apply(null,vals);$('#mout',r).innerHTML=m.v?`<b>Console shows:</b> ${esc(res)}<br><span class="hint">void means the machine returns nothing. It only does something.</span>`:`<b>result =</b> ${esc(String(res))} <span class="tag good">${m.sig.split(' ')[0]}</span>`;}
+  $$('#mm .chip',r).forEach(c=>c.onclick=()=>pick(c.dataset.m));$('#mgo',r).onclick=call;pick('Add');
+},
+quiz:{q:'What does the keyword "void" mean on a method?',ok:'The method returns nothing',bad:['The method returns a number','The method deletes itself'],why:'void methods do a job (like printing) but do not hand back a value.'}});
+
+/* =====================================================================
+   7. Classes & objects
+   ===================================================================== */
+add({id:'classes',world:W.blocks,icon:'🍪',title:'Classes & objects',
+say:`A <b>class</b> is a cookie cutter and an <b>object</b> is a cookie. One class can make lots of objects, and each one has its own values!`,
+html:()=>`
+<section class="card"><h2>🐾 The Pet class</h2>${code(`public class Pet
+{
+    public string Name { get; set; }          // property
+    public int Energy { get; private set; }   // only Pet can change it
+    public int Happy  { get; private set; }
+
+    public Pet(string name)                   // constructor
+    {
+        Name = name; Energy = 50; Happy = 50;
+    }
+    public void Feed()  { Energy += 20; }
+    public void Play()  { Happy += 20; Energy -= 15; }
+    public void Sleep() { Energy = 100; }
+}`)}</section>
+<section class="card"><h2>🍪 Bake some objects</h2>
+<div class="form"><label>Name <input id="pn" type="text" value="Rex" maxlength="12"></label><label>Animal <select id="pa"><option>🐶</option><option>🐱</option><option>🐰</option><option>🐹</option><option>🦎</option></select></label><button class="btn" id="pgo">new Pet(…)</button></div>
+<div id="pets"></div><div class="panel" id="plog">Make a pet, then call its methods!</div></section>`,
+init(r){
+  const pets=[];const cl=v=>Math.max(0,Math.min(100,v));
+  function draw(){$('#pets',r).innerHTML=pets.map((p,i)=>`<div class="pet"><span class="em">${p.a}</span><div><b>${esc(p.n)}</b><br>⚡ <span class="meter"><i style="width:${p.e}%"></i></span> ${p.e}<br>😄 <span class="meter"><i style="width:${p.h}%"></i></span> ${p.h}</div>
+   <div class="row"><button class="btn sm" data-i="${i}" data-a="Feed">Feed()</button><button class="btn sm" data-i="${i}" data-a="Play">Play()</button><button class="btn sm" data-i="${i}" data-a="Sleep">Sleep()</button></div></div>`).join('');
+    $$('#pets button',r).forEach(b=>b.onclick=()=>{const p=pets[+b.dataset.i],a=b.dataset.a,v=p.n.replace(/[^A-Za-z0-9]/g,'').toLowerCase()||'pet';let m='';
+      if(a==='Feed'){p.e=cl(p.e+20);m='Yum! Energy goes up.';}
+      else if(a==='Play'){if(p.e<15){m=p.n+' is too tired to play! Try Feed() or Sleep().';}else{p.h=cl(p.h+20);p.e=cl(p.e-15);m='Fun! Happy up, energy down.';}}
+      else{p.e=100;m='Zzz… fully rested.';}
+      $('#plog',r).innerHTML=code(`${v}.${a}();`)+esc(m);draw();});}
+  $('#pgo',r).onclick=()=>{const n=$('#pn',r).value.trim()||'Pet';if(pets.length>=5){$('#plog',r).textContent='That is a lot of pets! Five is the limit here. 😄';return;}
+    pets.push({n,a:$('#pa',r).value,e:50,h:50});$('#plog',r).innerHTML=code(`var ${n.replace(/[^A-Za-z0-9]/g,'').toLowerCase()||'pet'} = new Pet("${n.replace(/"/g,'')}");`)+'A brand-new object with its own energy!';draw();};
+  $('#pgo',r).click();
+},
+quiz:{q:'A class is like a cookie cutter. What is an object?',ok:'A cookie made with that cutter',bad:['The oven','The recipe book'],why:'The class is the blueprint and every object is one thing built from it.'}});
+
+/* =====================================================================
+   8. Inheritance & interfaces
+   ===================================================================== */
+add({id:'oop',world:W.blocks,icon:'🧬',title:'Inheritance & interfaces',
+say:`Classes can be a family! Kids <b>inherit</b> things from parents, and an <b>interface</b> is a promise: "I can do this job", each in its own way.`,
+html:()=>`
+<section class="card"><h2>🌳 Inheritance: family traits</h2><p class="sub">Tap a class to see what it gets for free.</p>
+<div class="chips" id="inh"></div><div id="inhcode"></div><div class="panel" id="inhmem"></div></section>
+<section class="card"><h2>📣 Interface: everybody Speak()!</h2>${code(`public interface ISpeaker
+{
+    string Speak();   // a promise, no details yet
+}`)}
+<p>Add animals to the party. They all keep the same promise, but each answers differently. This is called <b>polymorphism</b>.</p>
+<div class="chips" id="zoo"></div><div class="row" id="party" style="min-height:52px"></div>
+<div class="row"><button class="btn" id="sayall">📣 Everybody Speak()!</button><button class="btn ghost" id="clr">Clear</button></div>
+<div id="zcode"></div><div class="panel" id="zout">Add some animals first.</div></section>`,
+init(r){
+  const inh={Animal:{b:null,own:[['string Name','public string Name { get; set; }'],['void Eat()','public void Eat() { }']]},Dog:{b:'Animal',own:[['void Bark()','public void Bark() { }']]},Bird:{b:'Animal',own:[['void Fly()','public void Fly() { }']]},Fish:{b:'Animal',own:[['void Swim()','public void Swim() { }']]},Puppy:{b:'Dog',own:[['void Wag()','public void Wag() { }']]}};
+  $('#inh',r).innerHTML=Object.keys(inh).map(k=>`<button class="chip" data-k="${k}">${k}</button>`).join('');
+  function pick(k){$$('#inh .chip',r).forEach(c=>c.classList.toggle('on',c.dataset.k===k));const chain=[];let c=k;while(c){chain.unshift(c);c=inh[c].b;}
+    $('#inhcode',r).innerHTML=code(`public class ${k}${inh[k].b?' : '+inh[k].b:''}\n{\n${inh[k].own.map(m=>'    '+m[1]).join('\n')}\n}`);
+    $('#inhmem',r).innerHTML=`<b>${k} can do:</b><br>`+chain.map((cn,i)=>inh[cn].own.map(m=>`<span class="tag ${i<chain.length-1?'warn':'good'}">${esc(m[0])}</span> <small>${i<chain.length-1?'inherited from '+cn:'its own'}</small>`).join('<br>')).join('<br>');}
+  $$('#inh .chip',r).forEach(c=>c.onclick=()=>pick(c.dataset.k));pick('Puppy');
+  const Z={Dog:['🐶','Woof!'],Cat:['🐱','Meow!'],Duck:['🦆','Quack!'],Robot:['🤖','Beep boop!'],Cow:['🐮','Moooo!']};let party=[];
+  $('#zoo',r).innerHTML=Object.keys(Z).map(k=>`<button class="chip" data-z="${k}">${Z[k][0]} + ${k}</button>`).join('');
+  function drawParty(sayIt){$('#party',r).innerHTML=party.map(k=>`<span class="big" title="${k}">${Z[k][0]}</span>`).join('')||'<span class="hint">(empty party)</span>';
+    const k=party[party.length-1];$('#zcode',r).innerHTML=k?code(`public class ${k} : ISpeaker\n{\n    public string Speak() => "${Z[k][1]}";\n}\n\nforeach (ISpeaker s in party)\n    Console.WriteLine(s.Speak());`):'';
+    $('#zout',r).innerHTML=sayIt&&party.length?party.map(p=>`${Z[p][0]} <b>${p}</b> says ${Z[p][1]}`).join('<br>'):(party.length?'Press the button!':'Add some animals first.');}
+  $$('#zoo .chip',r).forEach(c=>c.onclick=()=>{if(party.length<8)party.push(c.dataset.z);drawParty(false);});
+  $('#sayall',r).onclick=()=>drawParty(true);$('#clr',r).onclick=()=>{party=[];drawParty(false);};drawParty(false);
+},
+quiz:{q:'Which example shows polymorphism?',ok:'A Dog says "Woof" and a Cat says "Meow" when both are asked to Speak()',bad:['Two dogs have the same name','A class gets deleted'],why:'Same method call, different behaviour depending on the object.'}});
+
+/* =====================================================================
+   9. Collections & LINQ
+   ===================================================================== */
+add({id:'linq',world:W.blocks,icon:'🔍',title:'Collections & LINQ',
+say:`A <b>List</b> is a toy box that holds many things. <b>LINQ</b> is a super-power for asking questions about the box: "Show me only the red toys, cheapest first!"`,
+html:()=>`
+<section class="card"><h2>🧸 Ask the toy box</h2>
+<div class="row"><b>Color:</b><span class="chips" id="lc"></span></div>
+<div class="row"><label>Max price <input type="range" id="lp" min="5" max="30" value="30"> <b id="lpv">$30</b></label>
+<label>Sort <select id="ls"><option value="">as they are</option><option value="asc">cheapest first</option><option value="desc">priciest first</option></select></label></div>
+<div id="lcode"></div><div class="grid" id="lres"></div><div class="panel" id="lcount"></div></section>
+<section class="card"><h2>🗃️ Kinds of boxes</h2><div class="grid">
+<div class="mini"><b>Array</b>A fixed row of boxes.${code('int[] a = new int[3];')}</div>
+<div class="mini"><b>List&lt;T&gt;</b>A stretchy box that only holds T.${code('var toys = new List<Toy>();')}</div>
+<div class="mini"><b>Dictionary</b>Look things up by a key.${code('var age = new Dictionary<string,int>();')}</div></div></section>`,
+init(r){
+  const T=[['Robot','🤖','Blue',25],['Teddy','🧸','Yellow',15],['Rocket','🚀','Red',30],['Ball','⚽','Green',8],['Kite','🪁','Red',12],['Car','🚗','Red',10],['Duck','🦆','Yellow',5],['Dino','🦖','Green',20],['Whale','🐳','Blue',18],['Drum','🥁','Yellow',22]];
+  let col='All';const cols=['All','Red','Blue','Green','Yellow'];
+  $('#lc',r).innerHTML=cols.map(c=>`<button class="chip" data-c="${c}">${c}</button>`).join('');
+  function draw(){$$('#lc .chip',r).forEach(c=>c.classList.toggle('on',c.dataset.c===col));const mp=+$('#lp',r).value,so=$('#ls',r).value;$('#lpv',r).textContent='$'+mp;
+    let res=T.filter(t=>(col==='All'||t[2]===col)&&t[3]<=mp);if(so==='asc')res.sort((a,b)=>a[3]-b[3]);if(so==='desc')res.sort((a,b)=>b[3]-a[3]);
+    let q='var result = toys';if(col!=='All')q+=`\n    .Where(t => t.Color == "${col}")`;if(mp<30)q+=`\n    .Where(t => t.Price <= ${mp})`;if(so==='asc')q+='\n    .OrderBy(t => t.Price)';if(so==='desc')q+='\n    .OrderByDescending(t => t.Price)';q+='\n    .ToList();';
+    $('#lcode',r).innerHTML=code(q);$('#lres',r).innerHTML=res.map(t=>`<div class="toy"><span class="em">${t[1]}</span>${t[0]}<br><small>$${t[3]} · ${t[2]}</small></div>`).join('')||'<p class="hint">No toys match. Try a bigger price.</p>';
+    $('#lcount',r).innerHTML=`<code>result.Count()</code> is <b>${res.length}</b>`+(res.length?` · <code>result.First().Name</code> is <b>${res[0][0]}</b>`:'');}
+  $$('#lc .chip',r).forEach(c=>c.onclick=()=>{col=c.dataset.c;draw();});$('#lp',r).oninput=draw;$('#ls',r).onchange=draw;draw();
+},
+quiz:{q:'Which LINQ method keeps only the items that match a rule?',ok:'Where',bad:['OrderBy','ToList'],why:'Where filters. OrderBy sorts and ToList turns the answer into a List.'}});
+
+/* =====================================================================
+   10. async / await
+   ===================================================================== */
+add({id:'async',world:W.blocks,icon:'⏳',title:'async & await',
+say:`Imagine making breakfast. You do not stare at the toaster! You start the toast, boil the egg and squeeze the juice <i>at the same time</i>. That is <b>async</b>.`,
+html:()=>`
+<section class="card"><h2>🍳 Cook breakfast</h2><div class="split">
+<div><h3>😴 One thing at a time</h3><div id="syncBox"></div><button class="btn ghost" id="goSync">▶ Cook (sync)</button>${code(`Toast();\nBoilEgg();\nSqueezeJuice();`)}</div>
+<div><h3>🚀 At the same time</h3><div id="asyncBox"></div><button class="btn" id="goAsync">▶ Cook (async)</button>${code(`var a = ToastAsync();\nvar b = BoilEggAsync();\nvar c = JuiceAsync();\nawait Task.WhenAll(a, b, c);`)}</div></div></section>
+<section class="card"><h2>🔑 Key words</h2><div class="grid"><div class="mini"><b>Task</b>A promise that some work will finish later.</div><div class="mini"><b>async</b>Marks a method that can wait without blocking.</div><div class="mini"><b>await</b>"Pause me here until the result is ready, and let others work meanwhile."</div></div></section>`,
+init(r){
+  const tasks=[['🍞','Toast',1.5],['🥚','Egg',1.5],['🧃','Juice',1.0]],timers={};
+  function idle(mode){$('#'+mode+'Box',r).innerHTML=tasks.map((k,i)=>`<div class="tk"><span>${k[0]} ${k[1]}</span><div class="track"><div class="fill" id="${mode}f${i}"></div></div></div>`).join('')+`<div class="clock" id="${mode}c">⏱ 0.0 s</div>`;}
+  function go(mode){clearInterval(timers[mode]);idle(mode);const st=[];let t=0;tasks.forEach(k=>{st.push(mode==='sync'?t:0);t+=k[2];});
+    const total=Math.max.apply(null,tasks.map((k,i)=>st[i]+k[2])),t0=performance.now();
+    timers[mode]=setInterval(()=>{const el=(performance.now()-t0)/1000;tasks.forEach((k,i)=>{$('#'+mode+'f'+i,r).style.width=Math.max(0,Math.min(1,(el-st[i])/k[2]))*100+'%';});
+      if(el>=total){clearInterval(timers[mode]);$('#'+mode+'c',r).innerHTML='✅ Done in '+total.toFixed(1)+' s '+(mode==='sync'?'😴':'🚀');}else $('#'+mode+'c',r).textContent='⏱ '+el.toFixed(1)+' s';},50);}
+  later(()=>Object.values(timers).forEach(clearInterval));idle('sync');idle('async');
+  $('#goSync',r).onclick=()=>go('sync');$('#goAsync',r).onclick=()=>go('async');
+},
+quiz:{q:'What is the big benefit of async/await?',ok:'Your app can do other work while it waits, instead of freezing',bad:['It makes math faster','It hides errors'],why:'While one task waits (for a file, the internet…), other work can continue.'}});
+
+/* =====================================================================
+   11. HTTP
+   ===================================================================== */
+add({id:'http',world:W.web,icon:'📨',title:'HTTP: requests & responses',
+say:`A website works like a <b>restaurant</b>. Your browser (the customer) sends a <b>request</b> (the order) and the server (the kitchen) sends back a <b>response</b> (the food). Order something!`,
+html:()=>`
+<section class="card"><h2>🍽️ The API restaurant</h2>
+<div class="row"><b>Verb:</b><span class="chips" id="hv"></span></div>
+<div class="form"><label>Path <input id="hp" type="text" value="/toys" maxlength="30"></label><label id="hbl" style="display:none">Toy name <input id="hb" type="text" value="Kite" maxlength="16"></label><button class="btn" id="hgo">Send request</button></div>
+<div class="chips" id="hpc"></div>
+<div class="split"><div><b>📤 Request</b><div id="hreq"></div></div><div><b>📥 Response</b><div id="hres"></div></div></div>
+<p class="hint">Fake server memory: <span id="hmem"></span></p></section>
+<section class="card"><h2>🚦 Status codes</h2><div class="grid">
+<div class="mini"><span class="tag good">2xx</span> ✅ <b>It worked!</b>200 OK, 201 Created</div><div class="mini"><span class="tag warn">3xx</span> ➡️ <b>Go somewhere else</b>301 Moved</div>
+<div class="mini"><span class="tag warn">4xx</span> 🙋 <b>Your mistake</b>404 Not Found, 401 Unauthorized</div><div class="mini"><span class="tag bad">5xx</span> 💥 <b>Server's mistake</b>500 Internal Error</div></div>
+${code(`app.MapGet("/toys", () => toys);\napp.MapPost("/toys", (Toy t) => Results.Created($"/toys/{t.Id}", t));`)}</section>`,
+init(r){
+  let toys=[{id:1,name:'Robot'},{id:2,name:'Teddy'}],nid=3,verb='GET';
+  $('#hv',r).innerHTML=['GET','POST','PUT','DELETE'].map(v=>`<button class="chip" data-v="${v}">${v}</button>`).join('');
+  $('#hpc',r).innerHTML=['/toys','/toys/1','/toys/99','/secret','/boom','/pizza'].map(p=>`<button class="chip">${p}</button>`).join('');
+  function serve(m,p,b){let x;p=p.trim();if(p[0]!=='/')p='/'+p;
+    if(p==='/toys'){if(m==='GET')return[200,'OK',toys];if(m==='POST'){if(!b)return[400,'Bad Request',{error:'Send a toy name!'}];const t={id:nid++,name:b};toys.push(t);return[201,'Created',t];}return[405,'Method Not Allowed',{error:m+' is not allowed here'}];}
+    if(x=p.match(/^\/toys\/(\d+)$/)){const id=+x[1],t=toys.find(o=>o.id===id);if(!t)return[404,'Not Found',{error:'No toy with id '+id}];
+      if(m==='GET')return[200,'OK',t];if(m==='PUT'){if(!b)return[400,'Bad Request',{error:'Send a toy name!'}];t.name=b;return[200,'OK',t];}
+      if(m==='DELETE'){toys=toys.filter(o=>o.id!==id);return[204,'No Content',null];}return[405,'Method Not Allowed',{error:m+' is not allowed here'}];}
+    if(p==='/secret')return[401,'Unauthorized',{error:'Who are you? Please log in.'}];
+    if(p==='/boom')return[500,'Internal Server Error',{error:'Oops! A bug on the server 🔥'}];
+    return[404,'Not Found',{error:'That page does not exist.'}];}
+  function pick(v){verb=v;$$('#hv .chip',r).forEach(c=>c.classList.toggle('on',c.dataset.v===v));$('#hbl',r).style.display=(v==='POST'||v==='PUT')?'':'none';}
+  $$('#hv .chip',r).forEach(c=>c.onclick=()=>pick(c.dataset.v));pick('GET');
+  $$('#hpc .chip',r).forEach(c=>c.onclick=()=>{$('#hp',r).value=c.textContent;});
+  function send(){const p=$('#hp',r).value,b=(verb==='POST'||verb==='PUT')?$('#hb',r).value.trim():'';const [s,txt,body]=serve(verb,p,b);
+    $('#hreq',r).innerHTML=plain(`${verb} ${p.trim()[0]==='/'?p.trim():'/'+p.trim()} HTTP/1.1\nHost: toyshop.example`+(b?`\n\n{ "name": "${b}" }`:''));
+    const cls=s<300?'good':s<500?'warn':'bad';$('#hres',r).innerHTML=plain(`HTTP/1.1 ${s} ${txt}\nContent-Type: application/json`+(body!==null?'\n\n'+JSON.stringify(body,null,2):''))+`<span class="tag ${cls}">${s} ${txt}</span>`;
+    $('#hmem',r).textContent=toys.map(t=>t.id+':'+t.name).join(', ')||'(empty)';}
+  $('#hgo',r).onclick=send;send();
+},
+quiz:{q:'Which HTTP status code means "Not Found"?',ok:'404',bad:['200','500'],why:'200 means OK and 500 means the server had a problem. 404 means that page does not exist.'}});
+
+/* =====================================================================
+   12. Program.cs & Kestrel
+   ===================================================================== */
+add({id:'program',world:W.web,icon:'🏪',title:'Program.cs & Kestrel',
+say:`Every ASP.NET Core website starts in <code>Program.cs</code>. Think of it as <b>opening a shop</b>: first you plan, then you build, then you open the door. Tap any line!`,
+html:()=>`
+<section class="card"><h2>📜 Program.cs, line by line</h2><p class="sub">Tap a line to hear what it does.</p>
+<div class="clickable" id="pcode"></div><div class="panel" id="pinfo">👆 Tap a line.</div></section>
+<section class="card"><h2>🚪 Kestrel: the doorman</h2>
+<p><b>Kestrel</b> is the fast web server built into ASP.NET Core. It listens for visitors and hands each one to your app. Tap a piece:</p>
+<div class="pipe" id="kpipe"><div class="stage"><span>🌐</span><b>Browser</b></div><div class="arrow">➜</div><div class="stage"><span>🛡️</span><b>Reverse proxy</b><small>optional: Nginx, IIS…</small></div><div class="arrow">➜</div><div class="stage"><span>🦅</span><b>Kestrel</b><small>the doorman</small></div><div class="arrow">➜</div><div class="stage"><span>🏪</span><b>Your app</b></div></div>
+<div class="panel" id="kinfo">Tap a step in the picture.</div></section>`,
+init(r){
+  const src=`var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddScoped<IToyService, ToyService>();
+
+var app = builder.Build();
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+app.MapGet("/", () => "Hello, kids!");
+
+app.Run();`.split('\n');
+  const info={0:['🏗️ Setup phase','Start planning. The <b>builder</b> reads your settings, sets up logging and gets Kestrel ready.'],
+   1:['🏗️ Setup phase','<b>Register services</b>: tell the app which tools it may use. This adds Controllers, the "waiters".'],
+   2:['🏗️ Setup phase','<b>Dependency Injection!</b> "Whenever someone asks for IToyService, give them a ToyService."'],
+   4:['🏪 Pipeline phase','Planning is over. <b>Build</b> the real app.'],
+   5:['🏪 Pipeline phase','<b>Middleware</b>: send people from http:// to the safe https:// door.'],
+   6:['🏪 Pipeline phase','<b>Middleware</b>: check whether the visitor is allowed in.'],
+   7:['🏪 Pipeline phase','<b>Routing</b>: connect web addresses to the controller actions.'],
+   8:['🏪 Pipeline phase','A <b>Minimal API</b> endpoint: when someone visits <code>/</code>, answer "Hello, kids!"'],
+   10:['🚪 Open the shop','<b>Run!</b> Kestrel starts listening and waits for visitors.']};
+  function draw(h){$('#pcode',r).innerHTML=code(src.join('\n'),h===undefined?[]:[h]);$$('#pcode .ln',r).forEach((el,i)=>el.onclick=()=>{if(info[i]){draw(i);$('#pinfo',r).innerHTML=`<span class="tag warn">${info[i][0]}</span><br>${info[i][1]}`;}});}
+  draw();
+  const K=['Your browser sends a request such as <code>https://toyshop.example/toys</code>.','A <b>reverse proxy</b> (Nginx, IIS, a cloud load balancer) can sit in front to add extras like encryption and load sharing. Optional!','<b>Kestrel</b> reads the raw bytes from the network and turns them into an HTTP request your code understands.','Your app runs its middleware pipeline and endpoints, then the answer travels back the same way.'];
+  $$('#kpipe .stage',r).forEach((s,i)=>{s.style.cursor='pointer';s.tabIndex=0;s.setAttribute('role','button');
+    const act=()=>{$$('#kpipe .stage',r).forEach(x=>x.classList.remove('on'));s.classList.add('on');$('#kinfo',r).innerHTML=K[i];};
+    s.onclick=act;s.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}};});
+},
+quiz:{q:'In Program.cs, what does app.Run() do?',ok:'Starts the server so the app begins listening for visitors',bad:['Deletes the app','Reads the settings file'],why:'Everything before Run() is planning. Run() opens the door.'}});
+
+/* =====================================================================
+   13. Middleware
+   ===================================================================== */
+add({id:'middleware',world:W.web,icon:'🛂',title:'Middleware pipeline',
+say:`Every request walks through a row of <b>checkpoints</b>, like at an airport. Each one can wave you through <i>or stop you</i>. The <b>order</b> matters a lot. Rearrange them and see!`,
+html:()=>`
+<section class="card"><h2>🛂 Build your pipeline</h2><p class="sub">Use ↑ ↓ to reorder and the checkbox to switch each checkpoint on or off.</p>
+<div id="mwlist"></div><div class="row"><b>Send a visitor:</b><button class="btn sm" data-v="ok">🙂 Has ID card</button><button class="btn sm" data-v="noid">😶 No ID card</button><button class="btn sm" data-v="spam">🏃 Way too fast</button></div>
+<div class="panel" id="mwlog" aria-live="polite">Send a visitor to see the journey.</div><div id="mwcode"></div></section>`,
+init(r){
+  const D={log:['📝','Logger','Writes down every visitor'],auth:['🪪','Authentication','Checks the ID card'],rate:['🚦','Rate limiter','Stops anyone coming too fast']};
+  let order=['log','auth','rate'],on={log:true,auth:true,rate:true},token=0;
+  function list(){$('#mwlist',r).innerHTML=order.map((k,i)=>`<div class="mw${on[k]?'':' off'}" id="mw-${k}"><span class="mi">${D[k][0]}</span><span class="grow"><b>${D[k][1]}</b><small>${D[k][2]}</small></span>
+    <label><input type="checkbox" data-k="${k}" ${on[k]?'checked':''} aria-label="${D[k][1]} on"></label><button class="btn sm ghost" data-up="${i}" aria-label="move up" ${i===0?'disabled':''}>↑</button><button class="btn sm ghost" data-dn="${i}" aria-label="move down" ${i===2?'disabled':''}>↓</button></div>`).join('')
+    +`<div class="mw" id="mw-end"><span class="mi">🎯</span><span class="grow"><b>Endpoint</b><small>The place you wanted to visit: "Hello, kids!"</small></span></div>`;
+    $$('#mwlist [data-k]',r).forEach(c=>c.onchange=()=>{on[c.dataset.k]=c.checked;list();});
+    $$('#mwlist [data-up]',r).forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[order[i-1],order[i]]=[order[i],order[i-1]];list();});
+    $$('#mwlist [data-dn]',r).forEach(b=>b.onclick=()=>{const i=+b.dataset.dn;[order[i+1],order[i]]=[order[i],order[i+1]];list();});
+    $('#mwcode',r).innerHTML=code('var app = builder.Build();\n'+order.filter(k=>on[k]).map(k=>({log:'app.UseRequestLogging();',auth:'app.UseAuthentication();',rate:'app.UseRateLimiter();'}[k])).join('\n')+'\napp.MapGet("/", () => "Hello, kids!");   // endpoint\napp.Run();');}
+  async function send(v){const my=++token;list();const L=$('#mwlog',r);L.innerHTML='';const say=(h,c)=>{L.insertAdjacentHTML('beforeend',`<div class="toast-line">${h}</div>`);};
+    let logged=false,stop=null;const seq=[];
+    for(const k of order){if(!on[k])continue;seq.push(k);if(k==='log')logged=true;if(k==='auth'&&v==='noid'){stop=[k,401];break;}if(k==='rate'&&v==='spam'){stop=[k,429];break;}}
+    for(const k of seq){if(my!==token)return;const el=$('#mw-'+k,r);el.classList.add('lit');
+      if(k==='log')say('📝 Logger writes: "A visitor arrived!"');
+      else if(k==='auth')say(stop&&stop[0]==='auth'?'🪪 Authentication: <b>no ID card!</b> ⛔ Stopped here → <span class="tag warn">401 Unauthorized</span>':'🪪 Authentication: ID looks good ✅');
+      else say(stop&&stop[0]==='rate'?'🚦 Rate limiter: <b>too fast!</b> ⛔ Stopped here → <span class="tag warn">429 Too Many Requests</span>':'🚦 Rate limiter: speed is fine ✅');
+      await wait(650);el.classList.remove('lit');}
+    if(my!==token)return;let status=200;
+    if(!stop){$('#mw-end',r).classList.add('lit');say('🎯 Endpoint answers: "Hello, kids!" <span class="tag good">200 OK</span>');await wait(650);$('#mw-end',r).classList.remove('lit');}else status=stop[1];
+    if(my!==token)return;
+    if(logged)say(`📝 Logger (on the way back) writes: "Response was ${status}".`);
+    else if(on.log)say('😱 <b>The Logger never saw this visitor</b>, because a checkpoint before it already turned them away. Move the Logger to the top!');
+    say('🏁 Journey finished.');}
+  $$('.row [data-v]',r).forEach(b=>b.onclick=()=>send(b.dataset.v));list();
+  later(()=>{token++;});
+},
+quiz:{q:'Why does the ORDER of middleware matter?',ok:'Each request passes through them one after another, so an earlier one can stop or change it',bad:['It does not matter at all','They always run in alphabetical order'],why:'The first checkpoint that says "stop" ends the trip, so later ones never see that request.'}});
+
+/* =====================================================================
+   14. Routing
+   ===================================================================== */
+add({id:'routing',world:W.web,icon:'🗺️',title:'Routing & endpoints',
+say:`<b>Routing</b> is the post office of your app: it reads the address (the URL) and delivers the request to the right <b>endpoint</b>. Type an address and see which door opens!`,
+html:()=>`
+<section class="card"><h2>📮 The route table</h2><div id="rtable"></div>
+<div class="form"><label>Verb <select id="rm"><option>GET</option><option>POST</option></select></label><label>URL path <input id="ru" type="text" value="/toys/7" maxlength="30"></label><button class="btn" id="rgo">Deliver</button></div>
+<div class="chips" id="rpc"></div><div class="panel" id="rout"></div></section>
+<section class="card"><h2>🧱 Two ways to write the same endpoint</h2><div class="chips" id="rtab"><button class="chip on" data-t="min">Minimal API</button><button class="chip" data-t="ctl">Controller</button></div><div id="rcode"></div></section>`,
+init(r){
+  const R=[['GET','/hello','Says "Hello!"'],['GET','/toys','Returns all toys'],['GET','/toys/{id:int}','Returns toy number {id}'],['GET','/hello/{name}','Says hello to {name}'],['POST','/toys','Creates a new toy']];
+  let tab='min',last=R[2];
+  function rx(t){const names=[];const s=t.split('/').map(seg=>{const m=seg.match(/^\{(\w+)(?::(\w+))?\}$/);if(!m)return seg.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');names.push([m[1],m[2]||'string']);return m[2]==='int'?'(\\d+)':'([^/]+)';}).join('/');return{re:new RegExp('^'+s+'$','i'),names};}
+  const P=R.map(x=>Object.assign({r:x},rx(x[1])));
+  $('#rtable',r).innerHTML='<div class="tblwrap"><table><tr><th>Verb</th><th>Pattern</th><th>What it does</th></tr>'+R.map((x,i)=>`<tr id="rt${i}"><td>${x[0]}</td><td><code>${esc(x[1])}</code></td><td>${esc(x[2])}</td></tr>`).join('')+'</table></div>';
+  $('#rpc',r).innerHTML=['/hello','/toys','/toys/7','/toys/abc','/hello/Ava','/nothing'].map(p=>`<button class="chip">${p}</button>`).join('');
+  $$('#rpc .chip',r).forEach(c=>c.onclick=()=>{$('#ru',r).value=c.textContent;deliver();});
+  function deliver(){const m=$('#rm',r).value;let u=$('#ru',r).value.trim();if(u[0]!=='/')u='/'+u;let hit=-1,g=null;
+    P.forEach((p,i)=>{if(hit<0&&p.r[0]===m){const x=u.match(p.re);if(x){hit=i;g=x.slice(1);}}});
+    R.forEach((_,i)=>$('#rt'+i,r).style.background=i===hit?'var(--w)':'');
+    if(hit<0){$('#rout',r).innerHTML=`<span class="tag warn">404 Not Found</span> No route matches <code>${esc(m)} ${esc(u)}</code>. ${/^\/toys\/[^/]+$/.test(u)?'(Hint: <code>{id:int}</code> only accepts whole numbers!)':''}`;}
+    else{last=R[hit];$('#rout',r).innerHTML=`<span class="tag good">Matched!</span> Route <code>${esc(R[hit][1])}</code> → ${esc(R[hit][2])}<br>`+(P[hit].names.length?P[hit].names.map((n,i)=>`<span class="tag warn">${n[0]} = ${esc(g[i])}</span> `).join(''):'<span class="hint">no route values in this one</span>');}
+    codeDraw();}
+  function codeDraw(){const x=last,pi=R.indexOf(x),nm=P[pi].names,args=nm.map(n=>(n[1]==='int'?'int ':'string ')+n[0]).join(', '),verb=x[0][0]+x[0].slice(1).toLowerCase();
+    $('#rcode',r).innerHTML=tab==='min'?code(`app.Map${verb}("${x[1]}", (${args}) =>\n{\n    return Results.Ok(/* ${x[2]} */);\n});`):code(`[ApiController]\n[Route("api/[controller]")]\npublic class ToysController : ControllerBase\n{\n    [Http${verb}("${x[1].replace(/^\/toys\/?/,'').replace(/^\//,'')}")]\n    public IActionResult Handle(${args})\n        => Ok(/* ${x[2]} */);\n}`);}
+  $$('#rtab .chip',r).forEach(c=>c.onclick=()=>{tab=c.dataset.t;$$('#rtab .chip',r).forEach(x=>x.classList.toggle('on',x===c));codeDraw();});
+  $('#rgo',r).onclick=deliver;deliver();
+},
+quiz:{q:'Which route pattern would match the address /toys/5 ?',ok:'/toys/{id}',bad:['/pets/{id}','/toys/{id}/edit'],why:'{id} is a placeholder that catches the 5. The other patterns have different words.'}});
+
+/* =====================================================================
+   15. Dependency Injection
+   ===================================================================== */
+add({id:'di',world:W.web,icon:'🍦',title:'Dependency Injection',
+say:`Instead of building every tool yourself, you <b>ask for it</b> and the app <b>hands it to you</b>. That magic waiter is called <b>Dependency Injection (DI)</b>. Try the three "lifetimes" with ice cream!`,
+html:()=>`
+<section class="card"><h2>🍦 Ice-cream service lifetimes</h2>
+<div class="grid" id="dmodes">
+<button class="tile" data-m="transient"><span class="big">🍦</span>Transient<small>a new scoop every time you ask</small></button>
+<button class="tile" data-m="scoped"><span class="big">🍨</span>Scoped<small>one scoop per visit (request)</small></button>
+<button class="tile" data-m="singleton"><span class="big">🍧</span>Singleton<small>one giant tub for the whole shop</small></button></div>
+<div id="dcode"></div>
+<p>In each <b>request</b>, two helpers ask for the service: the <b>Controller</b> and the <b>Repository</b>. The chips show <b>which instance</b> they got.</p>
+<div class="row"><button class="btn" id="dsend">📨 Send a request</button><button class="btn ghost" id="dreset">↺ Reset</button></div>
+<div class="tblwrap"><table><thead><tr><th>Request</th><th>🎮 Controller got</th><th>🗄️ Repository got</th></tr></thead><tbody id="dtb"></tbody></table></div>
+<div class="panel" id="dwhy"></div></section>
+<section class="card"><h2>🎁 Why use DI?</h2><p>Your class only says <i>what it needs</i>. The app decides <i>which one</i> to give. In tests you can hand over a <b>fake</b> instead of the real thing!</p>
+${code(`public class ToyController : ControllerBase\n{\n    private readonly IToyService _toys;\n\n    public ToyController(IToyService toys)   // asked for, not built\n    {\n        _toys = toys;\n    }\n}`)}</section>`,
+init(r){
+  let mode='transient',n=0,id=0,single=null,rows=[];const pal=['#ff9db9','#8fd6ff','#7ee3b8','#ffd469','#b9e6c2','#ffb877','#8ff0d6','#f7a1c6'];
+  const chip=i=>`<span class="idchip" style="background:${pal[i%pal.length]}">#${i}</span>`;
+  const why={transient:'Transient: every single ask creates a <b>new</b> object. Good for small, light helpers.',scoped:'Scoped: everyone in the <b>same request</b> shares one object, and the next request gets a new one. This is the usual choice for database work.',singleton:'Singleton: <b>one</b> object is created once and shared by everybody, forever. Good for caches, but be careful with shared data!'};
+  const reg={transient:'AddTransient',scoped:'AddScoped',singleton:'AddSingleton'};
+  function make(sc){if(mode==='singleton'){if(single===null)single=++id;return single;}if(mode==='scoped'){if(sc.i===undefined)sc.i=++id;return sc.i;}return ++id;}
+  function draw(){$$('#dmodes .tile',r).forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
+    $('#dcode',r).innerHTML=code(`builder.Services.${reg[mode]}<IIceCream, IceCream>();`);
+    $('#dtb',r).innerHTML=rows.map(x=>`<tr><td>${x.n}</td><td>${chip(x.a)}</td><td>${chip(x.b)}</td></tr>`).join('')||'<tr><td colspan="3" class="hint">No requests yet.</td></tr>';$('#dwhy',r).innerHTML=why[mode];}
+  $$('#dmodes .tile',r).forEach(t=>t.onclick=()=>{mode=t.dataset.m;n=0;id=0;single=null;rows=[];draw();});
+  $('#dsend',r).onclick=()=>{const sc={};rows.push({n:++n,a:make(sc),b:make(sc)});if(rows.length>6)rows.shift();draw();};
+  $('#dreset',r).onclick=()=>{n=0;id=0;single=null;rows=[];draw();};draw();
+},
+quiz:{q:'Which lifetime creates ONE object shared by the whole app?',ok:'Singleton',bad:['Transient','Scoped'],why:'Singleton = single. Transient makes a new one every time, and Scoped makes one per request.'}});
+
+/* =====================================================================
+   16. MVC
+   ===================================================================== */
+add({id:'mvc',world:W.web,icon:'🍕',title:'MVC, Razor Pages & Blazor',
+say:`<b>MVC</b> splits a website into three helpers: the <b>Model</b> (kitchen), the <b>View</b> (plate) and the <b>Controller</b> (waiter). Follow one pizza order from click to table!`,
+html:()=>`
+<section class="card"><h2>🍕 One request, step by step</h2>
+<div class="pipe" id="mvcpipe"></div><div class="row"><button class="btn" id="mnext">▶ Next step</button><button class="btn ghost" id="mreset">↺ Restart</button></div>
+<div class="panel" id="minfo"></div><div id="mcode"></div></section>
+<section class="card"><h2>🧭 Which style should I pick?</h2><div class="chips" id="pickq">
+<button class="chip" data-q="0">🌐 A website with pages</button><button class="chip" data-q="1">📱 JSON for a phone app</button><button class="chip" data-q="2">🧩 Interactive site, only C#</button><button class="chip" data-q="3">🪶 A tiny quick API</button></div>
+<div class="panel" id="pickout">👆 What do you want to build?</div></section>`,
+init(r){
+  const S=[['🙋','Browser','Order: <code>GET /toys/2</code>','GET /toys/2'],['🧑‍🍳','Controller (waiter)','Routing finds <code>ToysController.Details</code>. The waiter takes your order.',`public class ToysController : Controller\n{\n    public IActionResult Details(int id)\n    {`],
+    ['🍳','Model (kitchen)','The waiter asks the kitchen (data + rules) for toy number 2.',`        var toy = _toys.Find(id);   // Model`],['🍽️','View (plate)','The waiter hands the toy to a View, which knows how to make it look nice.',`        return View(toy);           // pass to the View\n    }\n}`],['📄','Response','The View (Razor) writes HTML and it travels back to your browser!',`<h1>@Model.Name</h1>\n<p>Price: @Model.Price</p>`]];
+  let s=0;$('#mvcpipe',r).innerHTML=S.map((x,i)=>`<div class="stage"><span>${x[0]}</span><b>${x[1]}</b></div>`+(i<S.length-1?'<div class="arrow">➜</div>':'')).join('');
+  const st=$$('#mvcpipe .stage',r);
+  function draw(){st.forEach((e,i)=>{e.classList.toggle('on',i===s);e.classList.toggle('past',i<s);});$('#minfo',r).innerHTML=S[s][2];const c=S[s][3];$('#mcode',r).innerHTML=s===0?plain(c):(s===4?plain(c):code(c));$('#mnext',r).disabled=s>=S.length-1;}
+  $('#mnext',r).onclick=()=>{s++;draw();};$('#mreset',r).onclick=()=>{s=0;draw();};draw();
+  const P=['<b>MVC</b> or <b>Razor Pages</b>. Both make HTML pages on the server. Razor Pages gives each page its own little file, which is easiest for beginners.','A <b>Web API</b> (controllers or Minimal APIs) sends <b>JSON</b> data that apps and other websites can use.','<b>Blazor</b> lets you build interactive pages with C# instead of JavaScript. 🧩','<b>Minimal APIs</b>: a few lines in Program.cs and you are done. 🪶'];
+  $$('#pickq .chip',r).forEach(c=>c.onclick=()=>{$$('#pickq .chip',r).forEach(x=>x.classList.toggle('on',x===c));$('#pickout',r).innerHTML=P[+c.dataset.q];});
+},
+quiz:{q:'In MVC, which part takes the request and decides what to do (the waiter)?',ok:'Controller',bad:['Model','View'],why:'The Controller coordinates: it asks the Model for data and picks a View to show it.'}});
+
+/* =====================================================================
+   17. Validation
+   ===================================================================== */
+add({id:'valid',world:W.web,icon:'✅',title:'Model binding & validation',
+say:`When a form is sent, ASP.NET Core <b>binds</b> each field into a C# object. Then <b>validation</b> checks the rules, like a bouncer with a checklist. Try to break the rules!`,
+html:()=>`
+<section class="card"><h2>📝 Sign-up form</h2>
+<div class="form"><label>Name <input id="fn" type="text" value="Ava" maxlength="20"></label><label>Age <input id="fa" type="text" value="8" maxlength="4"></label><label>Email <input id="fe" type="text" value="ava@example.com" maxlength="40"></label><button class="btn" id="fgo">POST /signup</button></div>
+<div class="split"><div><b>The model (DTO)</b>${code(`public class SignupDto\n{\n    [Required]\n    [StringLength(15, MinimumLength = 2)]\n    public string Name { get; set; }\n\n    [Range(1, 120)]\n    public int Age { get; set; }\n\n    [EmailAddress]\n    public string Email { get; set; }\n}`)}</div>
+<div><b>The server's answer</b><div id="fres"></div></div></div>
+${code(`[HttpPost("signup")]\npublic IActionResult Signup(SignupDto dto)\n{\n    // [ApiController] returns 400 automatically\n    // when the model is not valid.\n    return Ok($"Welcome, {dto.Name}!");\n}`)}</section>`,
+init(r){
+  function go(){const n=$('#fn',r).value.trim(),a=$('#fa',r).value.trim(),e=$('#fe',r).value.trim(),err={};
+    if(!n)err.Name=['The Name field is required.'];else if(n.length<2||n.length>15)err.Name=['The field Name must be a string with a minimum length of 2 and a maximum length of 15.'];
+    const ai=/^-?\d+$/.test(a)?+a:NaN;if(isNaN(ai)||ai<1||ai>120)err.Age=['The field Age must be between 1 and 120.'];
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))err.Email=['The Email field is not a valid e-mail address.'];
+    const bad=Object.keys(err).length>0;
+    $('#fres',r).innerHTML=bad?plain(`HTTP/1.1 400 Bad Request\n\n`+JSON.stringify({title:'One or more validation errors occurred.',status:400,errors:err},null,2))+'<span class="tag bad">400 Bad Request</span>':plain(`HTTP/1.1 200 OK\n\nWelcome, ${n}!`)+'<span class="tag good">200 OK 🎉</span>';}
+  $('#fgo',r).onclick=go;go();
+},
+quiz:{q:'What status code does an API usually return when validation fails?',ok:'400 Bad Request',bad:['200 OK','404 Not Found'],why:'The client sent bad data, so 400 tells them to fix their request.'}});
+
+/* =====================================================================
+   18. Configuration
+   ===================================================================== */
+add({id:'config',world:W.back,icon:'🎛️',title:'Configuration',
+say:`Apps need <b>settings</b> that change without rewriting code, like a volume knob. ASP.NET Core reads settings from several places and <b>the last one wins</b>. Turn the switches!`,
+html:()=>`
+<section class="card"><h2>🎛️ Who wins?</h2>
+<div class="row"><label>Environment <select id="env"><option>Development</option><option>Staging</option><option>Production</option></select></label>
+<label><input type="checkbox" id="tv"> Environment variable</label><label><input type="checkbox" id="tc"> Command-line</label></div>
+<div class="tblwrap" id="ctab"></div><div id="ccode"></div></section>
+<section class="card"><h2>🔐 Secrets</h2><p>Never put passwords in files you share (like GitHub). Use <b>user-secrets</b> while developing and environment variables or a vault when running for real.</p></section>`,
+init(r){
+  const base={Greeting:'Hello from base!',Db:'Server=localhost;Db=Toys',LogLevel:'Information'},byEnv={Development:{Greeting:'Hello, developer! 🛠️',LogLevel:'Debug'},Staging:{Db:'Server=staging-db;Db=Toys'},Production:{Db:'Server=prod-db;Db=Toys',LogLevel:'Warning'}},ev={Greeting:'Hello from an environment variable 🌍'},cmd={LogLevel:'Trace'};
+  function draw(){const env=$('#env',r).value,uv=$('#tv',r).checked,uc=$('#tc',r).checked;
+    const ly=[['appsettings.json',base],['appsettings.'+env+'.json',byEnv[env]],['Env variable',uv?ev:{}],['Command line',uc?cmd:{}]];
+    let h='<table><tr><th>Key</th>'+ly.map(l=>`<th>${esc(l[0])}</th>`).join('')+'<th>🏆 Final value</th></tr>';
+    Object.keys(base).forEach(k=>{let w=-1;ly.forEach((l,i)=>{if(l[1][k]!==undefined)w=i;});h+=`<tr><td><code>${k}</code></td>`+ly.map((l,i)=>`<td class="${w===i?'win':''}">${l[1][k]!==undefined?esc(l[1][k]):'—'}</td>`).join('')+`<td><b>${esc(ly[w][1][k])}</b></td></tr>`;});
+    $('#ctab',r).innerHTML=h+'</table>';
+    $('#ccode',r).innerHTML=code(`var greeting = builder.Configuration["Greeting"];\n\n// or a typed class:\nbuilder.Services.Configure<ShopOptions>(\n    builder.Configuration.GetSection("Shop"));`);}
+  ['env','tv','tc'].forEach(i=>$('#'+i,r).onchange=draw);draw();
+},
+quiz:{q:'A setting is in appsettings.json AND in an environment variable. Which value is used?',ok:'The environment variable',bad:['The appsettings.json value','Neither, it crashes'],why:'Later sources override earlier ones, and environment variables come after the JSON files.'}});
+
+/* =====================================================================
+   19. Logging
+   ===================================================================== */
+add({id:'log',world:W.back,icon:'📔',title:'Logging',
+say:`A <b>log</b> is your app's diary. It writes down what happened so you can find bugs later. Some entries are boring and some are <b>emergencies</b>. Move the slider!`,
+html:()=>`
+<section class="card"><h2>📔 The app's diary</h2>
+<label>Show me from level: <input type="range" id="lv" min="0" max="5" value="2"> <b id="lvn"></b></label>
+<div class="panel" id="lgout"></div><div id="lcode"></div></section>
+<section class="card"><h2>📍 Where do logs go?</h2><div class="chips"><span class="tag good">Console</span><span class="tag good">Files</span><span class="tag good">Serilog</span><span class="tag good">Cloud dashboards</span></div><p class="hint">These places are called <b>sinks</b> or <b>providers</b>. Your code stays the same.</p></section>`,
+init(r){
+  const lv=['Trace','Debug','Information','Warning','Error','Critical'],ic=['🔍','🐞','ℹ️','⚠️','❌','🔥'];
+  const M=[[0,'Entering GetToys()'],[1,'Toy list has 12 items'],[2,'Server started on port 5000'],[2,'User Ava logged in'],[1,'Cache miss for key toys:all'],[3,'Disk space is getting low (15%)'],[4,'Could not save Toy 7: database timeout'],[2,'Order 42 shipped'],[5,'The database is completely down!'],[3,'Slow request: 3.2 seconds']];
+  const cls=['','','good','warn','bad','bad'];
+  function draw(){const m=+$('#lv',r).value;$('#lvn',r).textContent=lv[m]+' ('+ic[m]+')';const l=M.filter(x=>x[0]>=m);
+    $('#lgout',r).innerHTML=l.map(x=>`<div>${ic[x[0]]} <span class="tag ${cls[x[0]]||''}">${lv[x[0]]}</span> ${esc(x[1])}</div>`).join('')||'Quiet…';
+    $('#lcode',r).innerHTML=code(`_logger.Log${lv[Math.max(m,0)]}("Order {OrderId} shipped to {Name}", 42, "Ava");\n\n// appsettings.json\n"Logging": { "LogLevel": { "Default": "${lv[m]}" } }`);}
+  $('#lv',r).oninput=draw;draw();
+},
+quiz:{q:'Which log level is the most serious?',ok:'Critical',bad:['Information','Warning'],why:'The order is Trace, Debug, Information, Warning, Error and then Critical.'}});
+
+/* =====================================================================
+   20. Authentication & Authorization
+   ===================================================================== */
+add({id:'auth',world:W.back,icon:'🎢',title:'Authentication & authorization',
+say:`Two different questions at the theme park gate: <b>"Who are you?"</b> (authentication) and <b>"What are you allowed to do?"</b> (authorization). Pick a visitor, then try the rides!`,
+html:()=>`
+<section class="card"><h2>🎟️ Pick a visitor</h2><div class="grid" id="users"></div><div class="panel" id="uinfo"></div></section>
+<section class="card"><h2>🎠 Try the attractions</h2><div class="grid" id="doors"></div><div id="dcode"></div><div class="panel" id="dres">Tap an attraction.</div></section>
+<section class="card"><h2>🎫 What is a token?</h2><p>After you log in, the server gives you a <b>wristband</b> (a signed <b>JWT token</b>) with your claims written inside. On every request you show it. Nobody can fake the signature. ✍️</p></section>`,
+init(r){
+  const U={guest:{n:'Guest',e:'👤',auth:false,age:0,roles:[],cl:[]},alice:{n:'Alice',e:'👧',auth:true,age:8,roles:['Kid'],cl:['name = Alice','age = 8','role = Kid']},bob:{n:'Bob',e:'🧑',auth:true,age:35,roles:['VIP'],cl:['name = Bob','age = 35','role = VIP']}};
+  const D=[{e:'🎠',n:'Carousel',a:'[AllowAnonymous]',f:'Carousel',c:u=>[200,'Everyone can ride the carousel! 🎠']},
+   {e:'🎡',n:'Ferris wheel',a:'[Authorize]',f:'FerrisWheel',c:u=>u.auth?[200,'Enjoy the view! 🎡']:[401,'Unauthorized: who are you? Show your wristband (log in).']},
+   {e:'🎢',n:'Roller coaster',a:'[Authorize(Policy = "Age10Plus")]',f:'RollerCoaster',c:u=>!u.auth?[401,'Unauthorized: log in first.']:u.age>=10?[200,'Wheee! 🎢']:[403,'Forbidden: I know who you are, but you are too young (policy Age10Plus).']},
+   {e:'👑',n:'VIP lounge',a:'[Authorize(Roles = "VIP")]',f:'VipLounge',c:u=>!u.auth?[401,'Unauthorized: log in first.']:u.roles.includes('VIP')?[200,'Welcome to the VIP lounge! 👑']:[403,'Forbidden: only VIPs are allowed in.']}];
+  let user='guest';
+  $('#users',r).innerHTML=Object.keys(U).map(k=>`<button class="tile" data-u="${k}"><span class="big">${U[k].e}</span>${U[k].n}<small>${U[k].auth?'logged in':'not logged in'}</small></button>`).join('');
+  $('#doors',r).innerHTML=D.map((d,i)=>`<button class="tile" data-d="${i}"><span class="big">${d.e}</span>${d.n}</button>`).join('');
+  function pu(k){user=k;$$('#users .tile',r).forEach(t=>t.classList.toggle('on',t.dataset.u===k));const u=U[k];$('#uinfo',r).innerHTML=u.auth?`<b>Wristband claims:</b> `+u.cl.map(c=>`<span class="tag warn">${c}</span>`).join(' '):'No wristband. This visitor has not logged in.';}
+  $$('#users .tile',r).forEach(t=>t.onclick=()=>pu(t.dataset.u));pu('guest');
+  $$('#doors .tile',r).forEach(t=>t.onclick=()=>{$$('#doors .tile',r).forEach(x=>x.classList.toggle('on',x===t));const d=D[+t.dataset.d],[s,m]=d.c(U[user]);
+    $('#dcode',r).innerHTML=code(`${d.a}\n[HttpGet("${d.f.toLowerCase()}")]\npublic IActionResult ${d.f}() => Ok("...");`);
+    $('#dres',r).innerHTML=`${U[user].e} ${U[user].n} at the ${d.n}: <span class="tag ${s===200?'good':'warn'}">${s}</span> ${esc(m)}`;});
+},
+quiz:{q:'Authentication answers which question?',ok:'Who are you?',bad:['What are you allowed to do?','How fast are you?'],why:'Authentication = identity. "What may you do?" is authorization (403 if you are not allowed).'}});
+
+/* =====================================================================
+   21. Entity Framework Core
+   ===================================================================== */
+add({id:'ef',world:W.back,icon:'🗄️',title:'Entity Framework Core',
+say:`Databases speak <b>SQL</b>, but you speak <b>C#</b>. <b>EF Core</b> is the translator! You change C# objects and EF Core writes the SQL for you, but only when you say <code>SaveChanges()</code>.`,
+html:()=>`
+<section class="card"><h2>🧸 The toy-chest table</h2>
+<div class="split"><div id="toycls"></div>
+<div>${code(`public class ShopContext : DbContext\n{\n    public DbSet<Toy> Toys { get; set; }\n}`)}</div></div>
+<div class="form"><label>Name <input id="en" type="text" value="Kite" maxlength="14"></label><label>Color <select id="ec"><option>Red</option><option>Blue</option><option>Green</option></select></label><button class="btn" id="eadd">db.Toys.Add(…)</button></div>
+<div class="tblwrap" id="etab"></div>
+<div class="row"><b>Tracked changes waiting:</b> <span id="epend"></span></div>
+<div class="row"><button class="btn" id="esave">💾 SaveChanges()</button></div>
+<div class="panel" id="esql">Nothing sent to the database yet.</div></section>
+<section class="card"><h2>🔎 Query with LINQ</h2><div class="chips" id="eq"></div><div id="eqc"></div></section>
+<section class="card"><h2>🚚 Migrations: change the table shape</h2><p>Add a new property to the class, then tell the database. Do the steps in order:</p>
+<div class="row"><button class="btn sm" id="m1">1️⃣ Add "Price" to the class</button><button class="btn sm" id="m2" disabled>2️⃣ dotnet ef migrations add AddPrice</button><button class="btn sm" id="m3" disabled>3️⃣ dotnet ef database update</button></div><div class="panel" id="mout">The class and the database match right now.</div></section>`,
+init(r){
+  let rows=[{id:1,name:'Robot',color:'Blue'},{id:2,name:'Teddy',color:'Green'}],nid=3,pend=[],price=false,mig=0,fq='';
+  const sq=s=>String(s).replace(/'/g,"''");
+  function draw(){
+    const view=rows.map(x=>Object.assign({},x));pend.forEach(p=>{if(p.op==='add')view.push({id:'new',name:p.name,color:p.color,tmp:1,price:0});});
+    $('#etab',r).innerHTML='<table><tr><th>Id</th><th>Name</th><th>Color</th>'+(mig>=3?'<th>Price</th>':'')+'<th></th></tr>'+view.map(x=>{const del=pend.some(p=>p.op==='del'&&p.id===x.id);
+      return `<tr style="${del?'text-decoration:line-through;opacity:.6':''}"><td>${x.tmp?'🆕':x.id}</td><td>${esc(x.name)}</td><td>${x.color}</td>${mig>=3?'<td>'+(x.price||0)+'</td>':''}<td>${x.tmp||del?'':`<button class="btn sm ghost" data-del="${x.id}">Remove</button>`}</td></tr>`;}).join('')+'</table>';
+    $$('#etab [data-del]',r).forEach(b=>b.onclick=()=>{pend.push({op:'del',id:+b.dataset.del});draw();});
+    $('#epend',r).innerHTML=pend.length?pend.map(p=>`<span class="tag warn">${p.op==='add'?'Added: '+esc(p.name):'Removed: #'+p.id}</span>`).join(' '):'<span class="hint">none</span>';
+    $('#toycls',r).innerHTML=code(`public class Toy\n{\n    public int Id { get; set; }\n    public string Name { get; set; }\n    public string Color { get; set; }${price?'\n    public decimal Price { get; set; }   // new!':''}\n}`);
+    $('#esave',r).disabled=!pend.length;
+    const fs=fq?rows.filter(x=>x.color===fq):rows;
+    $('#eqc',r).innerHTML=code(`var toys = db.Toys${fq?`\n    .Where(t => t.Color == "${fq}")`:''}\n    .ToList();`)+plain(`SELECT "t"."Id", "t"."Name", "t"."Color"${mig>=3?', "t"."Price"':''}\nFROM "Toys" AS "t"${fq?`\nWHERE "t"."Color" = @p0   -- @p0 = '${fq}'`:''}`)+`<div class="row">${fs.map(x=>`<span class="tag good">${x.name}</span>`).join('')||'<span class="hint">no rows</span>'}</div>`;}
+  $('#eq',r).innerHTML=['','Red','Blue','Green'].map(c=>`<button class="chip" data-c="${c}">${c||'all'}</button>`).join('');
+  $$('#eq .chip',r).forEach(c=>c.onclick=()=>{fq=c.dataset.c;$$('#eq .chip',r).forEach(x=>x.classList.toggle('on',x===c));draw();});$$('#eq .chip',r)[0].classList.add('on');
+  $('#eadd',r).onclick=()=>{const n=$('#en',r).value.trim()||'Toy';pend.push({op:'add',name:n,color:$('#ec',r).value});draw();$('#esql',r).innerHTML=code(`db.Toys.Add(new Toy { Name = "${n.replace(/"/g,'')}", Color = "${$('#ec',r).value}" });`)+'<span class="hint">EF Core is only <b>tracking</b> the change. The database has not been touched yet!</span>';};
+  $('#esave',r).onclick=()=>{const sql=[];pend.forEach(p=>{if(p.op==='add'){rows.push({id:nid,name:p.name,color:p.color,price:0});sql.push(`INSERT INTO "Toys" ("Name", "Color"${mig>=3?', "Price"':''}) VALUES (@p0, @p1${mig>=3?', 0.0':''});  -- @p0='${sq(p.name)}'`);nid++;}
+      else{rows=rows.filter(x=>x.id!==p.id);sql.push(`DELETE FROM "Toys" WHERE "Id" = @p0;  -- @p0=${p.id}`);}});pend=[];draw();
+    $('#esql',r).innerHTML='<b>💾 SQL that EF Core just sent:</b>'+plain(sql.join('\n'))+'<span class="hint">Values travel as <b>parameters</b> (@p0…), so nobody can sneak in bad SQL.</span>';};
+  $('#m1',r).onclick=()=>{price=true;mig=1;$('#m1',r).disabled=true;$('#m2',r).disabled=false;$('#mout',r).innerHTML='⚠️ The class has a <b>Price</b> but the database table does not yet. They do not match!';draw();};
+  $('#m2',r).onclick=()=>{mig=2;$('#m2',r).disabled=true;$('#m3',r).disabled=false;$('#mout',r).innerHTML='EF Core wrote a migration file (a recipe for the change):'+code(`migrationBuilder.AddColumn<decimal>(\n    name: "Price",\n    table: "Toys",\n    nullable: false,\n    defaultValue: 0m);`);};
+  $('#m3',r).onclick=()=>{mig=3;$('#m3',r).disabled=true;$('#mout',r).innerHTML='✅ The database was updated: <code>ALTER TABLE "Toys" ADD "Price" decimal NOT NULL DEFAULT 0.0;</code> Look at the table above, it has a Price column now!';draw();};
+  draw();
+},
+quiz:{q:'What does SaveChanges() do in EF Core?',ok:'Sends all the tracked changes to the database',bad:['Deletes the database','Compiles the C# code'],why:'Until you call SaveChanges(), EF Core only keeps track of your changes in memory.'}});
+
+/* =====================================================================
+   22. Testing
+   ===================================================================== */
+add({id:'test',world:W.pro,icon:'🧪',title:'Testing with xUnit',
+say:`Tests are little robots that check your code for you, every time. The park rule: kids must be <b>at least 120 cm</b> tall to ride. One version of the code has a bug. Can you find the right one?`,
+html:()=>`
+<section class="card"><h2>🎢 Which CanRide() is correct?</h2><div class="chips" id="impl"></div><div id="icode"></div>
+<h3>Tests</h3>${code(`[Fact] public void Tall_kid_can_ride()   => Assert.True(CanRide(130));\n[Fact] public void Exactly_120_can_ride() => Assert.True(CanRide(120));\n[Fact] public void Short_kid_cannot_ride() => Assert.False(CanRide(100));\n[Fact] public void Zero_cannot_ride()      => Assert.False(CanRide(0));`)}
+<div class="row"><button class="btn" id="trun">🧪 dotnet test</button></div><div class="panel" id="tout">Press the button to run the tests.</div></section>
+<section class="card"><h2>🧩 Arrange · Act · Assert</h2><div class="grid"><div class="mini"><b>Arrange</b>Get things ready.</div><div class="mini"><b>Act</b>Call the code you test.</div><div class="mini"><b>Assert</b>Check the answer is what you expect.</div></div>
+<p class="hint">Bigger tests can use <b>mocks</b>, which are fake helpers handed in through Dependency Injection.</p></section>`,
+init(r){
+  const I=[['A','height > 120',h=>h>120],['B','height >= 120',h=>h>=120],['C','height < 120',h=>h<120]];let cur=0;
+  const T=[['Tall_kid_can_ride',130,true],['Exactly_120_can_ride',120,true],['Short_kid_cannot_ride',100,false],['Zero_cannot_ride',0,false]];
+  $('#impl',r).innerHTML=I.map((x,i)=>`<button class="chip" data-i="${i}">Version ${x[0]}</button>`).join('');
+  function pick(i){cur=i;$$('#impl .chip',r).forEach((c,j)=>c.classList.toggle('on',j===i));$('#icode',r).innerHTML=code(`public static bool CanRide(int height)\n{\n    return ${I[i][1]};\n}`);$('#tout',r).textContent='Press the button to run the tests.';}
+  $$('#impl .chip',r).forEach(c=>c.onclick=()=>pick(+c.dataset.i));pick(0);
+  $('#trun',r).onclick=()=>{const res=T.map(t=>[t[0],I[cur][2](t[1])===t[2]]),pass=res.filter(x=>x[1]).length;
+    $('#tout',r).innerHTML=res.map(x=>`${x[1]?'✅':'❌'} ${x[0]}`).join('<br>')+`<br><b>${pass} passed, ${res.length-pass} failed</b> `+(pass===res.length?'<span class="tag good">All green! 🎉</span>':'<span class="tag bad">Bug found! 🐛</span>');
+    if(pass===res.length)burst($('#trun',r));};
+},
+quiz:{q:'What does a unit test do?',ok:'Checks that a small piece of code gives the expected answer',bad:['Makes the app look pretty','Uploads the app to the internet'],why:'Tests catch bugs early, and you can re-run them any time you change the code.'}});
+
+/* =====================================================================
+   23. Publish & deploy
+   ===================================================================== */
+add({id:'deploy',world:W.pro,icon:'🚚',title:'Publish & deploy',
+say:`Your app works on your computer. Time to <b>ship it</b> to the world! Follow the delivery truck through four stops. 🚚`,
+html:()=>`
+<section class="card"><h2>🚚 The delivery route</h2><div class="road" id="road"><span class="truck" id="truck">🚚</span></div>
+<div class="chips" id="dst"><button class="chip" data-s="0">1 Publish</button><button class="chip" data-s="1">2 Container</button><button class="chip" data-s="2">3 Run it</button><button class="chip" data-s="3">4 Go live</button></div>
+<div id="dbody"></div></section>`,
+init(r){
+  let sc=false;const truck=$('#truck',r);
+  function body(s){
+    if(s===0)return `<p>Package your app into a folder that is ready to run somewhere else.</p><label><input type="checkbox" id="sc" ${sc?'checked':''}> Include the .NET runtime (self-contained)</label>`
+      +plain(sc?'dotnet publish -c Release -r linux-x64 --self-contained -o ./out':'dotnet publish -c Release -o ./out')
+      +`<div class="panel">📦 <b>./out</b> has ${sc?'your app <b>plus the whole .NET runtime</b>, which is much bigger (often 70 MB or more) but runs on a machine that has no .NET installed.':'just your app files (tiny!). The computer must already have the .NET runtime.'}</div>`;
+    if(s===1)return `<p>A <b>container</b> is a sealed lunchbox holding your app and everything it needs, so it runs the same everywhere. 🐳</p>`+plain(`# Dockerfile\nFROM mcr.microsoft.com/dotnet/sdk:10.0 AS build\nWORKDIR /src\nCOPY . .\nRUN dotnet publish -c Release -o /app\n\nFROM mcr.microsoft.com/dotnet/aspnet:10.0\nWORKDIR /app\nCOPY --from=build /app .\nENTRYPOINT ["dotnet", "ToyShop.dll"]`)+'<p class="hint">Two stages: a big workshop image builds the app, then a small image runs it.</p>';
+    if(s===2)return `<p>Build the lunchbox and start it:</p>`+plain('docker build -t toyshop .\ndocker run -p 8080:8080 toyshop')+'<div class="panel">Open <code>http://localhost:8080</code> and your app answers from inside the container! 🎉</div>';
+    return `<p>Pick a place for your app to live. Tap one:</p><div class="chips" id="hosts"><button class="chip" data-h="0">☁️ Azure App Service</button><button class="chip" data-h="1">☸️ Kubernetes</button><button class="chip" data-h="2">🐧 Linux server</button><button class="chip" data-h="3">🪟 IIS on Windows</button></div><div class="panel" id="hinfo">👆 Choose a home.</div>`;}
+  function show(s){$$('#dst .chip',r).forEach((c,i)=>c.classList.toggle('on',i===s));truck.style.left=(s*27+2)+'%';$('#dbody',r).innerHTML=body(s);
+    const sb=$('#sc',r);if(sb)sb.onchange=()=>{sc=sb.checked;show(0);};
+    const H=['Push your container or folder to a managed service. Azure does the servers for you.','Runs many containers, restarts broken ones and adds more when it gets busy.','Run the app with Kestrel behind Nginx. You manage the machine.','IIS forwards requests to your app on a Windows server.'];
+    $$('#hosts .chip',r).forEach(c=>c.onclick=()=>{$$('#hosts .chip',r).forEach(x=>x.classList.toggle('on',x===c));$('#hinfo',r).innerHTML=H[+c.dataset.h];});}
+  $$('#dst .chip',r).forEach(c=>c.onclick=()=>show(+c.dataset.s));show(0);
+},
+quiz:{q:'What does "dotnet publish" do?',ok:"Prepares your app's files so it can run somewhere else",bad:['Opens a chat with other coders','Adds a new NuGet package'],why:'It builds a release version and gathers everything needed into one folder.'}});
+
+/* =====================================================================
+   24. The .NET family
+   ===================================================================== */
+add({id:'family',world:W.pro,icon:'🧩',title:'More cool .NET tools',
+say:`.NET is a whole <b>family</b> of tools. Tap a card to flip it and meet each family member!`,
+html:()=>`<section class="card"><h2>🃏 Flip the cards</h2><div class="grid" id="fam"></div></section>`,
+init(r){
+  const F=[['🧩','Blazor','Build interactive websites with C# instead of JavaScript.'],['📡','SignalR','Live magic! The server can push messages to browsers instantly, like in chat apps.'],['⚡','gRPC','Super-fast talking between two programs.'],['🪶','Minimal APIs','Tiny web APIs in just a few lines.'],
+   ['📄','Razor Pages','Every page gets its own little C# file. Great for beginners.'],['👷','Worker Services','Background helpers with no web page, like sending emails at night.'],['📱','.NET MAUI','One app for Android, iOS, Windows and Mac.'],['🩺','Health checks','A doctor address (/health) that says whether your app feels well.'],
+   ['🧠','Caching','Remember answers so you do not redo hard work.'],['🚪','CORS','Rules about which other websites may talk to your API.'],['📖','Swagger / OpenAPI','An automatic menu of your API that you can try in the browser.'],['🚦','Rate limiting','Slows down visitors who ask too often.'],
+   ['🪪','Identity','Ready-made sign-up, login and password features.'],['🤖','ML.NET','Teach your app to learn from data.'],['🌌','Aspire','Helps you run and connect the many pieces of a cloud app.'],['🔥','dotnet watch','Hot reload: change code and see it update while the app runs.']];
+  $('#fam',r).innerHTML=F.map(f=>`<button class="flip" aria-pressed="false"><span class="front"><span class="em">${f[0]}</span>${f[1]}</span><span class="back"><b>${f[1]}</b><br>${f[2]}</span></button>`).join('');
+  $$('#fam .flip',r).forEach(b=>b.onclick=()=>{const on=b.classList.toggle('on');b.setAttribute('aria-pressed',on);});
+},
+quiz:{q:'Which tool lets a server push live messages to browsers?',ok:'SignalR',bad:['CORS','Swagger'],why:'SignalR keeps a live connection open, which is perfect for chat and live scores.'}});
+
+/* =====================================================================
+   25. Final challenge
+   ===================================================================== */
+add({id:'final',world:W.fin,icon:'🏆',title:'Final challenge',
+say:`You made it to the end! Ten questions from all over Adventure Land. Get <b>7 or more</b> right to earn your certificate. Ready?`,
+html:()=>`<section class="card" id="fq"></section>`,
+init(r){
+  const pool=shuffle(L.filter(x=>x.quiz)).slice(0,10);let i=0,score=0;const box=$('#fq',r);
+  function q(){const it=pool[i].quiz,opts=shuffle([{t:it.ok,ok:1}].concat(it.bad.map(t=>({t,ok:0}))));
+    box.innerHTML=`<h2>Question ${i+1} of 10</h2><p><b>${esc(it.q)}</b></p><div class="opts">${opts.map(o=>`<button class="opt" data-ok="${o.ok}">${esc(o.t)}</button>`).join('')}</div><div class="fb" aria-live="polite"></div><div class="row" id="nx"></div>`;
+    $$('.opt',box).forEach(b=>b.onclick=()=>{$$('.opt',box).forEach(x=>{x.disabled=true;if(x.dataset.ok==='1')x.classList.add('right');});
+      const ok=b.dataset.ok==='1';if(ok)score++;else b.classList.add('wrong');const f=$('.fb',box);f.className='fb '+(ok?'good':'warn');f.textContent=(ok?'🎉 Correct! ':'Not this time. ')+it.why;
+      $('#nx',box).innerHTML=`<button class="btn" id="nb">${i<9?'Next question →':'See my result'}</button>`;$('#nb',box).onclick=()=>{i++;i<10?q():end();};});}
+  function end(){const pass=score>=7;
+    box.innerHTML=`<h2>${pass?'🎉 You did it!':'Good try!'}</h2><p class="big" style="margin:.2em 0">You got <b>${score} / 10</b></p>`+(pass?`<div class="cert"><div class="big">🏅</div><h3>.NET Explorer Certificate</h3><p>This certificate is proudly given to</p><input id="cn" type="text" value="" placeholder="type your name" maxlength="24" aria-label="your name"><p>for exploring .NET Adventure Land: C#, ASP.NET Core, EF Core, testing and more!</p><div class="big">🟢⭐🟢</div></div>`:'<p>Revisit a few lessons and try again. You will get it! 💪</p>')+`<div class="row"><button class="btn" id="again">🔁 Play again</button><button class="btn ghost" id="home">Back to lesson 1</button></div>`;
+    if(pass){saved.cert=true;store.set(saved);burst($('#again',box));}
+    $('#again',box).onclick=()=>{i=0;score=0;pool.splice(0,10,...shuffle(L.filter(x=>x.quiz)).slice(0,10));q();};$('#home',box).onclick=()=>go(0);}
+  q();
+}});
+
+/* =====================================================================
+   Start
+   ===================================================================== */
+buildNav();updateProgress();
+go(typeof saved.last==='number'&&saved.last>=0&&saved.last<L.length?saved.last:0);
+</script>
+</body>
+</html>

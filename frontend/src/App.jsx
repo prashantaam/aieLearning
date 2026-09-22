@@ -380,11 +380,70 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
+          | Teacher Direct Activity Creation
+          |--------------------------------------------------------------------------
+          |
+          | Every activity begins directly from Lesson Detail.
+          |
+          | The create page will eventually create:
+          |
+          | 1. Parent Sublesson
+          | 2. Activity-specific child record
+          |
+          */}
+
+          {/* Content */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/content/create"
+            element={
+              <CreateSublessonContentPage />
+            }
+          />
+
+          {/* Interactive Demo */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/interactive-demo/create"
+            element={
+              <InteractiveDemoCreatePage />
+            }
+          />
+
+          {/* Exercise */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/exercise/create"
+            element={
+              <ExerciseCreatePage />
+            }
+          />
+
+          {/* Quiz */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/quiz/create"
+            element={
+              <QuizCreatePage />
+            }
+          />
+
+          {/* Flashcard */}
+
+          <Route
+            path="/teacher/lessons/:lessonId/flashcard/create"
+            element={
+              <FlashcardCreatePage />
+            }
+          />
+
+          {/*
+          |--------------------------------------------------------------------------
           | Teacher Sublessons
           |--------------------------------------------------------------------------
           |
-          | These routes are temporarily retained while
-          | the new activity-based authoring flow is introduced.
+          | Temporarily retained while the activity-based
+          | authoring architecture is being migrated.
           |
           */}
 
@@ -411,36 +470,11 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Content Activities
-          |--------------------------------------------------------------------------
-          |
-          | NEW CREATE FLOW
-          |
-          | Lesson
-          |   ↓
-          | Create Content
-          |   ↓
-          | Creates:
-          |
-          | sublessons
-          | +
-          | sublesson_contents
-          |
-          */}
-
-          <Route
-            path="/teacher/lessons/:lessonId/content/create"
-            element={
-              <CreateSublessonContentPage />
-            }
-          />
-
-          {/*
-          |--------------------------------------------------------------------------
           | Existing Sublesson Content Routes
           |--------------------------------------------------------------------------
           |
-          | Retained for existing content management and editing.
+          | Retained for existing content management
+          | and editing.
           |
           */}
 
@@ -467,7 +501,7 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Interactive Demos
+          | Existing Interactive Demo Routes
           |--------------------------------------------------------------------------
           */}
 
@@ -504,7 +538,7 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Sublesson Quizzes
+          | Existing Sublesson Quiz Routes
           |--------------------------------------------------------------------------
           */}
 
@@ -531,7 +565,7 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Sublesson Flashcards
+          | Existing Sublesson Flashcard Routes
           |--------------------------------------------------------------------------
           */}
 
@@ -558,7 +592,7 @@ const App = () => {
 
           {/*
           |--------------------------------------------------------------------------
-          | Teacher Sublesson Exercises
+          | Existing Sublesson Exercise Routes
           |--------------------------------------------------------------------------
           */}
 
